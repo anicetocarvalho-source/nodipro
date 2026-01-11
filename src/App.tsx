@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import Portfolio from "./pages/Portfolio";
 import KPI from "./pages/KPI";
 import Risks from "./pages/Risks";
@@ -32,6 +33,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/projects" element={<PageWrapper><Projects /></PageWrapper>} />
+          <Route path="/projects/:id" element={<PageWrapper><ProjectDetail /></PageWrapper>} />
           <Route path="/portfolio" element={<PageWrapper><Portfolio /></PageWrapper>} />
           <Route path="/kpi" element={<PageWrapper><KPI /></PageWrapper>} />
           <Route path="/risks" element={<PageWrapper><Risks /></PageWrapper>} />
