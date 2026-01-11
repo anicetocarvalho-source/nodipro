@@ -32,19 +32,36 @@ const columns: Column[] = [
 const initialTasks: Record<string, Task[]> = {
   backlog: [
     { id: "t1", title: "Pesquisa de mercado para novos features", priority: "low", assignee: { name: "Ana", initials: "AC" } },
-    { id: "t2", title: "Documentação da API v2", priority: "medium", dueDate: "25 Jan" },
+    { id: "t2", title: "Documentação da API v2", priority: "medium", dueDate: "25 Jan", subtasks: [
+      { id: "st1", title: "Documentar endpoints de autenticação", completed: true },
+      { id: "st2", title: "Documentar endpoints de projetos", completed: false },
+      { id: "st3", title: "Criar exemplos de código", completed: false },
+    ]},
   ],
   todo: [
-    { id: "t3", title: "Implementar autenticação OAuth", priority: "high", assignee: { name: "Pedro", initials: "PA" }, dueDate: "18 Jan", comments: 5 },
+    { id: "t3", title: "Implementar autenticação OAuth", priority: "high", assignee: { name: "Pedro", initials: "PA" }, dueDate: "18 Jan", comments: 5, subtasks: [
+      { id: "st4", title: "Configurar provider Google", completed: true },
+      { id: "st5", title: "Configurar provider GitHub", completed: true },
+      { id: "st6", title: "Implementar callback", completed: false },
+      { id: "st7", title: "Testar fluxo completo", completed: false },
+    ]},
     { id: "t4", title: "Design do dashboard mobile", priority: "medium", assignee: { name: "Sofia", initials: "SL" }, dueDate: "20 Jan", attachments: 3 },
     { id: "t5", title: "Optimização de queries SQL", priority: "high", dueDate: "19 Jan" },
   ],
   in_progress: [
-    { id: "t6", title: "Desenvolvimento do módulo de relatórios", description: "Criar componentes para exportação PDF e Excel", priority: "high", assignee: { name: "João", initials: "JM" }, dueDate: "16 Jan", comments: 12, attachments: 2, labels: ["feature"] },
+    { id: "t6", title: "Desenvolvimento do módulo de relatórios", description: "Criar componentes para exportação PDF e Excel", priority: "high", assignee: { name: "João", initials: "JM" }, dueDate: "16 Jan", comments: 12, attachments: 2, labels: ["feature"], subtasks: [
+      { id: "st8", title: "Criar template PDF", completed: true },
+      { id: "st9", title: "Implementar exportação Excel", completed: true },
+      { id: "st10", title: "Adicionar gráficos", completed: false },
+    ]},
     { id: "t7", title: "Integração com gateway de pagamento", priority: "high", assignee: { name: "Carlos", initials: "CF" }, dueDate: "17 Jan", comments: 8 },
   ],
   review: [
-    { id: "t8", title: "Testes unitários do módulo de users", priority: "medium", assignee: { name: "Maria", initials: "MS" }, comments: 3 },
+    { id: "t8", title: "Testes unitários do módulo de users", priority: "medium", assignee: { name: "Maria", initials: "MS" }, comments: 3, subtasks: [
+      { id: "st11", title: "Testes de criação", completed: true },
+      { id: "st12", title: "Testes de edição", completed: true },
+      { id: "st13", title: "Testes de exclusão", completed: true },
+    ]},
     { id: "t9", title: "Code review - Sprint 4", priority: "low", assignee: { name: "Pedro", initials: "PA" } },
   ],
   done: [
