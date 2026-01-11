@@ -1,11 +1,18 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Calendar, MessageSquare, Paperclip, Pencil } from "lucide-react";
+import { GripVertical, Calendar, MessageSquare, Paperclip, Pencil, CheckSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
 
 export interface Task {
   id: string;
@@ -17,11 +24,13 @@ export interface Task {
   comments?: number;
   attachments?: number;
   labels?: string[];
+  subtasks?: Subtask[];
 }
 
 interface KanbanCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
+  onToggleSubtask?: (taskId: string, subtaskId: string) => void;
 }
 
 const priorityConfig = {
@@ -30,7 +39,7 @@ const priorityConfig = {
   low: { label: "Baixa", className: "bg-muted text-muted-foreground border-muted" },
 };
 
-export function KanbanCard({ task, onEdit }: KanbanCardProps) {
+export function KanbanCard({ task, onEdit, onToggleSubtask }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -49,6 +58,10 @@ export function KanbanCard({ task, onEdit }: KanbanCardProps) {
     e.stopPropagation();
     onEdit?.(task);
   };
+
+  const completedSubtasks = task.subtasks?.filter((s) => s.completed).length || 0;
+  const totalSubtasks = task.subtasks?.length || 0;
+  const subtaskProgress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
 
   return (
     <Card
@@ -99,6 +112,22 @@ export function KanbanCard({ task, onEdit }: KanbanCardProps) {
               <p className="text-xs text-muted-foreground line-clamp-2">
                 {task.description}
               </p>
+            )}
+
+            {/* Subtasks Progress */}
+            {totalSubtasks > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <CheckSquare className="h-3 w-3" />
+                    <span>{completedSubtasks}/{totalSubtasks} subtarefas</span>
+                  </div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {Math.round(subtaskProgress)}%
+                  </span>
+                </div>
+                <Progress value={subtaskProgress} className="h-1.5" />
+              </div>
             )}
 
             {/* Meta info */}
