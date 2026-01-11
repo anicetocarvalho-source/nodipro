@@ -10,9 +10,11 @@ interface KanbanColumnProps {
   title: string;
   tasks: Task[];
   color: string;
+  onAddTask: (columnId: string) => void;
+  onEditTask: (task: Task, columnId: string) => void;
 }
 
-export function KanbanColumn({ id, title, tasks, color }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, tasks, color, onAddTask, onEditTask }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
@@ -27,7 +29,7 @@ export function KanbanColumn({ id, title, tasks, color }: KanbanColumnProps) {
           </span>
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-6 w-6">
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onAddTask(id)}>
             <Plus className="h-3.5 w-3.5" />
           </Button>
           <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -46,7 +48,7 @@ export function KanbanColumn({ id, title, tasks, color }: KanbanColumnProps) {
       >
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <KanbanCard key={task.id} task={task} />
+            <KanbanCard key={task.id} task={task} onEdit={(t) => onEditTask(t, id)} />
           ))}
         </SortableContext>
 
@@ -54,6 +56,7 @@ export function KanbanColumn({ id, title, tasks, color }: KanbanColumnProps) {
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-foreground h-9"
+          onClick={() => onAddTask(id)}
         >
           <Plus className="h-4 w-4 mr-2" />
           Adicionar tarefa
