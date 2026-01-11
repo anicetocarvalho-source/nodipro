@@ -13,6 +13,7 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard, Task } from "./KanbanCard";
+import { TaskFormModal } from "./TaskFormModal";
 
 interface Column {
   id: string;
@@ -56,6 +57,9 @@ const initialTasks: Record<string, Task[]> = {
 export function KanbanBoard() {
   const [tasks, setTasks] = useState(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [selectedColumnId, setSelectedColumnId] = useState<string>("todo");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -136,29 +140,75 @@ export function KanbanBoard() {
     }
   };
 
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-    >
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
-        {columns.map((column) => (
-          <KanbanColumn
-            key={column.id}
-            id={column.id}
-            title={column.title}
-            tasks={tasks[column.id] || []}
-            color={column.color}
-          />
-        ))}
-      </div>
+  const handleAddTask = (columnId: string) => {
+    setEditingTask(null);
+    setSelectedColumnId(columnId);
+    setModalOpen(true);
+  };
 
-      <DragOverlay>
-        {activeTask && <KanbanCard task={activeTask} />}
-      </DragOverlay>
-    </DndContext>
+  const handleEditTask = (task: Task, columnId: string) => {
+    setEditingTask(task);
+    setSelectedColumnId(columnId);
+    setModalOpen(true);
+  };
+
+  const handleSaveTask = (task: Task, columnId: string, isNew: boolean) => {
+    setTasks((prev) => {
+      if (isNew) {
+        return {
+          ...prev,
+          [columnId]: [task, ...prev[columnId]],
+        };
+      } else {
+        // Find and update existing task
+        const newTasks = { ...prev };
+        for (const col of Object.keys(newTasks)) {
+          const index = newTasks[col].findIndex((t) => t.id === task.id);
+          if (index !== -1) {
+            newTasks[col][index] = task;
+            break;
+          }
+        }
+        return newTasks;
+      }
+    });
+  };
+
+  return (
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin">
+          {columns.map((column) => (
+            <KanbanColumn
+              key={column.id}
+              id={column.id}
+              title={column.title}
+              tasks={tasks[column.id] || []}
+              color={column.color}
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+            />
+          ))}
+        </div>
+
+        <DragOverlay>
+          {activeTask && <KanbanCard task={activeTask} />}
+        </DragOverlay>
+      </DndContext>
+
+      <TaskFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        task={editingTask}
+        columnId={selectedColumnId}
+        onSave={handleSaveTask}
+      />
+    </>
   );
 }

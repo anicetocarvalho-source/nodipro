@@ -1,9 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Calendar, MessageSquare, Paperclip, User } from "lucide-react";
+import { GripVertical, Calendar, MessageSquare, Paperclip, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface Task {
@@ -20,6 +21,7 @@ export interface Task {
 
 interface KanbanCardProps {
   task: Task;
+  onEdit?: (task: Task) => void;
 }
 
 const priorityConfig = {
@@ -28,7 +30,7 @@ const priorityConfig = {
   low: { label: "Baixa", className: "bg-muted text-muted-foreground border-muted" },
 };
 
-export function KanbanCard({ task }: KanbanCardProps) {
+export function KanbanCard({ task, onEdit }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -43,12 +45,17 @@ export function KanbanCard({ task }: KanbanCardProps) {
     transition,
   };
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.(task);
+  };
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
       className={cn(
-        "cursor-grab active:cursor-grabbing hover:shadow-md transition-all",
+        "cursor-grab active:cursor-grabbing hover:shadow-md transition-all group",
         isDragging && "opacity-50 shadow-lg rotate-2"
       )}
     >
@@ -74,8 +81,18 @@ export function KanbanCard({ task }: KanbanCardProps) {
               </div>
             )}
 
-            {/* Title */}
-            <p className="text-sm font-medium leading-tight">{task.title}</p>
+            {/* Title with Edit Button */}
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm font-medium leading-tight flex-1">{task.title}</p>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                onClick={handleEditClick}
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+            </div>
 
             {/* Description */}
             {task.description && (
