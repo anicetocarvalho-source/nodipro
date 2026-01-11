@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -155,6 +156,7 @@ const riskConfig = {
 };
 
 export default function Projects() {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -248,6 +250,7 @@ export default function Projects() {
                 <Card
                   key={project.id}
                   className="hover:shadow-md transition-all hover:border-primary/30 cursor-pointer group"
+                  onClick={() => navigate(`/projects/${project.id}`)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -353,7 +356,7 @@ export default function Projects() {
                   </thead>
                   <tbody>
                     {filteredProjects.map((project) => (
-                      <tr key={project.id} className="border-b hover:bg-accent/50 cursor-pointer">
+                      <tr key={project.id} className="border-b hover:bg-accent/50 cursor-pointer" onClick={() => navigate(`/projects/${project.id}`)}>
                         <td className="p-4">
                           <div>
                             <p className="font-medium">{project.name}</p>
