@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -31,6 +32,24 @@ const ProtectedPageWrapper = ({ children }: { children: React.ReactNode }) => (
   </ProtectedRoute>
 );
 
+// Wrapper for role-protected pages (manager or above)
+const ManagerPageWrapper = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AppLayout>
+      <RoleProtectedRoute requiredRole="manager">{children}</RoleProtectedRoute>
+    </AppLayout>
+  </ProtectedRoute>
+);
+
+// Wrapper for admin-only pages
+const AdminPageWrapper = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AppLayout>
+      <RoleProtectedRoute requiredRole="admin">{children}</RoleProtectedRoute>
+    </AppLayout>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -45,14 +64,14 @@ const App = () => (
             <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
             <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
             <Route path="/kpi" element={<ProtectedPageWrapper><KPI /></ProtectedPageWrapper>} />
-            <Route path="/risks" element={<ProtectedPageWrapper><Risks /></ProtectedPageWrapper>} />
+            <Route path="/risks" element={<ManagerPageWrapper><Risks /></ManagerPageWrapper>} />
             <Route path="/team" element={<ProtectedPageWrapper><Team /></ProtectedPageWrapper>} />
             <Route path="/documents" element={<ProtectedPageWrapper><Documents /></ProtectedPageWrapper>} />
             <Route path="/communication" element={<ProtectedPageWrapper><Communication /></ProtectedPageWrapper>} />
-            <Route path="/budget" element={<ProtectedPageWrapper><Budget /></ProtectedPageWrapper>} />
-            <Route path="/reports" element={<ProtectedPageWrapper><Reports /></ProtectedPageWrapper>} />
+            <Route path="/budget" element={<ManagerPageWrapper><Budget /></ManagerPageWrapper>} />
+            <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
             <Route path="/profile" element={<ProtectedPageWrapper><Profile /></ProtectedPageWrapper>} />
-            <Route path="/admin" element={<ProtectedPageWrapper><Admin /></ProtectedPageWrapper>} />
+            <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
