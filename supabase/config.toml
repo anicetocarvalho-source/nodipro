@@ -1,1 +1,7 @@
 project_id = "raabxifuzcflzhwwkcet"
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.send-invitation]
+verify_jwt = false
