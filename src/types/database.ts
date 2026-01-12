@@ -2,6 +2,7 @@
 
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type ProjectStatus = 'active' | 'delayed' | 'completed' | 'on_hold';
+export const PROJECT_STATUS_OPTIONS = ['active', 'delayed', 'completed', 'on_hold'] as const;
 
 export interface DbProject {
   id: string;
