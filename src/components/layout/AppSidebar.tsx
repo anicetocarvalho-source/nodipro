@@ -21,22 +21,17 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useAuthContext } from "@/contexts/AuthContext";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: FolderKanban, label: "Projectos", path: "/projects" },
-  { icon: Briefcase, label: "Portfólio", path: "/portfolio" },
-  { icon: BarChart3, label: "Indicadores", path: "/kpi" },
-  { icon: AlertTriangle, label: "Riscos", path: "/risks" },
-  { icon: Users, label: "Equipa", path: "/team" },
-  { icon: FileText, label: "Documentos", path: "/documents" },
-  { icon: MessageSquare, label: "Comunicação", path: "/communication" },
-  { icon: Wallet, label: "Orçamento", path: "/budget" },
-  { icon: ClipboardList, label: "Relatórios", path: "/reports" },
-];
+interface MenuItem {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  path: string;
+  requiresPermission?: keyof ReturnType<typeof usePermissions>;
+}
 
-const bottomMenuItems = [
+const bottomMenuItems: MenuItem[] = [
   { icon: Settings, label: "Configurações", path: "/settings" },
   { icon: HelpCircle, label: "Ajuda", path: "/help" },
 ];
@@ -44,14 +39,35 @@ const bottomMenuItems = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { role } = useAuthContext();
+  const permissions = usePermissions();
+  const { signOut } = useAuthContext();
+
+  // Build menu items based on permissions
+  const menuItems: MenuItem[] = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: FolderKanban, label: "Projectos", path: "/projects" },
+    { icon: Briefcase, label: "Portfólio", path: "/portfolio" },
+    { icon: BarChart3, label: "Indicadores", path: "/kpi" },
+    { icon: AlertTriangle, label: "Riscos", path: "/risks", requiresPermission: "canManageRisks" },
+    { icon: Users, label: "Equipa", path: "/team" },
+    { icon: FileText, label: "Documentos", path: "/documents" },
+    { icon: MessageSquare, label: "Comunicação", path: "/communication" },
+    { icon: Wallet, label: "Orçamento", path: "/budget", requiresPermission: "canViewBudget" },
+    { icon: ClipboardList, label: "Relatórios", path: "/reports", requiresPermission: "canAccessReports" },
+  ];
+
+  // Filter menu items based on permissions
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (!item.requiresPermission) return true;
+    return permissions[item.requiresPermission];
+  });
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   };
 
-  const MenuItem = ({ item }: { item: typeof menuItems[0] }) => {
+  const MenuItem = ({ item }: { item: MenuItem }) => {
     const Icon = item.icon;
     const active = isActive(item.path);
 
@@ -129,12 +145,12 @@ export function AppSidebar() {
 
       {/* Main menu */}
       <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-        {menuItems.map((item) => (
+        {visibleMenuItems.map((item) => (
           <MenuItem key={item.path} item={item} />
         ))}
         
         {/* Admin menu - only visible to admins */}
-        {role === "admin" && (
+        {permissions.canAccessAdmin && (
           <MenuItem item={{ icon: ShieldCheck, label: "Administração", path: "/admin" }} />
         )}
       </nav>
@@ -147,6 +163,7 @@ export function AppSidebar() {
         
         {/* Logout */}
         <button
+          onClick={signOut}
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-lg w-full transition-all duration-200",
             "text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10"
