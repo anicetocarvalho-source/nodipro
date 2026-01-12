@@ -3,8 +3,6 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  TrendingUp,
-  Users,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
@@ -13,7 +11,9 @@ import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { ProgressChart } from "@/components/dashboard/ProgressChart";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { Button } from "@/components/ui/button";
-
+import { RoleBadge } from "@/components/ui/role-badge";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 const stats = [
   {
     title: "Projectos Activos",
@@ -187,22 +187,41 @@ const activities = [
 ];
 
 export default function Dashboard() {
+  const { profile, role } = useAuthContext();
+  const { canCreateProject } = usePermissions();
+  
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Bom dia";
+    if (hour < 18) return "Boa tarde";
+    return "Boa noite";
+  };
+
+  const firstName = profile?.full_name?.split(" ")[0] || "Utilizador";
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Bom dia, João! 👋
-          </h1>
-          <p className="text-muted-foreground">
-            Aqui está o resumo dos seus projectos e tarefas.
-          </p>
+        <div className="flex items-start gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl font-bold text-foreground">
+                {getGreeting()}, {firstName}! 👋
+              </h1>
+              <RoleBadge role={role} size="md" />
+            </div>
+            <p className="text-muted-foreground">
+              Aqui está o resumo dos seus projectos e tarefas.
+            </p>
+          </div>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
-          <FolderKanban className="h-4 w-4 mr-2" />
-          Novo Projecto
-        </Button>
+        {canCreateProject && (
+          <Button className="bg-primary hover:bg-primary/90">
+            <FolderKanban className="h-4 w-4 mr-2" />
+            Novo Projecto
+          </Button>
+        )}
       </div>
 
       {/* Stats Grid */}
