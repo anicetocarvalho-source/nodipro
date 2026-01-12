@@ -18,6 +18,7 @@ import Documents from "./pages/Documents";
 import Communication from "./pages/Communication";
 import Budget from "./pages/Budget";
 import Reports from "./pages/Reports";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/communication" element={<ProtectedPageWrapper><Communication /></ProtectedPageWrapper>} />
             <Route path="/budget" element={<ProtectedPageWrapper><Budget /></ProtectedPageWrapper>} />
             <Route path="/reports" element={<ProtectedPageWrapper><Reports /></ProtectedPageWrapper>} />
+            <Route path="/profile" element={<ProtectedPageWrapper><Profile /></ProtectedPageWrapper>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, Bell, ChevronDown, Menu, LogOut, User, Settings } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ interface TopBarProps {
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const { profile, role, signOut } = useAuthContext();
+  const navigate = useNavigate();
   const notificationCount = 5;
 
   const getRoleLabel = (role: string | null) => {
@@ -137,7 +139,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/profile")}>
               <User className="mr-2 h-4 w-4" />
               Perfil
             </DropdownMenuItem>
