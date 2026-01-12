@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Plus,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { GanttChart } from "@/components/gantt/GanttChart";
+import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 import { useProject } from "@/hooks/useProjects";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTasks } from "@/hooks/useTasks";
@@ -60,6 +62,7 @@ export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<"kanban" | "gantt" | "list">("kanban");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const { data: project, isLoading: projectLoading } = useProject(id);
   const { data: teamMembers, isLoading: teamLoading } = useTeamMembers(id);
@@ -122,6 +125,10 @@ export default function ProjectDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 ml-12 lg:ml-0">
+          <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
           <Button variant="outline">
             <FileText className="h-4 w-4 mr-2" />
             Relatório
@@ -376,6 +383,12 @@ export default function ProjectDetail() {
           </Card>
         </div>
       </div>
+
+      <ProjectFormModal 
+        open={isEditModalOpen} 
+        onOpenChange={setIsEditModalOpen}
+        project={project}
+      />
     </div>
   );
 }
