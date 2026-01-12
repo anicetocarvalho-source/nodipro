@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, Lock, User, ArrowRight, FolderKanban, BarChart3, Users, Shield, CheckCircle2 } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowRight, FolderKanban, BarChart3, Users, Shield } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
 
 const loginSchema = z.object({
   email: z
@@ -30,30 +30,7 @@ const loginSchema = z.object({
     .min(6, "Palavra-passe deve ter pelo menos 6 caracteres"),
 });
 
-const signupSchema = z.object({
-  fullName: z
-    .string()
-    .trim()
-    .min(1, "Nome é obrigatório")
-    .max(100, "Nome muito longo"),
-  email: z
-    .string()
-    .trim()
-    .min(1, "Email é obrigatório")
-    .email("Email inválido")
-    .max(255, "Email muito longo"),
-  password: z
-    .string()
-    .min(6, "Palavra-passe deve ter pelo menos 6 caracteres")
-    .max(72, "Palavra-passe muito longa"),
-  confirmPassword: z.string().min(1, "Confirme a palavra-passe"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As palavras-passe não coincidem",
-  path: ["confirmPassword"],
-});
-
 type LoginFormValues = z.infer<typeof loginSchema>;
-type SignupFormValues = z.infer<typeof signupSchema>;
 
 const features = [
   {
@@ -80,8 +57,7 @@ const features = [
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("login");
-  const { user, signIn, signUp } = useAuthContext();
+  const { user, signIn } = useAuthContext();
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -99,28 +75,9 @@ export default function Auth() {
     },
   });
 
-  const signupForm = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      fullName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
   const onLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     const { error } = await signIn(values.email, values.password);
-    setIsLoading(false);
-    if (!error) {
-      navigate("/projects", { replace: true });
-    }
-  };
-
-  const onSignup = async (values: SignupFormValues) => {
-    setIsLoading(true);
-    const { error } = await signUp(values.email, values.password, values.fullName);
     setIsLoading(false);
     if (!error) {
       navigate("/projects", { replace: true });
@@ -194,7 +151,7 @@ export default function Auth() {
         </div>
       </div>
 
-      {/* Right Panel - Auth Forms */}
+      {/* Right Panel - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-background">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
@@ -210,18 +167,8 @@ export default function Auth() {
             </p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="login" className="text-sm font-medium">
-                Entrar
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="text-sm font-medium">
-                Criar Conta
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Login Tab */}
-            <TabsContent value="login" className="mt-0">
+          <Card className="border-0 shadow-xl bg-card">
+            <CardContent className="p-8">
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-foreground">
                   Bem-vindo de volta
@@ -260,15 +207,7 @@ export default function Auth() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <div className="flex items-center justify-between">
-                          <FormLabel className="text-foreground font-medium">Palavra-passe</FormLabel>
-                          <button
-                            type="button"
-                            className="text-xs text-primary hover:underline"
-                          >
-                            Esqueceu-se?
-                          </button>
-                        </div>
+                        <FormLabel className="text-foreground font-medium">Palavra-passe</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -302,175 +241,11 @@ export default function Auth() {
                 </form>
               </Form>
 
-              <div className="mt-8 text-center">
-                <p className="text-muted-foreground text-sm">
-                  Não tem uma conta?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("signup")}
-                    className="text-primary hover:underline font-semibold"
-                  >
-                    Registe-se gratuitamente
-                  </button>
-                </p>
-              </div>
-            </TabsContent>
-
-            {/* Signup Tab */}
-            <TabsContent value="signup" className="mt-0">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-foreground">
-                  Criar nova conta
-                </h2>
-                <p className="text-muted-foreground mt-2">
-                  Preencha os dados para começar a usar a plataforma
-                </p>
-              </div>
-
-              <Form {...signupForm}>
-                <form onSubmit={signupForm.handleSubmit(onSignup)} className="space-y-4">
-                  <FormField
-                    control={signupForm.control}
-                    name="fullName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Nome completo</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              placeholder="João Silva"
-                              className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={signupForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-foreground font-medium">Email</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="email"
-                              placeholder="seu@email.com"
-                              className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={signupForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground font-medium">Palavra-passe</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type="password"
-                                placeholder="••••••"
-                                className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={signupForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground font-medium">Confirmar</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                              <Input
-                                type="password"
-                                placeholder="••••••"
-                                className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  {/* Terms */}
-                  <div className="flex items-start gap-2 pt-2">
-                    <CheckCircle2 className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-muted-foreground">
-                      Ao criar conta, concorda com os{" "}
-                      <button type="button" className="text-primary hover:underline">
-                        Termos de Serviço
-                      </button>{" "}
-                      e{" "}
-                      <button type="button" className="text-primary hover:underline">
-                        Política de Privacidade
-                      </button>
-                    </p>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full h-12 text-base font-semibold" 
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        Criar Conta Gratuita
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
-
-              <div className="mt-8 text-center">
-                <p className="text-muted-foreground text-sm">
-                  Já tem uma conta?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("login")}
-                    className="text-primary hover:underline font-semibold"
-                  >
-                    Entre aqui
-                  </button>
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          {/* Footer */}
-          <div className="mt-12 text-center">
-            <p className="text-xs text-muted-foreground">
-              © 2026 NODIPRO. Todos os direitos reservados.
-            </p>
-          </div>
+              <p className="mt-8 text-center text-sm text-muted-foreground">
+                Não tem conta? Contacte o administrador do sistema.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
