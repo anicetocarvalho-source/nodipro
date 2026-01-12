@@ -16,10 +16,12 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -42,6 +44,7 @@ const bottomMenuItems = [
 export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { role } = useAuthContext();
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
@@ -129,6 +132,11 @@ export function AppSidebar() {
         {menuItems.map((item) => (
           <MenuItem key={item.path} item={item} />
         ))}
+        
+        {/* Admin menu - only visible to admins */}
+        {role === "admin" && (
+          <MenuItem item={{ icon: ShieldCheck, label: "Administração", path: "/admin" }} />
+        )}
       </nav>
 
       {/* Bottom menu */}
