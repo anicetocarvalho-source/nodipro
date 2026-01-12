@@ -15,6 +15,7 @@ import {
   Plus,
   Loader2,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +23,20 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { GanttChart } from "@/components/gantt/GanttChart";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
-import { useProject } from "@/hooks/useProjects";
+import { useProject, useDeleteProject } from "@/hooks/useProjects";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTasks } from "@/hooks/useTasks";
 
@@ -63,6 +74,8 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<"kanban" | "gantt" | "list">("kanban");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const deleteProject = useDeleteProject();
   
   const { data: project, isLoading: projectLoading } = useProject(id);
   const { data: teamMembers, isLoading: teamLoading } = useTeamMembers(id);
@@ -128,6 +141,14 @@ export default function ProjectDetail() {
           <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
             <Pencil className="h-4 w-4 mr-2" />
             Editar
+          </Button>
+          <Button 
+            variant="outline" 
+            className="text-destructive hover:text-destructive"
+            onClick={() => setIsDeleteDialogOpen(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Eliminar
           </Button>
           <Button variant="outline">
             <FileText className="h-4 w-4 mr-2" />
@@ -389,6 +410,36 @@ export default function ProjectDetail() {
         onOpenChange={setIsEditModalOpen}
         project={project}
       />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar projecto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem a certeza que deseja eliminar o projecto "{project.name}"? 
+              Esta acção é irreversível e eliminará todas as tarefas associadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                deleteProject.mutate(project.id, {
+                  onSuccess: () => navigate("/projects"),
+                });
+              }}
+            >
+              {deleteProject.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

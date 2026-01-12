@@ -10,22 +10,33 @@ import {
   Calendar,
   ChevronDown,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { useProjects } from "@/hooks/useProjects";
+import { useProjects, useDeleteProject } from "@/hooks/useProjects";
 import { DbProject } from "@/types/database";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 
@@ -78,7 +89,9 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<DbProject | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<DbProject | null>(null);
   const { data: projects, isLoading, error } = useProjects();
+  const deleteProject = useDeleteProject();
 
   const filteredProjects = (projects || []).filter(
     (p) =>
@@ -141,6 +154,14 @@ export default function Projects() {
                   Editar
                 </DropdownMenuItem>
                 <DropdownMenuItem>Relatório</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setProjectToDelete(project)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Eliminar
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -364,6 +385,37 @@ export default function Projects() {
         }}
         project={editingProject}
       />
+
+      <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar projecto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem a certeza que deseja eliminar o projecto "{projectToDelete?.name}"? 
+              Esta acção é irreversível e eliminará todas as tarefas associadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (projectToDelete) {
+                  deleteProject.mutate(projectToDelete.id);
+                  setProjectToDelete(null);
+                }
+              }}
+            >
+              {deleteProject.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
