@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Bell, ChevronDown, Menu } from "lucide-react";
+import { Search, Bell, ChevronDown, Menu, LogOut, User, Settings } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,7 +21,31 @@ interface TopBarProps {
 
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const [searchFocused, setSearchFocused] = useState(false);
+  const { profile, role, signOut } = useAuthContext();
   const notificationCount = 5;
+
+  const getRoleLabel = (role: string | null) => {
+    switch (role) {
+      case "admin":
+        return "Administrador";
+      case "manager":
+        return "Gestor de Projectos";
+      case "member":
+        return "Membro";
+      default:
+        return "Utilizador";
+    }
+  };
+
+  const getInitials = (name: string | null) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
@@ -97,14 +122,14 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 px-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg" />
+                <AvatarImage src={profile?.avatar_url || undefined} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                  JM
+                  {getInitials(profile?.full_name)}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden md:flex flex-col items-start">
-                <span className="text-sm font-medium">João Miguel</span>
-                <span className="text-xs text-muted-foreground">Gestor de Projectos</span>
+                <span className="text-sm font-medium">{profile?.full_name || "Utilizador"}</span>
+                <span className="text-xs text-muted-foreground">{getRoleLabel(role)}</span>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
             </Button>
@@ -112,11 +137,23 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Perfil</DropdownMenuItem>
-            <DropdownMenuItem>Preferências</DropdownMenuItem>
-            <DropdownMenuItem>Notificações</DropdownMenuItem>
+            <DropdownMenuItem>
+              <User className="mr-2 h-4 w-4" />
+              Perfil
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              Preferências
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Bell className="mr-2 h-4 w-4" />
+              Notificações
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Sair</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive" onClick={signOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sair
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
