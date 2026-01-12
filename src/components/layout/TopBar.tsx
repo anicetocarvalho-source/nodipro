@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { RoleBadge } from "@/components/ui/role-badge";
 import { cn } from "@/lib/utils";
 
 interface TopBarProps {
@@ -131,7 +132,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
               </Avatar>
               <div className="hidden md:flex flex-col items-start">
                 <span className="text-sm font-medium">{profile?.full_name || "Utilizador"}</span>
-                <span className="text-xs text-muted-foreground">{getRoleLabel(role)}</span>
+                <RoleBadge role={role} size="sm" showIcon={false} className="mt-0.5" />
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground hidden md:block" />
             </Button>
