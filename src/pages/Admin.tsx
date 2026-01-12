@@ -19,11 +19,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Users, Shield, Search, UserCog } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Shield, Search, UserCog, Trash2, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface UserWithRole {
@@ -56,6 +68,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   // Redirect non-admins
   useEffect(() => {
@@ -184,6 +197,49 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteUser = async (userId: string, userName: string | null) => {
+    // Prevent self-deletion
+    if (userId === currentUser?.id) {
+      toast({
+        variant: "destructive",
+        title: "Operação não permitida",
+        description: "Não pode eliminar a sua própria conta",
+      });
+      return;
+    }
+
+    setDeletingUserId(userId);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      // Remove user from local state
+      setUsers((prev) => prev.filter((u) => u.user_id !== userId));
+
+      toast({
+        title: "Utilizador eliminado",
+        description: `${userName || "O utilizador"} foi eliminado com sucesso`,
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Não foi possível eliminar o utilizador",
+      });
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   const getInitials = (name: string | null) => {
     if (!name) return "??";
     return name
@@ -307,7 +363,8 @@ export default function Admin() {
                   <TableHead>Utilizador</TableHead>
                   <TableHead>Role Atual</TableHead>
                   <TableHead>Data de Registo</TableHead>
-                  <TableHead className="text-right">Alterar Role</TableHead>
+                  <TableHead>Alterar Role</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -343,13 +400,13 @@ export default function Admin() {
                         year: "numeric",
                       })}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell>
                       <Select
                         value={user.role}
                         onValueChange={(value) => handleRoleChange(user.user_id, value as AppRole)}
                         disabled={updatingUserId === user.user_id || user.user_id === currentUser?.id}
                       >
-                        <SelectTrigger className="w-36 ml-auto">
+                        <SelectTrigger className="w-36">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -358,6 +415,49 @@ export default function Admin() {
                           <SelectItem value="member">Membro</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {user.user_id === currentUser?.id ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              disabled={deletingUserId === user.user_id}
+                            >
+                              {deletingUserId === user.user_id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Eliminar utilizador</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem a certeza que deseja eliminar{" "}
+                                <span className="font-semibold text-foreground">
+                                  {user.full_name || "este utilizador"}
+                                </span>
+                                ? Esta ação é irreversível e todos os dados associados serão permanentemente eliminados.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(user.user_id, user.full_name)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Eliminar
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
