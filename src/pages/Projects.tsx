@@ -27,6 +27,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useProjects } from "@/hooks/useProjects";
 import { DbProject } from "@/types/database";
+import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 
 const statusConfig = {
   active: { label: "Activo", className: "bg-success/10 text-success" },
@@ -75,6 +76,7 @@ export default function Projects() {
   const navigate = useNavigate();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const { data: projects, isLoading, error } = useProjects();
 
   const filteredProjects = (projects || []).filter(
@@ -262,7 +264,7 @@ export default function Projects() {
             Gerir e acompanhar todos os projectos da organização.
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button className="bg-primary hover:bg-primary/90" onClick={() => setIsFormOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Projecto
         </Button>
@@ -342,6 +344,8 @@ export default function Projects() {
           {renderProjects(getProjectsByStatus("completed"))}
         </TabsContent>
       </Tabs>
+
+      <ProjectFormModal open={isFormOpen} onOpenChange={setIsFormOpen} />
     </div>
   );
 }
