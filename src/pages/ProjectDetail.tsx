@@ -195,7 +195,7 @@ export default function ProjectDetail() {
           {/* Views */}
           <Card className="overflow-hidden">
             <CardContent className="p-4">
-              {activeView === "kanban" && <KanbanBoard />}
+              {activeView === "kanban" && <KanbanBoard projectId={id || ""} />}
               {activeView === "gantt" && <GanttChart />}
               {activeView === "list" && (
                 <div className="text-center py-12 text-muted-foreground">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -12,8 +12,11 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import { KanbanColumn } from "./KanbanColumn";
-import { KanbanCard, Task } from "./KanbanCard";
+import { KanbanCard, Task, Subtask } from "./KanbanCard";
 import { TaskFormModal } from "./TaskFormModal";
+import { useTasks, useCreateTask, useUpdateTask, useMoveTask } from "@/hooks/useTasks";
+import { DbTask, DbSubtask, TaskPriority } from "@/types/database";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Column {
   id: string;
@@ -29,54 +32,81 @@ const columns: Column[] = [
   { id: "done", title: "Concluído", color: "bg-success" },
 ];
 
-const initialTasks: Record<string, Task[]> = {
-  backlog: [
-    { id: "t1", title: "Pesquisa de mercado para novos features", priority: "low", assignee: { name: "Ana", initials: "AC" } },
-    { id: "t2", title: "Documentação da API v2", priority: "medium", dueDate: "25 Jan", subtasks: [
-      { id: "st1", title: "Documentar endpoints de autenticação", completed: true },
-      { id: "st2", title: "Documentar endpoints de projetos", completed: false },
-      { id: "st3", title: "Criar exemplos de código", completed: false },
-    ]},
-  ],
-  todo: [
-    { id: "t3", title: "Implementar autenticação OAuth", priority: "high", assignee: { name: "Pedro", initials: "PA" }, dueDate: "18 Jan", comments: 5, subtasks: [
-      { id: "st4", title: "Configurar provider Google", completed: true },
-      { id: "st5", title: "Configurar provider GitHub", completed: true },
-      { id: "st6", title: "Implementar callback", completed: false },
-      { id: "st7", title: "Testar fluxo completo", completed: false },
-    ]},
-    { id: "t4", title: "Design do dashboard mobile", priority: "medium", assignee: { name: "Sofia", initials: "SL" }, dueDate: "20 Jan", attachments: 3 },
-    { id: "t5", title: "Optimização de queries SQL", priority: "high", dueDate: "19 Jan" },
-  ],
-  in_progress: [
-    { id: "t6", title: "Desenvolvimento do módulo de relatórios", description: "Criar componentes para exportação PDF e Excel", priority: "high", assignee: { name: "João", initials: "JM" }, dueDate: "16 Jan", comments: 12, attachments: 2, labels: ["feature"], subtasks: [
-      { id: "st8", title: "Criar template PDF", completed: true },
-      { id: "st9", title: "Implementar exportação Excel", completed: true },
-      { id: "st10", title: "Adicionar gráficos", completed: false },
-    ]},
-    { id: "t7", title: "Integração com gateway de pagamento", priority: "high", assignee: { name: "Carlos", initials: "CF" }, dueDate: "17 Jan", comments: 8 },
-  ],
-  review: [
-    { id: "t8", title: "Testes unitários do módulo de users", priority: "medium", assignee: { name: "Maria", initials: "MS" }, comments: 3, subtasks: [
-      { id: "st11", title: "Testes de criação", completed: true },
-      { id: "st12", title: "Testes de edição", completed: true },
-      { id: "st13", title: "Testes de exclusão", completed: true },
-    ]},
-    { id: "t9", title: "Code review - Sprint 4", priority: "low", assignee: { name: "Pedro", initials: "PA" } },
-  ],
-  done: [
-    { id: "t10", title: "Setup do ambiente de staging", priority: "medium", assignee: { name: "João", initials: "JM" } },
-    { id: "t11", title: "Configuração CI/CD", priority: "high", assignee: { name: "Carlos", initials: "CF" } },
-    { id: "t12", title: "Migração do banco de dados", priority: "high", assignee: { name: "Ana", initials: "AC" } },
-  ],
-};
+interface KanbanBoardProps {
+  projectId: string;
+}
 
-export function KanbanBoard() {
-  const [tasks, setTasks] = useState(initialTasks);
+// Convert DB task to UI task
+function dbTaskToUiTask(dbTask: DbTask & { subtasks?: DbSubtask[] }): Task {
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  let dueDate: string | undefined;
+  
+  if (dbTask.due_date) {
+    const date = new Date(dbTask.due_date);
+    dueDate = `${date.getDate()} ${months[date.getMonth()]}`;
+  }
+
+  return {
+    id: dbTask.id,
+    title: dbTask.title,
+    description: dbTask.description || undefined,
+    priority: dbTask.priority as "high" | "medium" | "low",
+    assignee: dbTask.assignee_name && dbTask.assignee_initials
+      ? { name: dbTask.assignee_name, initials: dbTask.assignee_initials }
+      : undefined,
+    dueDate,
+    comments: dbTask.comments_count || undefined,
+    attachments: dbTask.attachments_count || undefined,
+    labels: dbTask.labels || undefined,
+    subtasks: dbTask.subtasks?.map(st => ({
+      id: st.id,
+      title: st.title,
+      completed: st.completed,
+    })),
+  };
+}
+
+export function KanbanBoard({ projectId }: KanbanBoardProps) {
+  const { data: dbTasks, isLoading, error } = useTasks(projectId);
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const moveTask = useMoveTask();
+
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedColumnId, setSelectedColumnId] = useState<string>("todo");
+  
+  // Local state for optimistic updates during drag
+  const [localTasks, setLocalTasks] = useState<Record<string, Task[]>>({});
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Group tasks by column
+  const tasksByColumn = useMemo(() => {
+    if (isDragging) return localTasks;
+    
+    const grouped: Record<string, Task[]> = {
+      backlog: [],
+      todo: [],
+      in_progress: [],
+      review: [],
+      done: [],
+    };
+
+    if (dbTasks) {
+      for (const dbTask of dbTasks) {
+        const uiTask = dbTaskToUiTask(dbTask);
+        const column = dbTask.column_id;
+        if (grouped[column]) {
+          grouped[column].push(uiTask);
+        } else {
+          grouped.todo.push(uiTask);
+        }
+      }
+    }
+
+    return grouped;
+  }, [dbTasks, isDragging, localTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -87,7 +117,7 @@ export function KanbanBoard() {
   );
 
   const findColumn = (taskId: string): string | undefined => {
-    for (const [columnId, columnTasks] of Object.entries(tasks)) {
+    for (const [columnId, columnTasks] of Object.entries(tasksByColumn)) {
       if (columnTasks.some((t) => t.id === taskId)) {
         return columnId;
       }
@@ -99,8 +129,12 @@ export function KanbanBoard() {
     const { active } = event;
     const columnId = findColumn(active.id as string);
     if (columnId) {
-      const task = tasks[columnId].find((t) => t.id === active.id);
-      if (task) setActiveTask(task);
+      const task = tasksByColumn[columnId].find((t) => t.id === active.id);
+      if (task) {
+        setActiveTask(task);
+        setLocalTasks({ ...tasksByColumn });
+        setIsDragging(true);
+      }
     }
   };
 
@@ -116,7 +150,7 @@ export function KanbanBoard() {
 
     if (!activeColumn || !overColumn || activeColumn === overColumn) return;
 
-    setTasks((prev) => {
+    setLocalTasks((prev) => {
       const activeTask = prev[activeColumn].find((t) => t.id === activeId);
       if (!activeTask) return prev;
 
@@ -131,30 +165,52 @@ export function KanbanBoard() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveTask(null);
+    setIsDragging(false);
 
     if (!over) return;
 
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    if (activeId === overId) return;
-
     const activeColumn = findColumn(activeId);
-    const overColumn = findColumn(overId);
+    let overColumn = findColumn(overId);
 
-    if (!activeColumn || !overColumn) return;
-
-    if (activeColumn === overColumn) {
-      setTasks((prev) => {
-        const oldIndex = prev[activeColumn].findIndex((t) => t.id === activeId);
-        const newIndex = prev[activeColumn].findIndex((t) => t.id === overId);
-
-        return {
-          ...prev,
-          [activeColumn]: arrayMove(prev[activeColumn], oldIndex, newIndex),
-        };
-      });
+    // Check if dropped on a column header
+    if (!overColumn && columns.find((c) => c.id === overId)) {
+      overColumn = overId;
     }
+
+    if (!activeColumn) return;
+
+    // Calculate new position
+    const targetColumn = overColumn || activeColumn;
+    const tasksInColumn = localTasks[targetColumn] || [];
+    let newPosition = 0;
+
+    if (activeId !== overId && overColumn) {
+      const overIndex = tasksInColumn.findIndex((t) => t.id === overId);
+      if (overIndex >= 0) {
+        newPosition = overIndex;
+      } else {
+        newPosition = tasksInColumn.length;
+      }
+    } else if (activeColumn === targetColumn) {
+      const oldIndex = tasksInColumn.findIndex((t) => t.id === activeId);
+      const newIndex = tasksInColumn.findIndex((t) => t.id === overId);
+      if (oldIndex !== newIndex && newIndex >= 0) {
+        newPosition = newIndex;
+      } else {
+        return; // No change needed
+      }
+    }
+
+    // Update in database
+    moveTask.mutate({
+      taskId: activeId,
+      projectId,
+      columnId: targetColumn,
+      position: newPosition,
+    });
   };
 
   const handleAddTask = (columnId: string) => {
@@ -170,26 +226,94 @@ export function KanbanBoard() {
   };
 
   const handleSaveTask = (task: Task, columnId: string, isNew: boolean) => {
-    setTasks((prev) => {
-      if (isNew) {
-        return {
-          ...prev,
-          [columnId]: [task, ...prev[columnId]],
-        };
-      } else {
-        // Find and update existing task
-        const newTasks = { ...prev };
-        for (const col of Object.keys(newTasks)) {
-          const index = newTasks[col].findIndex((t) => t.id === task.id);
-          if (index !== -1) {
-            newTasks[col][index] = task;
-            break;
-          }
+    // Parse date from Portuguese format to ISO
+    let dueDate: string | null = null;
+    if (task.dueDate) {
+      const months: Record<string, number> = {
+        Jan: 0, Fev: 1, Mar: 2, Abr: 3, Mai: 4, Jun: 5,
+        Jul: 6, Ago: 7, Set: 8, Out: 9, Nov: 10, Dez: 11,
+      };
+      const parts = task.dueDate.split(" ");
+      if (parts.length === 2) {
+        const day = parseInt(parts[0]);
+        const month = months[parts[1]];
+        if (!isNaN(day) && month !== undefined) {
+          const date = new Date(2026, month, day);
+          dueDate = date.toISOString().split("T")[0];
         }
-        return newTasks;
       }
-    });
+    }
+
+    if (isNew) {
+      const tasksInColumn = tasksByColumn[columnId] || [];
+      createTask.mutate({
+        task: {
+          project_id: projectId,
+          title: task.title,
+          description: task.description || null,
+          priority: task.priority as TaskPriority,
+          column_id: columnId,
+          position: 0, // Add at beginning
+          assignee_name: task.assignee?.name || null,
+          assignee_initials: task.assignee?.initials || null,
+          due_date: dueDate,
+          labels: task.labels || null,
+          comments_count: 0,
+          attachments_count: 0,
+        },
+        subtasks: task.subtasks?.map((st) => ({
+          title: st.title,
+          completed: st.completed,
+          position: 0,
+        })),
+      });
+    } else {
+      updateTask.mutate({
+        id: task.id,
+        projectId,
+        title: task.title,
+        description: task.description || null,
+        priority: task.priority as TaskPriority,
+        assignee_name: task.assignee?.name || null,
+        assignee_initials: task.assignee?.initials || null,
+        due_date: dueDate,
+        labels: task.labels || null,
+        subtasks: task.subtasks?.map((st, index) => ({
+          id: st.id,
+          task_id: task.id,
+          title: st.title,
+          completed: st.completed,
+          position: index,
+          created_at: new Date().toISOString(),
+        })),
+      });
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {columns.map((column) => (
+          <div key={column.id} className="flex-shrink-0 w-72">
+            <Skeleton className="h-10 mb-3" />
+            <div className="space-y-3">
+              <Skeleton className="h-24" />
+              <Skeleton className="h-32" />
+              <Skeleton className="h-20" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64 text-destructive">
+        Erro ao carregar tarefas: {error.message}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -206,7 +330,7 @@ export function KanbanBoard() {
               key={column.id}
               id={column.id}
               title={column.title}
-              tasks={tasks[column.id] || []}
+              tasks={tasksByColumn[column.id] || []}
               color={column.color}
               onAddTask={handleAddTask}
               onEditTask={handleEditTask}
