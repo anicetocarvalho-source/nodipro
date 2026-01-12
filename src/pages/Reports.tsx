@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { FileText, Download, Calendar, Filter, Clock, User, Activity, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FileText, Download, Calendar, Clock, User, Activity, Eye, BarChart3, TrendingUp, Users, FolderKanban, CheckCircle2, AlertTriangle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, subMonths } from "date-fns";
+import { pt } from "date-fns/locale";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -121,8 +130,170 @@ const typeConfig = {
   kpi: { label: "KPIs", className: "bg-chart-5/10 text-chart-5" },
 };
 
+const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+
+const chartConfig = {
+  tasks: { label: "Tarefas", color: "hsl(var(--chart-1))" },
+  projects: { label: "Projectos", color: "hsl(var(--chart-2))" },
+  completed: { label: "Concluídas", color: "hsl(var(--success))" },
+  pending: { label: "Pendentes", color: "hsl(var(--warning))" },
+  active: { label: "Activos", color: "hsl(var(--chart-1))" },
+  delayed: { label: "Atrasados", color: "hsl(var(--destructive))" },
+};
+
+interface AnalyticsData {
+  totalProjects: number;
+  totalTasks: number;
+  completedTasks: number;
+  totalTeamMembers: number;
+  projectsByStatus: { name: string; value: number; color: string }[];
+  tasksByPriority: { name: string; value: number; color: string }[];
+  tasksOverTime: { date: string; created: number; completed: number }[];
+  projectsOverTime: { month: string; created: number; active: number }[];
+  recentActivity: { date: string; tasks: number; projects: number }[];
+}
+
 export default function Reports() {
   const [selectedProject, setSelectedProject] = useState("");
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const fetchAnalytics = async () => {
+    setLoadingAnalytics(true);
+    try {
+      // Fetch all data in parallel
+      const [projectsRes, tasksRes, teamMembersRes] = await Promise.all([
+        supabase.from('projects').select('*'),
+        supabase.from('tasks').select('*'),
+        supabase.from('team_members').select('*'),
+      ]);
+
+      const projects = projectsRes.data || [];
+      const tasks = tasksRes.data || [];
+      const teamMembers = teamMembersRes.data || [];
+
+      // Calculate stats
+      const totalProjects = projects.length;
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter(t => t.column_id === 'done').length;
+      const totalTeamMembers = teamMembers.length;
+
+      // Projects by status
+      const statusCounts = projects.reduce((acc, p) => {
+        acc[p.status] = (acc[p.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const statusLabels: Record<string, string> = {
+        active: 'Activos',
+        delayed: 'Atrasados',
+        completed: 'Concluídos',
+        on_hold: 'Em Pausa',
+      };
+
+      const projectsByStatus = Object.entries(statusCounts).map(([status, count], index) => ({
+        name: statusLabels[status] || status,
+        value: count as number,
+        color: COLORS[index % COLORS.length],
+      }));
+
+      // Tasks by priority
+      const priorityCounts = tasks.reduce((acc, t) => {
+        acc[t.priority] = (acc[t.priority] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const priorityLabels: Record<string, string> = {
+        high: 'Alta',
+        medium: 'Média',
+        low: 'Baixa',
+      };
+
+      const tasksByPriority = Object.entries(priorityCounts).map(([priority, count], index) => ({
+        name: priorityLabels[priority] || priority,
+        value: count as number,
+        color: priority === 'high' ? 'hsl(var(--destructive))' : priority === 'medium' ? 'hsl(var(--warning))' : 'hsl(var(--success))',
+      }));
+
+      // Tasks over time (last 30 days)
+      const last30Days = eachDayOfInterval({
+        start: subDays(new Date(), 29),
+        end: new Date(),
+      });
+
+      const tasksOverTime = last30Days.map(day => {
+        const dayStr = format(day, 'yyyy-MM-dd');
+        const created = tasks.filter(t => format(new Date(t.created_at), 'yyyy-MM-dd') === dayStr).length;
+        const completed = tasks.filter(t => t.column_id === 'done' && format(new Date(t.updated_at), 'yyyy-MM-dd') === dayStr).length;
+        return {
+          date: format(day, 'dd/MM', { locale: pt }),
+          created,
+          completed,
+        };
+      });
+
+      // Projects over time (last 6 months)
+      const last6Months = eachMonthOfInterval({
+        start: subMonths(new Date(), 5),
+        end: new Date(),
+      });
+
+      const projectsOverTime = last6Months.map(month => {
+        const monthStart = startOfMonth(month);
+        const monthEnd = endOfMonth(month);
+        const created = projects.filter(p => {
+          const createdDate = new Date(p.created_at);
+          return createdDate >= monthStart && createdDate <= monthEnd;
+        }).length;
+        const active = projects.filter(p => {
+          const createdDate = new Date(p.created_at);
+          return createdDate <= monthEnd && p.status === 'active';
+        }).length;
+        return {
+          month: format(month, 'MMM', { locale: pt }),
+          created,
+          active,
+        };
+      });
+
+      // Recent activity (last 7 days)
+      const last7Days = eachDayOfInterval({
+        start: subDays(new Date(), 6),
+        end: new Date(),
+      });
+
+      const recentActivity = last7Days.map(day => {
+        const dayStr = format(day, 'yyyy-MM-dd');
+        const taskCount = tasks.filter(t => format(new Date(t.created_at), 'yyyy-MM-dd') === dayStr || format(new Date(t.updated_at), 'yyyy-MM-dd') === dayStr).length;
+        const projectCount = projects.filter(p => format(new Date(p.created_at), 'yyyy-MM-dd') === dayStr || format(new Date(p.updated_at), 'yyyy-MM-dd') === dayStr).length;
+        return {
+          date: format(day, 'EEE', { locale: pt }),
+          tasks: taskCount,
+          projects: projectCount,
+        };
+      });
+
+      setAnalytics({
+        totalProjects,
+        totalTasks,
+        completedTasks,
+        totalTeamMembers,
+        projectsByStatus,
+        tasksByPriority,
+        tasksOverTime,
+        projectsOverTime,
+        recentActivity,
+      });
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -136,12 +307,245 @@ export default function Reports() {
         </div>
       </div>
 
-      <Tabs defaultValue="generate">
+      <Tabs defaultValue="analytics">
         <TabsList>
+          <TabsTrigger value="analytics">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </TabsTrigger>
           <TabsTrigger value="generate">Gerar Relatório</TabsTrigger>
           <TabsTrigger value="history">Histórico</TabsTrigger>
           <TabsTrigger value="audit">Logs de Auditoria</TabsTrigger>
         </TabsList>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="mt-6 space-y-6">
+          {loadingAnalytics ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : analytics ? (
+            <>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Total de Projectos</p>
+                        <p className="text-2xl font-bold text-foreground">{analytics.totalProjects}</p>
+                        <p className="text-xs text-muted-foreground">Todos os projectos no sistema</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-primary/10">
+                        <FolderKanban className="h-5 w-5 text-primary" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Total de Tarefas</p>
+                        <p className="text-2xl font-bold text-foreground">{analytics.totalTasks}</p>
+                        <p className="text-xs text-success">{analytics.completedTasks} concluídas ({analytics.totalTasks > 0 ? Math.round((analytics.completedTasks / analytics.totalTasks) * 100) : 0}%)</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-chart-1/10">
+                        <CheckCircle2 className="h-5 w-5 text-chart-1" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Membros da Equipa</p>
+                        <p className="text-2xl font-bold text-foreground">{analytics.totalTeamMembers}</p>
+                        <p className="text-xs text-muted-foreground">Alocados a projectos</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-chart-2/10">
+                        <Users className="h-5 w-5 text-chart-2" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium text-muted-foreground">Taxa de Conclusão</p>
+                        <p className="text-2xl font-bold text-foreground">
+                          {analytics.totalTasks > 0 ? Math.round((analytics.completedTasks / analytics.totalTasks) * 100) : 0}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">Tarefas concluídas</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-success/10">
+                        <TrendingUp className="h-5 w-5 text-success" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 1 */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Tasks Over Time */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Tarefas ao Longo do Tempo</CardTitle>
+                    <p className="text-sm text-muted-foreground">Últimos 30 dias</p>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                      <AreaChart data={analytics.tasksOverTime} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorCreated" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" interval="preserveStartEnd" />
+                        <YAxis axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area type="monotone" dataKey="created" name="Criadas" stroke="hsl(var(--chart-1))" fillOpacity={1} fill="url(#colorCreated)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="completed" name="Concluídas" stroke="hsl(var(--success))" fillOpacity={1} fill="url(#colorCompleted)" strokeWidth={2} />
+                      </AreaChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Projects Over Time */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Evolução de Projectos</CardTitle>
+                    <p className="text-sm text-muted-foreground">Últimos 6 meses</p>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                      <BarChart data={analytics.projectsOverTime} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="month" axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
+                        <YAxis axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="created" name="Criados" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="active" name="Activos" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 2 */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Projects by Status */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Projectos por Estado</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                      <PieChart>
+                        <Pie
+                          data={analytics.projectsByStatus}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {analytics.projectsByStatus.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ChartContainer>
+                    <div className="flex flex-wrap justify-center gap-4 mt-4">
+                      {analytics.projectsByStatus.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="text-sm text-muted-foreground">{entry.name}: {entry.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Tasks by Priority */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Tarefas por Prioridade</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                      <PieChart>
+                        <Pie
+                          data={analytics.tasksByPriority}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {analytics.tasksByPriority.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ChartContainer>
+                    <div className="flex flex-wrap justify-center gap-4 mt-4">
+                      {analytics.tasksByPriority.map((entry, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
+                          <span className="text-sm text-muted-foreground">{entry.name}: {entry.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Weekly Activity */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Actividade Semanal</CardTitle>
+                    <p className="text-sm text-muted-foreground">Últimos 7 dias</p>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                      <LineChart data={analytics.recentActivity} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="date" axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
+                        <YAxis axisLine={false} tickLine={false} className="text-xs fill-muted-foreground" />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Line type="monotone" dataKey="tasks" name="Tarefas" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={{ fill: 'hsl(var(--chart-1))' }} />
+                        <Line type="monotone" dataKey="projects" name="Projectos" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ fill: 'hsl(var(--chart-2))' }} />
+                      </LineChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Não foi possível carregar os dados de analytics.</p>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
 
         <TabsContent value="generate" className="mt-6 space-y-6">
           {/* Report Generator */}
