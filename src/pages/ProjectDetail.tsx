@@ -7,60 +7,94 @@ import {
   DollarSign,
   AlertTriangle,
   FileText,
-  MessageSquare,
   Settings,
   LayoutGrid,
   GanttChartSquare,
   List,
-  Clock,
   CheckCircle,
-  MoreHorizontal,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { GanttChart } from "@/components/gantt/GanttChart";
-import { cn } from "@/lib/utils";
+import { useProject } from "@/hooks/useProjects";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
+import { useTasks } from "@/hooks/useTasks";
 
-const projectData = {
-  id: "1",
-  name: "Sistema de Gestão Financeira",
-  client: "Ministério das Finanças",
-  status: "active",
-  phase: "Desenvolvimento",
-  progress: 75,
-  startDate: "01 Jan 2026",
-  deadline: "15 Mar 2026",
-  budget: "45.000.000 AOA",
-  spent: "32.500.000 AOA",
-  budgetPercentage: 72,
-  risk: "low",
-  description: "Desenvolvimento e implementação de um sistema integrado de gestão financeira para automatizar processos de orçamentação, execução e controlo financeiro.",
-  team: [
-    { name: "João Miguel", initials: "JM", role: "Gestor de Projecto" },
-    { name: "Maria Silva", initials: "MS", role: "Analista de Negócios" },
-    { name: "Pedro Alves", initials: "PA", role: "Developer Sénior" },
-    { name: "Ana Costa", initials: "AC", role: "UX Designer" },
-    { name: "Carlos Ferreira", initials: "CF", role: "Arquitecto" },
-    { name: "Sofia Lima", initials: "SL", role: "QA Lead" },
-  ],
-  stats: {
-    totalTasks: 48,
-    completedTasks: 36,
-    inProgress: 8,
-    pending: 4,
-  },
+const formatCurrency = (value: number | null) => {
+  if (value === null) return "-";
+  return new Intl.NumberFormat("pt-AO", {
+    style: "decimal",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value) + " AOA";
+};
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return "-";
+  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const date = new Date(dateStr);
+  return `${date.getDate().toString().padStart(2, '0')} ${months[date.getMonth()]} ${date.getFullYear()}`;
+};
+
+const getRiskLevel = (progress: number, endDate: string | null): { label: string; className: string } => {
+  if (!endDate) return { label: "Baixo", className: "text-success" };
+  const now = new Date();
+  const deadline = new Date(endDate);
+  const daysRemaining = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  
+  if (progress >= 90) return { label: "Baixo", className: "text-success" };
+  if (daysRemaining < 0) return { label: "Crítico", className: "text-destructive" };
+  if (daysRemaining < 7 && progress < 80) return { label: "Alto", className: "text-destructive" };
+  if (daysRemaining < 30 && progress < 60) return { label: "Médio", className: "text-warning" };
+  return { label: "Baixo", className: "text-success" };
 };
 
 export default function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState<"kanban" | "gantt" | "list">("kanban");
+  
+  const { data: project, isLoading: projectLoading } = useProject(id);
+  const { data: teamMembers, isLoading: teamLoading } = useTeamMembers(id);
+  const { data: tasks } = useTasks(id);
+
+  if (projectLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-muted-foreground">Projecto não encontrado.</p>
+        <Button onClick={() => navigate("/projects")}>Voltar aos Projectos</Button>
+      </div>
+    );
+  }
+
+  const budgetPercentage = project.budget && project.spent 
+    ? Math.round((Number(project.spent) / Number(project.budget)) * 100)
+    : 0;
+
+  const risk = getRiskLevel(project.progress, project.end_date);
+
+  // Calculate task stats from real data
+  const taskStats = {
+    totalTasks: tasks?.length || 0,
+    completedTasks: tasks?.filter(t => t.column_id === 'done').length || 0,
+    inProgress: tasks?.filter(t => t.column_id === 'in_progress').length || 0,
+    pending: tasks?.filter(t => ['backlog', 'todo'].includes(t.column_id)).length || 0,
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -77,10 +111,14 @@ export default function ProjectDetail() {
           </Button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{projectData.name}</h1>
-              <Badge className="bg-success/10 text-success">Activo</Badge>
+              <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
+              <Badge className="bg-success/10 text-success">
+                {project.status === 'active' ? 'Activo' : 
+                 project.status === 'delayed' ? 'Atrasado' :
+                 project.status === 'completed' ? 'Concluído' : 'Pausado'}
+              </Badge>
             </div>
-            <p className="text-muted-foreground mt-1">{projectData.client}</p>
+            <p className="text-muted-foreground mt-1">{project.client || "Sem cliente"}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 ml-12 lg:ml-0">
@@ -109,7 +147,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Prazo</p>
-                <p className="text-sm font-semibold">{projectData.deadline}</p>
+                <p className="text-sm font-semibold">{formatDate(project.end_date)}</p>
               </div>
             </div>
           </CardContent>
@@ -122,7 +160,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Progresso</p>
-                <p className="text-sm font-semibold">{projectData.progress}%</p>
+                <p className="text-sm font-semibold">{project.progress}%</p>
               </div>
             </div>
           </CardContent>
@@ -135,7 +173,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Equipa</p>
-                <p className="text-sm font-semibold">{projectData.team.length} membros</p>
+                <p className="text-sm font-semibold">{teamMembers?.length || 0} membros</p>
               </div>
             </div>
           </CardContent>
@@ -148,7 +186,7 @@ export default function ProjectDetail() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Orçamento</p>
-                <p className="text-sm font-semibold">{projectData.budgetPercentage}% usado</p>
+                <p className="text-sm font-semibold">{budgetPercentage}% usado</p>
               </div>
             </div>
           </CardContent>
@@ -157,11 +195,11 @@ export default function ProjectDetail() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-success/10">
-                <AlertTriangle className="h-4 w-4 text-success" />
+                <AlertTriangle className={`h-4 w-4 ${risk.className}`} />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Risco</p>
-                <p className="text-sm font-semibold text-success">Baixo</p>
+                <p className={`text-sm font-semibold ${risk.className}`}>{risk.label}</p>
               </div>
             </div>
           </CardContent>
@@ -174,7 +212,7 @@ export default function ProjectDetail() {
         <div className="xl:col-span-3 space-y-4">
           {/* View Toggle */}
           <div className="flex items-center justify-between">
-            <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)}>
+            <Tabs value={activeView} onValueChange={(v) => setActiveView(v as typeof activeView)}>
               <TabsList>
                 <TabsTrigger value="kanban" className="flex items-center gap-2">
                   <LayoutGrid className="h-4 w-4" />
@@ -218,22 +256,25 @@ export default function ProjectDetail() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Tarefas</span>
                   <span className="font-medium">
-                    {projectData.stats.completedTasks}/{projectData.stats.totalTasks}
+                    {taskStats.completedTasks}/{taskStats.totalTasks}
                   </span>
                 </div>
-                <Progress value={(projectData.stats.completedTasks / projectData.stats.totalTasks) * 100} className="h-2" />
+                <Progress 
+                  value={taskStats.totalTasks > 0 ? (taskStats.completedTasks / taskStats.totalTasks) * 100 : 0} 
+                  className="h-2" 
+                />
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="p-2 bg-success/10 rounded-lg">
-                  <p className="text-lg font-bold text-success">{projectData.stats.completedTasks}</p>
+                  <p className="text-lg font-bold text-success">{taskStats.completedTasks}</p>
                   <p className="text-xs text-muted-foreground">Concluídas</p>
                 </div>
                 <div className="p-2 bg-warning/10 rounded-lg">
-                  <p className="text-lg font-bold text-warning">{projectData.stats.inProgress}</p>
+                  <p className="text-lg font-bold text-warning">{taskStats.inProgress}</p>
                   <p className="text-xs text-muted-foreground">Em curso</p>
                 </div>
                 <div className="p-2 bg-muted rounded-lg">
-                  <p className="text-lg font-bold">{projectData.stats.pending}</p>
+                  <p className="text-lg font-bold">{taskStats.pending}</p>
                   <p className="text-xs text-muted-foreground">Pendentes</p>
                 </div>
               </div>
@@ -249,19 +290,29 @@ export default function ProjectDetail() {
               </Button>
             </CardHeader>
             <CardContent className="space-y-3">
-              {projectData.team.slice(0, 5).map((member) => (
-                <div key={member.initials} className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                      {member.initials}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{member.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{member.role}</p>
-                  </div>
+              {teamLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
-              ))}
+              ) : teamMembers && teamMembers.length > 0 ? (
+                teamMembers.slice(0, 5).map((member) => (
+                  <div key={member.id} className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                        {member.initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{member.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.role || "Membro"}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  Nenhum membro na equipa.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -274,16 +325,16 @@ export default function ProjectDetail() {
               <div className="space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Planeado</span>
-                  <span className="font-medium">{projectData.budget}</span>
+                  <span className="font-medium">{formatCurrency(project.budget)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Executado</span>
-                  <span className="font-medium">{projectData.spent}</span>
+                  <span className="font-medium">{formatCurrency(project.spent)}</span>
                 </div>
               </div>
-              <Progress value={projectData.budgetPercentage} className="h-2" />
+              <Progress value={budgetPercentage} className="h-2" />
               <p className="text-xs text-muted-foreground text-center">
-                {projectData.budgetPercentage}% do orçamento utilizado
+                {budgetPercentage}% do orçamento utilizado
               </p>
             </CardContent>
           </Card>
@@ -294,27 +345,33 @@ export default function ProjectDetail() {
               <CardTitle className="text-base">Actividade Recente</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {[
-                { user: "JM", action: "completou", target: "Setup ambiente", time: "5 min" },
-                { user: "PA", action: "comentou em", target: "API Auth", time: "15 min" },
-                { user: "MS", action: "criou tarefa", target: "Análise v2", time: "1h" },
-              ].map((activity, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm">
-                  <Avatar className="h-6 w-6 mt-0.5">
-                    <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                      {activity.user}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs">
-                      <span className="font-medium">{activity.user}</span>{" "}
-                      <span className="text-muted-foreground">{activity.action}</span>{" "}
-                      <span className="text-primary">{activity.target}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+              {tasks && tasks.length > 0 ? (
+                tasks.slice(0, 3).map((task, i) => (
+                  <div key={i} className="flex items-start gap-2 text-sm">
+                    <Avatar className="h-6 w-6 mt-0.5">
+                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                        {task.assignee_initials || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs">
+                        <span className="font-medium">{task.assignee_name || "Sistema"}</span>{" "}
+                        <span className="text-muted-foreground">trabalha em</span>{" "}
+                        <span className="text-primary truncate">{task.title}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {task.column_id === 'done' ? 'Concluído' : 
+                         task.column_id === 'in_progress' ? 'Em progresso' :
+                         task.column_id === 'review' ? 'Em revisão' : 'Pendente'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-2">
+                  Sem actividade recente.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
