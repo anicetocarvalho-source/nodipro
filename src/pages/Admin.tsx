@@ -45,9 +45,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2 } from "lucide-react";
+import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2, History, UserPlus, UserMinus, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface UserWithRole {
   id: string;
@@ -68,6 +69,19 @@ interface Invitation {
   created_at: string;
 }
 
+interface AuditLog {
+  id: string;
+  user_id: string;
+  user_name: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  target_name: string | null;
+  old_value: string | null;
+  new_value: string | null;
+  created_at: string;
+}
+
 const roleLabels: Record<AppRole, string> = {
   admin: "Administrador",
   manager: "Gestor",
@@ -80,13 +94,23 @@ const roleBadgeVariants: Record<AppRole, "default" | "secondary" | "outline"> = 
   member: "outline",
 };
 
+const actionLabels: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  role_change: { label: "Alteração de Role", icon: <RefreshCw className="h-4 w-4" />, color: "text-blue-500" },
+  user_delete: { label: "Utilizador Eliminado", icon: <UserMinus className="h-4 w-4" />, color: "text-red-500" },
+  invitation_sent: { label: "Convite Enviado", icon: <Mail className="h-4 w-4" />, color: "text-green-500" },
+  invitation_delete: { label: "Convite Eliminado", icon: <Trash2 className="h-4 w-4" />, color: "text-orange-500" },
+  user_create: { label: "Utilizador Criado", icon: <UserPlus className="h-4 w-4" />, color: "text-emerald-500" },
+};
+
 export default function Admin() {
   const { role: currentUserRole, user: currentUser, loading: authLoading } = useAuthContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [logsLoading, setLogsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
@@ -96,6 +120,65 @@ export default function Admin() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("member");
   const [sendingInvite, setSendingInvite] = useState(false);
+
+  // Helper function to get current user's name
+  const getCurrentUserName = () => {
+    const currentProfile = users.find(u => u.user_id === currentUser?.id);
+    return currentProfile?.full_name || currentUser?.email || "Admin";
+  };
+
+  // Log audit action
+  const logAuditAction = async (
+    action: string,
+    targetType: string,
+    targetId: string | null,
+    targetName: string | null,
+    oldValue: string | null = null,
+    newValue: string | null = null
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("audit_logs")
+        .insert({
+          user_id: currentUser?.id,
+          user_name: getCurrentUserName(),
+          action,
+          target_type: targetType,
+          target_id: targetId,
+          target_name: targetName,
+          old_value: oldValue,
+          new_value: newValue,
+        });
+
+      if (error) {
+        console.error("Error logging audit action:", error);
+      } else {
+        // Refresh audit logs
+        fetchAuditLogs();
+      }
+    } catch (error) {
+      console.error("Error logging audit action:", error);
+    }
+  };
+
+  // Fetch audit logs
+  const fetchAuditLogs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      setAuditLogs(data || []);
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+    } finally {
+      setLogsLoading(false);
+    }
+  };
 
   // Redirect non-admins
   useEffect(() => {
@@ -159,6 +242,9 @@ export default function Admin() {
           ...inv,
           role: inv.role as AppRole,
         })));
+
+        // Fetch audit logs
+        await fetchAuditLogs();
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({
@@ -187,6 +273,9 @@ export default function Admin() {
       return;
     }
 
+    const targetUser = users.find(u => u.user_id === userId);
+    const oldRole = targetUser?.role;
+
     setUpdatingUserId(userId);
 
     try {
@@ -195,7 +284,7 @@ export default function Admin() {
         .from("user_roles")
         .select("id")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
 
       if (existingRole) {
         // Update existing role
@@ -219,6 +308,16 @@ export default function Admin() {
         prev.map((u) =>
           u.user_id === userId ? { ...u, role: newRole } : u
         )
+      );
+
+      // Log the action
+      await logAuditAction(
+        "role_change",
+        "user",
+        userId,
+        targetUser?.full_name || null,
+        oldRole ? roleLabels[oldRole] : null,
+        roleLabels[newRole]
       );
 
       toast({
@@ -260,6 +359,16 @@ export default function Admin() {
       if (data?.error) {
         throw new Error(data.error);
       }
+
+      // Log the action before removing from state
+      await logAuditAction(
+        "user_delete",
+        "user",
+        userId,
+        userName,
+        null,
+        null
+      );
 
       // Remove user from local state
       setUsers((prev) => prev.filter((u) => u.user_id !== userId));
@@ -326,6 +435,16 @@ export default function Admin() {
         }, ...prev]);
       }
 
+      // Log the action
+      await logAuditAction(
+        "invitation_sent",
+        "invitation",
+        data?.invitation?.id || null,
+        inviteEmail,
+        null,
+        roleLabels[inviteRole]
+      );
+
       toast({
         title: "Convite enviado",
         description: `Convite enviado para ${inviteEmail}`,
@@ -347,7 +466,7 @@ export default function Admin() {
     }
   };
 
-  const handleDeleteInvitation = async (invitationId: string) => {
+  const handleDeleteInvitation = async (invitationId: string, email: string) => {
     try {
       const { error } = await supabase
         .from("invitations")
@@ -355,6 +474,16 @@ export default function Admin() {
         .eq("id", invitationId);
 
       if (error) throw error;
+
+      // Log the action
+      await logAuditAction(
+        "invitation_delete",
+        "invitation",
+        invitationId,
+        email,
+        null,
+        null
+      );
 
       setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
 
@@ -389,12 +518,6 @@ export default function Admin() {
   const pendingInvitations = invitations.filter(
     (inv) => !inv.accepted_at && new Date(inv.expires_at) > new Date()
   );
-
-  const expiredInvitations = invitations.filter(
-    (inv) => !inv.accepted_at && new Date(inv.expires_at) <= new Date()
-  );
-
-  const acceptedInvitations = invitations.filter((inv) => inv.accepted_at);
 
   const stats = {
     total: users.length,
@@ -538,159 +661,163 @@ export default function Admin() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="audit" className="gap-2">
+            <History className="h-4 w-4" />
+            Logs de Auditoria
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users">
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle>Utilizadores</CardTitle>
-              <CardDescription>
-                Lista de todos os utilizadores registados no sistema
-              </CardDescription>
-            </div>
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Pesquisar utilizadores..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                  </div>
-                  <Skeleton className="h-8 w-24" />
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle>Utilizadores</CardTitle>
+                  <CardDescription>
+                    Lista de todos os utilizadores registados no sistema
+                  </CardDescription>
                 </div>
-              ))}
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              {searchTerm
-                ? "Nenhum utilizador encontrado com esse nome"
-                : "Nenhum utilizador registado"}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Utilizador</TableHead>
-                  <TableHead>Role Atual</TableHead>
-                  <TableHead>Data de Registo</TableHead>
-                  <TableHead>Alterar Role</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.avatar_url || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {getInitials(user.full_name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="font-medium">
-                            {user.full_name || "Sem nome"}
-                            {user.user_id === currentUser?.id && (
-                              <span className="ml-2 text-xs text-muted-foreground">(Você)</span>
-                            )}
-                          </div>
-                        </div>
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Pesquisar utilizadores..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-48" />
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={roleBadgeVariants[user.role]}>
-                        {roleLabels[user.role]}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(user.created_at).toLocaleDateString("pt-PT", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={user.role}
-                        onValueChange={(value) => handleRoleChange(user.user_id, value as AppRole)}
-                        disabled={updatingUserId === user.user_id || user.user_id === currentUser?.id}
-                      >
-                        <SelectTrigger className="w-36">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Administrador</SelectItem>
-                          <SelectItem value="manager">Gestor</SelectItem>
-                          <SelectItem value="member">Membro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {user.user_id === currentUser?.id ? (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      ) : (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              disabled={deletingUserId === user.user_id}
-                            >
-                              {deletingUserId === user.user_id ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Eliminar utilizador</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem a certeza que deseja eliminar{" "}
-                                <span className="font-semibold text-foreground">
-                                  {user.full_name || "este utilizador"}
-                                </span>
-                                ? Esta ação é irreversível e todos os dados associados serão permanentemente eliminados.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteUser(user.user_id, user.full_name)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      <Skeleton className="h-8 w-24" />
+                    </div>
+                  ))}
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  {searchTerm
+                    ? "Nenhum utilizador encontrado com esse nome"
+                    : "Nenhum utilizador registado"}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Utilizador</TableHead>
+                      <TableHead>Role Atual</TableHead>
+                      <TableHead>Data de Registo</TableHead>
+                      <TableHead>Alterar Role</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                              <AvatarImage src={user.avatar_url || undefined} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                {getInitials(user.full_name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <div className="font-medium">
+                                {user.full_name || "Sem nome"}
+                                {user.user_id === currentUser?.id && (
+                                  <span className="ml-2 text-xs text-muted-foreground">(Você)</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={roleBadgeVariants[user.role]}>
+                            {roleLabels[user.role]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(user.created_at).toLocaleDateString("pt-PT", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            value={user.role}
+                            onValueChange={(value) => handleRoleChange(user.user_id, value as AppRole)}
+                            disabled={updatingUserId === user.user_id || user.user_id === currentUser?.id}
+                          >
+                            <SelectTrigger className="w-36">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">Administrador</SelectItem>
+                              <SelectItem value="manager">Gestor</SelectItem>
+                              <SelectItem value="member">Membro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {user.user_id === currentUser?.id ? (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          ) : (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deletingUserId === user.user_id}
+                                >
+                                  {deletingUserId === user.user_id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Eliminar utilizador</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem a certeza que deseja eliminar{" "}
+                                    <span className="font-semibold text-foreground">
+                                      {user.full_name || "este utilizador"}
+                                    </span>
+                                    ? Esta ação é irreversível e todos os dados associados serão permanentemente eliminados.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteUser(user.user_id, user.full_name)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Eliminar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="invitations">
@@ -736,7 +863,6 @@ export default function Admin() {
                     {invitations.map((invitation) => {
                       const isExpired = !invitation.accepted_at && new Date(invitation.expires_at) <= new Date();
                       const isAccepted = !!invitation.accepted_at;
-                      const isPending = !isExpired && !isAccepted;
 
                       return (
                         <TableRow key={invitation.id}>
@@ -804,7 +930,7 @@ export default function Admin() {
                                   <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
                                     <AlertDialogAction
-                                      onClick={() => handleDeleteInvitation(invitation.id)}
+                                      onClick={() => handleDeleteInvitation(invitation.id, invitation.email)}
                                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
                                       Eliminar
@@ -819,6 +945,132 @@ export default function Admin() {
                     })}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5" />
+                    Logs de Auditoria
+                  </CardTitle>
+                  <CardDescription>
+                    Histórico de todas as ações administrativas realizadas no sistema
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchAuditLogs}
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Atualizar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {logsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-start gap-4 p-4 rounded-lg border">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-full" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : auditLogs.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhum log de auditoria</p>
+                  <p className="text-sm mt-1">As ações administrativas serão registadas aqui</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[500px] pr-4">
+                  <div className="space-y-3">
+                    {auditLogs.map((log) => {
+                      const actionConfig = actionLabels[log.action] || {
+                        label: log.action,
+                        icon: <History className="h-4 w-4" />,
+                        color: "text-muted-foreground",
+                      };
+
+                      return (
+                        <div
+                          key={log.id}
+                          className="flex items-start gap-4 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                        >
+                          <div className={`p-2 rounded-full bg-muted ${actionConfig.color}`}>
+                            {actionConfig.icon}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium">{actionConfig.label}</span>
+                              {log.target_name && (
+                                <>
+                                  <span className="text-muted-foreground">•</span>
+                                  <span className="text-sm text-muted-foreground truncate">
+                                    {log.target_name}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                            <div className="mt-1 text-sm text-muted-foreground">
+                              {log.action === "role_change" && log.old_value && log.new_value && (
+                                <span>
+                                  Role alterado de{" "}
+                                  <Badge variant="outline" className="mx-1 font-normal">
+                                    {log.old_value}
+                                  </Badge>
+                                  para{" "}
+                                  <Badge variant="outline" className="ml-1 font-normal">
+                                    {log.new_value}
+                                  </Badge>
+                                </span>
+                              )}
+                              {log.action === "invitation_sent" && log.new_value && (
+                                <span>
+                                  Convite enviado com role{" "}
+                                  <Badge variant="outline" className="ml-1 font-normal">
+                                    {log.new_value}
+                                  </Badge>
+                                </span>
+                              )}
+                              {log.action === "user_delete" && (
+                                <span>Utilizador removido permanentemente do sistema</span>
+                              )}
+                              {log.action === "invitation_delete" && (
+                                <span>Convite cancelado e removido</span>
+                              )}
+                            </div>
+                            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>Por: {log.user_name || "Sistema"}</span>
+                              <span>•</span>
+                              <span>
+                                {new Date(log.created_at).toLocaleString("pt-PT", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
               )}
             </CardContent>
           </Card>
