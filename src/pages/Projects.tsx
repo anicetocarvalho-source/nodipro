@@ -77,6 +77,7 @@ export default function Projects() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<DbProject | null>(null);
   const { data: projects, isLoading, error } = useProjects();
 
   const filteredProjects = (projects || []).filter(
@@ -130,8 +131,15 @@ export default function Projects() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-                <DropdownMenuItem>Editar</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
+                  Ver detalhes
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  setEditingProject(project);
+                  setIsFormOpen(true);
+                }}>
+                  Editar
+                </DropdownMenuItem>
                 <DropdownMenuItem>Relatório</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -264,7 +272,10 @@ export default function Projects() {
             Gerir e acompanhar todos os projectos da organização.
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90" onClick={() => setIsFormOpen(true)}>
+        <Button className="bg-primary hover:bg-primary/90" onClick={() => {
+          setEditingProject(null);
+          setIsFormOpen(true);
+        }}>
           <Plus className="h-4 w-4 mr-2" />
           Novo Projecto
         </Button>
@@ -345,7 +356,14 @@ export default function Projects() {
         </TabsContent>
       </Tabs>
 
-      <ProjectFormModal open={isFormOpen} onOpenChange={setIsFormOpen} />
+      <ProjectFormModal 
+        open={isFormOpen} 
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditingProject(null);
+        }}
+        project={editingProject}
+      />
     </div>
   );
 }

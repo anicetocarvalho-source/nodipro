@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,8 +39,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { useCreateProject } from "@/hooks/useProjects";
-import { ProjectStatus } from "@/types/database";
+import { useCreateProject, useUpdateProject } from "@/hooks/useProjects";
+import { DbProject, ProjectStatus } from "@/types/database";
 
 const projectFormSchema = z.object({
   name: z.string().trim().min(1, "Nome é obrigatório").max(100, "Nome deve ter no máximo 100 caracteres"),
@@ -74,10 +74,13 @@ const statusOptions: { value: ProjectStatus; label: string }[] = [
 interface ProjectFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  project?: DbProject | null;
 }
 
-export function ProjectFormModal({ open, onOpenChange }: ProjectFormModalProps) {
+export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormModalProps) {
   const createProject = useCreateProject();
+  const updateProject = useUpdateProject();
+  const isEditing = !!project;
   
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -92,8 +95,37 @@ export function ProjectFormModal({ open, onOpenChange }: ProjectFormModalProps) 
     },
   });
 
+  // Reset form when project changes or modal opens
+  useEffect(() => {
+    if (open) {
+      if (project) {
+        form.reset({
+          name: project.name,
+          description: project.description || "",
+          client: project.client || "",
+          status: project.status,
+          progress: project.progress,
+          start_date: project.start_date ? new Date(project.start_date) : undefined,
+          end_date: project.end_date ? new Date(project.end_date) : undefined,
+          budget: project.budget ?? undefined,
+          spent: project.spent ?? undefined,
+        });
+      } else {
+        form.reset({
+          name: "",
+          description: "",
+          client: "",
+          status: "active",
+          progress: 0,
+          budget: undefined,
+          spent: undefined,
+        });
+      }
+    }
+  }, [open, project, form]);
+
   const onSubmit = async (values: ProjectFormValues) => {
-    await createProject.mutateAsync({
+    const projectData = {
       name: values.name,
       description: values.description || null,
       client: values.client || null,
@@ -103,19 +135,28 @@ export function ProjectFormModal({ open, onOpenChange }: ProjectFormModalProps) 
       end_date: values.end_date ? format(values.end_date, "yyyy-MM-dd") : null,
       budget: values.budget ?? null,
       spent: values.spent ?? null,
-    });
+    };
+
+    if (isEditing && project) {
+      await updateProject.mutateAsync({ id: project.id, ...projectData });
+    } else {
+      await createProject.mutateAsync(projectData);
+    }
     
-    form.reset();
     onOpenChange(false);
   };
+
+  const isPending = createProject.isPending || updateProject.isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Novo Projecto</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Projecto" : "Novo Projecto"}</DialogTitle>
           <DialogDescription>
-            Preencha os dados para criar um novo projecto.
+            {isEditing 
+              ? "Modifique os dados do projecto." 
+              : "Preencha os dados para criar um novo projecto."}
           </DialogDescription>
         </DialogHeader>
 
@@ -178,7 +219,7 @@ export function ProjectFormModal({ open, onOpenChange }: ProjectFormModalProps) 
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Estado</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccione o estado" />
@@ -245,7 +286,7 @@ export function ProjectFormModal({ open, onOpenChange }: ProjectFormModalProps) 
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
-                          className="pointer-events-auto"
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -285,7 +326,7 @@ export function ProjectFormModal({ open, onOpenChange }: ProjectFormModalProps) 
                           selected={field.value}
                           onSelect={field.onChange}
                           initialFocus
-                          className="pointer-events-auto"
+                          className="p-3 pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -350,18 +391,18 @@ export function ProjectFormModal({ open, onOpenChange }: ProjectFormModalProps) 
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={createProject.isPending}
+                disabled={isPending}
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createProject.isPending}>
-                {createProject.isPending ? (
+              <Button type="submit" disabled={isPending}>
+                {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    A criar...
+                    {isEditing ? "A guardar..." : "A criar..."}
                   </>
                 ) : (
-                  "Criar Projecto"
+                  isEditing ? "Guardar Alterações" : "Criar Projecto"
                 )}
               </Button>
             </div>
