@@ -15,6 +15,7 @@ export interface DbProject {
   end_date: string | null;
   budget: number | null;
   spent: number | null;
+  program_id: string | null;
   created_at: string;
   updated_at: string;
 }
