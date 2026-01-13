@@ -45,7 +45,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2, History, UserPlus, UserMinus, RefreshCw } from "lucide-react";
+import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2, History, UserPlus, UserMinus, RefreshCw, Filter, CalendarDays, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
+import { pt } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -119,6 +123,12 @@ export default function Admin() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<AppRole>("member");
+  
+  // Audit log filters
+  const [actionFilter, setActionFilter] = useState<string>("all");
+  const [userFilter, setUserFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [sendingInvite, setSendingInvite] = useState(false);
 
   // Helper function to get current user's name
@@ -973,6 +983,98 @@ export default function Admin() {
                   Atualizar
                 </Button>
               </div>
+              
+              {/* Filters Section */}
+              <div className="mt-4 flex flex-wrap gap-3 items-center">
+                <div className="flex items-center gap-2">
+                  <Filter className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-muted-foreground">Filtros:</span>
+                </div>
+                
+                {/* Action Type Filter */}
+                <Select value={actionFilter} onValueChange={setActionFilter}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder="Tipo de ação" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as ações</SelectItem>
+                    <SelectItem value="role_change">Alteração de Role</SelectItem>
+                    <SelectItem value="user_delete">Utilizador Eliminado</SelectItem>
+                    <SelectItem value="invitation_sent">Convite Enviado</SelectItem>
+                    <SelectItem value="invitation_delete">Convite Eliminado</SelectItem>
+                    <SelectItem value="user_create">Utilizador Criado</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                {/* User Filter */}
+                <Select value={userFilter} onValueChange={setUserFilter}>
+                  <SelectTrigger className="w-[180px] h-9">
+                    <SelectValue placeholder="Utilizador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os utilizadores</SelectItem>
+                    {[...new Set(auditLogs.map(log => log.user_name).filter(Boolean))].map((userName) => (
+                      <SelectItem key={userName} value={userName!}>
+                        {userName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                {/* Date From */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      {dateFrom ? format(dateFrom, "dd MMM yyyy", { locale: pt }) : "Data início"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateFrom}
+                      onSelect={setDateFrom}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Date To */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-2">
+                      <CalendarDays className="h-4 w-4" />
+                      {dateTo ? format(dateTo, "dd MMM yyyy", { locale: pt }) : "Data fim"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dateTo}
+                      onSelect={setDateTo}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                
+                {/* Clear Filters */}
+                {(actionFilter !== "all" || userFilter !== "all" || dateFrom || dateTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 gap-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setActionFilter("all");
+                      setUserFilter("all");
+                      setDateFrom(undefined);
+                      setDateTo(undefined);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                    Limpar
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {logsLoading ? (
@@ -988,16 +1090,44 @@ export default function Admin() {
                     </div>
                   ))}
                 </div>
-              ) : auditLogs.length === 0 ? (
+              ) : (() => {
+                // Apply filters
+                const filteredLogs = auditLogs.filter((log) => {
+                  // Action filter
+                  if (actionFilter !== "all" && log.action !== actionFilter) return false;
+                  
+                  // User filter
+                  if (userFilter !== "all" && log.user_name !== userFilter) return false;
+                  
+                  // Date from filter
+                  if (dateFrom) {
+                    const logDate = new Date(log.created_at);
+                    if (isBefore(logDate, startOfDay(dateFrom))) return false;
+                  }
+                  
+                  // Date to filter
+                  if (dateTo) {
+                    const logDate = new Date(log.created_at);
+                    if (isAfter(logDate, endOfDay(dateTo))) return false;
+                  }
+                  
+                  return true;
+                });
+                
+                return filteredLogs.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
                   <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhum log de auditoria</p>
-                  <p className="text-sm mt-1">As ações administrativas serão registadas aqui</p>
+                  <p>Nenhum log de auditoria encontrado</p>
+                  <p className="text-sm mt-1">
+                    {auditLogs.length > 0 
+                      ? "Tente ajustar os filtros de pesquisa" 
+                      : "As ações administrativas serão registadas aqui"}
+                  </p>
                 </div>
               ) : (
                 <ScrollArea className="h-[500px] pr-4">
                   <div className="space-y-3">
-                    {auditLogs.map((log) => {
+                    {filteredLogs.map((log) => {
                       const actionConfig = actionLabels[log.action] || {
                         label: log.action,
                         icon: <History className="h-4 w-4" />,
@@ -1071,7 +1201,8 @@ export default function Admin() {
                     })}
                   </div>
                 </ScrollArea>
-              )}
+              );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
