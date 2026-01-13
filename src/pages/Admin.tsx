@@ -45,7 +45,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2, History, UserPlus, UserMinus, RefreshCw, Filter, CalendarDays, X, Settings } from "lucide-react";
+import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2, History, UserPlus, UserMinus, RefreshCw, Filter, CalendarDays, X, Settings, Eye } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
@@ -54,6 +54,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PermissionsManager } from "@/components/admin/PermissionsManager";
+import { EffectivePermissionsViewer } from "@/components/admin/EffectivePermissionsViewer";
 
 interface UserWithRole {
   id: string;
@@ -696,6 +697,10 @@ export default function Admin() {
             <Settings className="h-4 w-4" />
             Permissões
           </TabsTrigger>
+          <TabsTrigger value="effective" className="gap-2">
+            <Eye className="h-4 w-4" />
+            Perm. Efectivas
+          </TabsTrigger>
           <TabsTrigger value="audit" className="gap-2">
             <History className="h-4 w-4" />
             Logs de Auditoria
@@ -989,6 +994,10 @@ export default function Admin() {
 
         <TabsContent value="permissions">
           <PermissionsManager />
+        </TabsContent>
+
+        <TabsContent value="effective">
+          <EffectivePermissionsViewer />
         </TabsContent>
 
         <TabsContent value="audit">
