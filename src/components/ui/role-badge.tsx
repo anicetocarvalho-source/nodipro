@@ -1,4 +1,4 @@
-import { Shield, ShieldCheck, User } from "lucide-react";
+import { Shield, ShieldCheck, User, Eye, Briefcase, FolderKanban } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { AppRole } from "@/hooks/useAuth";
@@ -16,6 +16,16 @@ const roleConfig: Record<AppRole, { label: string; icon: typeof Shield; classNam
     icon: ShieldCheck,
     className: "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20",
   },
+  portfolio_manager: {
+    label: "Gestor de Portfólio",
+    icon: Briefcase,
+    className: "bg-purple-500/10 text-purple-600 border-purple-500/20 hover:bg-purple-500/20",
+  },
+  project_manager: {
+    label: "Gestor de Projecto",
+    icon: FolderKanban,
+    className: "bg-blue-500/10 text-blue-600 border-blue-500/20 hover:bg-blue-500/20",
+  },
   manager: {
     label: "Gestor",
     icon: Shield,
@@ -25,6 +35,11 @@ const roleConfig: Record<AppRole, { label: string; icon: typeof Shield; classNam
     label: "Membro",
     icon: User,
     className: "bg-info/10 text-info border-info/20 hover:bg-info/20",
+  },
+  observer: {
+    label: "Observador",
+    icon: Eye,
+    className: "bg-muted text-muted-foreground border-border hover:bg-muted/80",
   },
 };
 
@@ -38,6 +53,8 @@ export function RoleBadge({ role, showIcon = true, size = "md", className }: Rol
   if (!role) return null;
 
   const config = roleConfig[role];
+  if (!config) return null;
+  
   const Icon = config.icon;
 
   return (
@@ -60,6 +77,8 @@ export function RoleIndicator({ role }: { role: AppRole | null }) {
   if (!role) return null;
 
   const config = roleConfig[role];
+  if (!config) return null;
+  
   const Icon = config.icon;
 
   return (
