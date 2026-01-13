@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { TrendingUp, Target, DollarSign, AlertTriangle, Plus, Pencil, Trash2, FolderKanban, Layers, MoreHorizontal } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { TrendingUp, Target, DollarSign, AlertTriangle, Plus, Pencil, Trash2, FolderKanban, Layers, MoreHorizontal, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -44,6 +45,7 @@ function formatCurrency(value: number) {
 }
 
 export default function Portfolio() {
+  const navigate = useNavigate();
   const { data: portfolios, isLoading: loadingPortfolios } = usePortfoliosWithStats();
   const { data: programs, isLoading: loadingPrograms } = useProgramsWithStats();
   const { data: projects, isLoading: loadingProjects } = useProjects();
@@ -412,7 +414,7 @@ export default function Portfolio() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {programs?.map((program) => (
-                <Card key={program.id} className="hover:shadow-md transition-shadow">
+                <Card key={program.id} className="hover:shadow-md transition-shadow cursor-pointer group" onClick={() => navigate(`/programs/${program.id}`)}>
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div>
@@ -448,16 +450,20 @@ export default function Portfolio() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleAssignProject(program)}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/programs/${program.id}`); }}>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Ver Detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAssignProject(program); }}>
                               <Plus className="h-4 w-4 mr-2" />
                               Atribuir Projecto
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleEditProgram(program)}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditProgram(program); }}>
                               <Pencil className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteClick("program", program.id, program.name)}
+                              onClick={(e) => { e.stopPropagation(); handleDeleteClick("program", program.id, program.name); }}
                               className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
