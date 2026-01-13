@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useProgram } from "@/hooks/usePrograms";
 import { useProjects } from "@/hooks/useProjects";
 import { usePortfolios } from "@/hooks/usePortfolios";
+import { DraggableProjectsSection } from "@/components/program/DraggableProjectsSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,11 +24,11 @@ import {
   TrendingUp,
   AlertTriangle,
   Clock,
-  Users,
   ChevronLeft,
   ChevronRight,
   ZoomIn,
   ZoomOut,
+  ArrowLeftRight,
 } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -341,6 +342,19 @@ export default function ProgramDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* Drag and Drop Projects Section */}
+      <div>
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <ArrowLeftRight className="h-5 w-5" />
+          Gerir Projectos
+        </h2>
+        <DraggableProjectsSection
+          programId={id!}
+          programName={program.name}
+          allProjects={allProjects || []}
+        />
+      </div>
 
       {/* Projects Table */}
       <Card>
