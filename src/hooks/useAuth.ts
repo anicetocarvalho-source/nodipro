@@ -3,9 +3,28 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-export type AppRole = "admin" | "manager" | "member";
+// Extended role types to support new granular roles
+export type AppRole = "admin" | "portfolio_manager" | "project_manager" | "manager" | "member" | "observer";
 
-interface Profile {
+export const roleLabels: Record<AppRole, string> = {
+  admin: "Administrador",
+  portfolio_manager: "Gestor de Portfólio",
+  project_manager: "Gestor de Projecto",
+  manager: "Gestor",
+  member: "Membro",
+  observer: "Observador",
+};
+
+export const roleHierarchy: Record<AppRole, number> = {
+  admin: 6,
+  portfolio_manager: 5,
+  manager: 4,
+  project_manager: 3,
+  member: 2,
+  observer: 1,
+};
+
+export interface Profile {
   id: string;
   user_id: string;
   full_name: string | null;
@@ -14,7 +33,7 @@ interface Profile {
   updated_at: string;
 }
 
-interface UseAuthReturn {
+export interface UseAuthReturn {
   user: User | null;
   session: Session | null;
   profile: Profile | null;

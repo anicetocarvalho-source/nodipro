@@ -45,7 +45,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2, History, UserPlus, UserMinus, RefreshCw, Filter, CalendarDays, X } from "lucide-react";
+import { Users, Shield, Search, UserCog, Trash2, Loader2, Mail, Send, Clock, CheckCircle2, History, UserPlus, UserMinus, RefreshCw, Filter, CalendarDays, X, Settings } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
@@ -53,6 +53,7 @@ import { pt } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PermissionsManager } from "@/components/admin/PermissionsManager";
 
 interface UserWithRole {
   id: string;
@@ -88,14 +89,20 @@ interface AuditLog {
 
 const roleLabels: Record<AppRole, string> = {
   admin: "Administrador",
+  portfolio_manager: "Gestor de Portfólio",
+  project_manager: "Gestor de Projecto",
   manager: "Gestor",
   member: "Membro",
+  observer: "Observador",
 };
 
-const roleBadgeVariants: Record<AppRole, "default" | "secondary" | "outline"> = {
+const roleBadgeVariants: Record<AppRole, "default" | "secondary" | "outline" | "destructive"> = {
   admin: "default",
+  portfolio_manager: "secondary",
+  project_manager: "secondary",
   manager: "secondary",
   member: "outline",
+  observer: "outline",
 };
 
 const actionLabels: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
@@ -532,8 +539,11 @@ export default function Admin() {
   const stats = {
     total: users.length,
     admins: users.filter((u) => u.role === "admin").length,
+    portfolioManagers: users.filter((u) => u.role === "portfolio_manager").length,
+    projectManagers: users.filter((u) => u.role === "project_manager").length,
     managers: users.filter((u) => u.role === "manager").length,
     members: users.filter((u) => u.role === "member").length,
+    observers: users.filter((u) => u.role === "observer").length,
     pendingInvites: pendingInvitations.length,
   };
 
@@ -584,8 +594,10 @@ export default function Admin() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
-                    <SelectItem value="manager">Gestor</SelectItem>
+                    <SelectItem value="portfolio_manager">Gestor de Portfólio</SelectItem>
+                    <SelectItem value="project_manager">Gestor de Projecto</SelectItem>
                     <SelectItem value="member">Membro</SelectItem>
+                    <SelectItem value="observer">Observador</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -608,10 +620,10 @@ export default function Admin() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Utilizadores</CardTitle>
+            <CardTitle className="text-sm font-medium">Total</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -620,20 +632,29 @@ export default function Admin() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
+            <CardTitle className="text-sm font-medium">Admins</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{stats.admins}</div>
+            <div className="text-2xl font-bold text-destructive">{stats.admins}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gestores</CardTitle>
+            <CardTitle className="text-sm font-medium">Gest. Portfólio</CardTitle>
             <UserCog className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary-foreground">{stats.managers}</div>
+            <div className="text-2xl font-bold text-purple-600">{stats.portfolioManagers}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Gest. Projecto</CardTitle>
+            <UserCog className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{stats.projectManagers}</div>
           </CardContent>
         </Card>
         <Card>
@@ -642,12 +663,12 @@ export default function Admin() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.members}</div>
+            <div className="text-2xl font-bold">{stats.members + stats.managers}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Convites Pendentes</CardTitle>
+            <CardTitle className="text-sm font-medium">Convites</CardTitle>
             <Mail className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -657,7 +678,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="users" className="gap-2">
             <Users className="h-4 w-4" />
             Utilizadores
@@ -670,6 +691,10 @@ export default function Admin() {
                 {pendingInvitations.length}
               </Badge>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Permissões
           </TabsTrigger>
           <TabsTrigger value="audit" className="gap-2">
             <History className="h-4 w-4" />
@@ -773,8 +798,10 @@ export default function Admin() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="admin">Administrador</SelectItem>
-                              <SelectItem value="manager">Gestor</SelectItem>
+                              <SelectItem value="portfolio_manager">Gestor de Portfólio</SelectItem>
+                              <SelectItem value="project_manager">Gestor de Projecto</SelectItem>
                               <SelectItem value="member">Membro</SelectItem>
+                              <SelectItem value="observer">Observador</SelectItem>
                             </SelectContent>
                           </Select>
                         </TableCell>
@@ -958,6 +985,10 @@ export default function Admin() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="permissions">
+          <PermissionsManager />
         </TabsContent>
 
         <TabsContent value="audit">
