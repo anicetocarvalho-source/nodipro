@@ -16,6 +16,7 @@ import {
   Loader2,
   Pencil,
   Trash2,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,9 +37,11 @@ import {
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { GanttChart } from "@/components/gantt/GanttChart";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
+import { ProjectPermissionsManager } from "@/components/projects/ProjectPermissionsManager";
 import { useProject, useDeleteProject } from "@/hooks/useProjects";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTasks } from "@/hooks/useTasks";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const formatCurrency = (value: number | null) => {
   if (value === null) return "-";
@@ -75,11 +78,15 @@ export default function ProjectDetail() {
   const [activeView, setActiveView] = useState<"kanban" | "gantt" | "list">("kanban");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const deleteProject = useDeleteProject();
+  const { isAdmin, isPortfolioManager, isProjectManager } = usePermissions();
   
   const { data: project, isLoading: projectLoading } = useProject(id);
   const { data: teamMembers, isLoading: teamLoading } = useTeamMembers(id);
   const { data: tasks } = useTasks(id);
+  
+  const canManagePermissions = isAdmin || isPortfolioManager || isProjectManager;
 
   if (projectLoading) {
     return (
@@ -154,6 +161,12 @@ export default function ProjectDetail() {
             <FileText className="h-4 w-4 mr-2" />
             Relatório
           </Button>
+          {canManagePermissions && (
+            <Button variant="outline" onClick={() => setIsPermissionsOpen(true)}>
+              <Shield className="h-4 w-4 mr-2" />
+              Permissões
+            </Button>
+          )}
           <Button variant="outline">
             <Settings className="h-4 w-4 mr-2" />
             Configurações
@@ -440,6 +453,14 @@ export default function ProjectDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {canManagePermissions && (
+        <ProjectPermissionsManager
+          projectId={id || ""}
+          open={isPermissionsOpen}
+          onOpenChange={setIsPermissionsOpen}
+        />
+      )}
     </div>
   );
 }
