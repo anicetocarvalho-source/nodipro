@@ -404,13 +404,52 @@ export default function Auth() {
                   </motion.form>
                 </Form>
 
+                {/* Test Users Section */}
+                <motion.div 
+                  className="mt-6 p-4 bg-muted/50 rounded-lg border border-border/50"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                >
+                  <p className="text-xs font-medium text-muted-foreground mb-3 text-center uppercase tracking-wide">
+                    Utilizadores de Teste
+                  </p>
+                  <div className="space-y-2">
+                    {[
+                      { email: "admin@nodipro.com", password: "Admin123!", role: "Admin", color: "bg-red-500/10 text-red-600 border-red-200" },
+                      { email: "manager@nodipro.com", password: "Manager123!", role: "Manager", color: "bg-blue-500/10 text-blue-600 border-blue-200" },
+                      { email: "member@nodipro.com", password: "Member123!", role: "Member", color: "bg-green-500/10 text-green-600 border-green-200" },
+                    ].map((testUser) => (
+                      <motion.button
+                        key={testUser.email}
+                        type="button"
+                        onClick={() => {
+                          loginForm.setValue("email", testUser.email);
+                          loginForm.setValue("password", testUser.password);
+                        }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-md border border-border/50 bg-background hover:bg-muted/80 transition-colors text-left group"
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-foreground">{testUser.email}</span>
+                          <span className="text-[10px] text-muted-foreground">{testUser.password}</span>
+                        </div>
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${testUser.color}`}>
+                          {testUser.role}
+                        </span>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+
                 <motion.p 
-                  className="mt-8 text-center text-sm text-muted-foreground"
+                  className="mt-4 text-center text-xs text-muted-foreground"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.8, duration: 0.5 }}
                 >
-                  Não tem conta? Contacte o administrador do sistema.
+                  Clique num utilizador para preencher automaticamente
                 </motion.p>
               </CardContent>
             </Card>
