@@ -135,6 +135,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
       end_date: values.end_date ? format(values.end_date, "yyyy-MM-dd") : null,
       budget: values.budget ?? null,
       spent: values.spent ?? null,
+      program_id: project?.program_id ?? null,
     };
 
     if (isEditing && project) {

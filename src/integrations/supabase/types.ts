@@ -116,6 +116,36 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolios: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          manager_id: string | null
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manager_id?: string | null
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          manager_id?: string | null
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -143,6 +173,56 @@ export type Database = {
         }
         Relationships: []
       }
+      programs: {
+        Row: {
+          created_at: string
+          description: string | null
+          end_date: string | null
+          id: string
+          manager_id: string | null
+          name: string
+          portfolio_id: string
+          sector: string | null
+          start_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          manager_id?: string | null
+          name: string
+          portfolio_id: string
+          sector?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          id?: string
+          manager_id?: string | null
+          name?: string
+          portfolio_id?: string
+          sector?: string | null
+          start_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "programs_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           budget: number | null
@@ -152,6 +232,7 @@ export type Database = {
           end_date: string | null
           id: string
           name: string
+          program_id: string | null
           progress: number
           spent: number | null
           start_date: string | null
@@ -166,6 +247,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           name: string
+          program_id?: string | null
           progress?: number
           spent?: number | null
           start_date?: string | null
@@ -180,13 +262,22 @@ export type Database = {
           end_date?: string | null
           id?: string
           name?: string
+          program_id?: string | null
           progress?: number
           spent?: number | null
           start_date?: string | null
           status?: Database["public"]["Enums"]["project_status"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "projects_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       role_permissions: {
         Row: {
