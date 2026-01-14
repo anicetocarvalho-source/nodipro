@@ -22,6 +22,8 @@ import Budget from "./pages/Budget";
 import Reports from "./pages/Reports";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import Settings from "./pages/Settings";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +76,8 @@ const App = () => (
             <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
             <Route path="/profile" element={<ProtectedPageWrapper><Profile /></ProtectedPageWrapper>} />
             <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
+            <Route path="/settings" element={<ProtectedPageWrapper><Settings /></ProtectedPageWrapper>} />
+            <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
