@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Bell, ChevronDown, Menu, LogOut, User, Settings } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Search, Bell, ChevronDown, Menu, LogOut, User, Settings, Sun, Moon, Monitor } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +17,45 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TopBarProps {
   onMobileMenuToggle?: () => void;
+}
+
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+
+  const cycleTheme = () => {
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("system");
+    else setTheme("light");
+  };
+
+  const getIcon = () => {
+    if (theme === "dark") return <Moon className="h-5 w-5" />;
+    if (theme === "light") return <Sun className="h-5 w-5" />;
+    return <Monitor className="h-5 w-5" />;
+  };
+
+  const getLabel = () => {
+    if (theme === "dark") return "Escuro";
+    if (theme === "light") return "Claro";
+    return "Sistema";
+  };
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant="ghost" size="icon" onClick={cycleTheme}>
+          {getIcon()}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Tema: {getLabel()}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
@@ -78,6 +115,9 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
 
       {/* Right section */}
       <div className="flex items-center gap-2 lg:gap-4">
+        {/* Theme toggle */}
+        <ThemeToggle />
+
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
