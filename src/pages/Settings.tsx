@@ -1,14 +1,17 @@
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Globe, Moon, Palette, Shield, Save } from "lucide-react";
+import { Bell, Globe, Palette, Shield, Save } from "lucide-react";
 import { toast } from "sonner";
 
 const Settings = () => {
+  const { theme, setTheme } = useTheme();
+  
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
@@ -16,7 +19,6 @@ const Settings = () => {
     weeklyDigest: true,
     language: "pt",
     timezone: "Europe/Lisbon",
-    theme: "system",
     compactMode: false,
     twoFactorAuth: false,
     sessionTimeout: "30",
@@ -132,8 +134,8 @@ const Settings = () => {
             <div className="space-y-2">
               <Label htmlFor="theme">Tema</Label>
               <Select
-                value={settings.theme}
-                onValueChange={(value) => updateSetting("theme", value)}
+                value={theme}
+                onValueChange={(value) => setTheme(value)}
               >
                 <SelectTrigger id="theme">
                   <SelectValue placeholder="Selecione o tema" />
