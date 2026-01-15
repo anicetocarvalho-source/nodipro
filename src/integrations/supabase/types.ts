@@ -285,6 +285,287 @@ export type Database = {
           },
         ]
       }
+      document_comments: {
+        Row: {
+          content: string
+          created_at: string
+          document_id: string
+          id: string
+          is_resolved: boolean
+          parent_id: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          updated_at: string
+          user_id: string | null
+          user_name: string | null
+          version_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_id: string
+          id?: string
+          is_resolved?: boolean
+          parent_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          is_resolved?: boolean
+          parent_id?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          updated_at?: string
+          user_id?: string | null
+          user_name?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_comments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_comments_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_history: {
+        Row: {
+          action: string
+          action_details: Json | null
+          created_at: string
+          document_id: string
+          id: string
+          ip_address: string | null
+          performed_by: string | null
+          performed_by_name: string | null
+          version_id: string | null
+        }
+        Insert: {
+          action: string
+          action_details?: Json | null
+          created_at?: string
+          document_id: string
+          id?: string
+          ip_address?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          action?: string
+          action_details?: Json | null
+          created_at?: string
+          document_id?: string
+          id?: string
+          ip_address?: string | null
+          performed_by?: string | null
+          performed_by_name?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_history_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_history_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          change_summary: string | null
+          created_at: string
+          document_id: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          hash_sha256: string | null
+          id: string
+          uploaded_by: string | null
+          version_number: number
+        }
+        Insert: {
+          change_summary?: string | null
+          created_at?: string
+          document_id: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          hash_sha256?: string | null
+          id?: string
+          uploaded_by?: string | null
+          version_number: number
+        }
+        Update: {
+          change_summary?: string | null
+          created_at?: string
+          document_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          hash_sha256?: string | null
+          id?: string
+          uploaded_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_workflows: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          document_id: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          priority: string | null
+          requested_by: string | null
+          status: string
+          updated_at: string
+          version_id: string | null
+          workflow_type: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          document_id: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          version_id?: string | null
+          workflow_type?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          document_id?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          priority?: string | null
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          version_id?: string | null
+          workflow_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_workflows_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_workflows_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "document_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_version: number
+          description: string | null
+          document_type: string
+          id: string
+          phase_name: string | null
+          project_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          description?: string | null
+          document_type?: string
+          id?: string
+          phase_name?: string | null
+          project_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_version?: number
+          description?: string | null
+          document_type?: string
+          id?: string
+          phase_name?: string | null
+          project_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
