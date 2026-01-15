@@ -13,6 +13,7 @@ import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Portfolio from "./pages/Portfolio";
 import ProgramDetail from "./pages/ProgramDetail";
+import Methodologies from "./pages/Methodologies";
 import KPI from "./pages/KPI";
 import Risks from "./pages/Risks";
 import Team from "./pages/Team";
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
             <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
             <Route path="/programs/:id" element={<ProtectedPageWrapper><ProgramDetail /></ProtectedPageWrapper>} />
+            <Route path="/methodologies" element={<ProtectedPageWrapper><Methodologies /></ProtectedPageWrapper>} />
             <Route path="/kpi" element={<ProtectedPageWrapper><KPI /></ProtectedPageWrapper>} />
             <Route path="/risks" element={<ManagerPageWrapper><Risks /></ManagerPageWrapper>} />
             <Route path="/team" element={<ProtectedPageWrapper><Team /></ProtectedPageWrapper>} />
