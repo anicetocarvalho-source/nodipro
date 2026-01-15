@@ -59,6 +59,232 @@ export type Database = {
         }
         Relationships: []
       }
+      budget_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          current_percentage: number | null
+          id: string
+          is_read: boolean
+          is_resolved: boolean
+          message: string
+          project_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          threshold_percentage: number | null
+          title: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          current_percentage?: number | null
+          id?: string
+          is_read?: boolean
+          is_resolved?: boolean
+          message: string
+          project_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          threshold_percentage?: number | null
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          current_percentage?: number | null
+          id?: string
+          is_read?: boolean
+          is_resolved?: boolean
+          message?: string
+          project_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          threshold_percentage?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_alerts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_entries: {
+        Row: {
+          actual_amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          entry_date: string
+          id: string
+          invoice_number: string | null
+          notes: string | null
+          phase_name: string | null
+          planned_amount: number
+          project_id: string
+          status: string
+          supplier: string | null
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          entry_date?: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          phase_name?: string | null
+          planned_amount?: number
+          project_id: string
+          status?: string
+          supplier?: string | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          entry_date?: string
+          id?: string
+          invoice_number?: string | null
+          notes?: string | null
+          phase_name?: string | null
+          planned_amount?: number
+          project_id?: string
+          status?: string
+          supplier?: string | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cost_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_snapshots: {
+        Row: {
+          category_breakdown: Json | null
+          created_at: string
+          id: string
+          notes: string | null
+          period_type: string
+          phase_breakdown: Json | null
+          project_id: string
+          snapshot_date: string
+          total_actual: number
+          total_planned: number
+          variance: number
+          variance_percentage: number
+        }
+        Insert: {
+          category_breakdown?: Json | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_type?: string
+          phase_breakdown?: Json | null
+          project_id: string
+          snapshot_date: string
+          total_actual?: number
+          total_planned?: number
+          variance?: number
+          variance_percentage?: number
+        }
+        Update: {
+          category_breakdown?: Json | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_type?: string
+          phase_breakdown?: Json | null
+          project_id?: string
+          snapshot_date?: string
+          total_actual?: number
+          total_planned?: number
+          variance?: number
+          variance_percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_snapshots_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cost_categories: {
+        Row: {
+          code: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          parent_id: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          parent_id?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          parent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "cost_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -443,6 +669,7 @@ export type Database = {
           due_date: string | null
           id: string
           labels: string[] | null
+          phase_name: string | null
           position: number
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string
@@ -460,6 +687,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           labels?: string[] | null
+          phase_name?: string | null
           position?: number
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id: string
@@ -477,6 +705,7 @@ export type Database = {
           due_date?: string | null
           id?: string
           labels?: string[] | null
+          phase_name?: string | null
           position?: number
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string
