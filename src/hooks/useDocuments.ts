@@ -538,3 +538,29 @@ export async function downloadDocumentVersion(filePath: string, fileName: string
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+// Hook to download latest version of a document
+export function useDownloadFile() {
+  return useMutation({
+    mutationFn: async (documentId: string) => {
+      // Get latest version
+      const { data: versions, error } = await supabase
+        .from('document_versions')
+        .select('file_path, file_name')
+        .eq('document_id', documentId)
+        .order('version_number', { ascending: false })
+        .limit(1);
+
+      if (error) throw error;
+      if (!versions || versions.length === 0) {
+        throw new Error('Nenhuma versão encontrada');
+      }
+
+      const { file_path, file_name } = versions[0];
+      await downloadDocumentVersion(file_path, file_name);
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao descarregar: ${error.message}`);
+    },
+  });
+}
