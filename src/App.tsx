@@ -19,7 +19,7 @@ import Risks from "./pages/Risks";
 import Team from "./pages/Team";
 import Documents from "./pages/Documents";
 import Communication from "./pages/Communication";
-import Budget from "./pages/Budget";
+import Budget from "./pages/BudgetNew";
 import Reports from "./pages/Reports";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
