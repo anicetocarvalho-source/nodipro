@@ -1,25 +1,14 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Plus,
   Search,
-  Upload,
-  FolderOpen,
   FileText,
-  FileImage,
-  FileSpreadsheet,
-  File,
-  Download,
-  MoreHorizontal,
   Grid,
   List,
-  Star,
   Clock,
   CheckCircle2,
-  XCircle,
   AlertCircle,
   Eye,
-  GitBranch,
-  MessageSquare,
   Loader2,
   Filter,
 } from "lucide-react";
@@ -29,33 +18,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { pt } from "date-fns/locale";
-import { useDocuments, useDeleteDocument, usePendingWorkflows, useDownloadFile } from "@/hooks/useDocuments";
+import { useDocuments, useDeleteDocument, usePendingWorkflows, useDownloadFile, useUploadVersion } from "@/hooks/useDocuments";
 import { useProjects } from "@/hooks/useProjects";
 import { DocumentFormModal } from "@/components/documents/DocumentFormModal";
 import { VersionUploadModal } from "@/components/documents/VersionUploadModal";
 import { WorkflowModal } from "@/components/documents/WorkflowModal";
 import { DocumentDetailModal } from "@/components/documents/DocumentDetailModal";
+import { DocumentTableRow } from "@/components/documents/DocumentTableRow";
+import { DocumentGridCard } from "@/components/documents/DocumentGridCard";
 import { 
   DOCUMENT_STATUS_LABELS, 
   DOCUMENT_TYPE_OPTIONS,
   type Document,
-  type DocumentStatus 
 } from "@/types/document";
 import {
   AlertDialog,
@@ -68,28 +49,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-
-const statusConfig: Record<DocumentStatus, { icon: typeof Clock; color: string; bgColor: string }> = {
-  draft: { icon: FileText, color: "text-muted-foreground", bgColor: "bg-muted" },
-  pending_review: { icon: Clock, color: "text-warning", bgColor: "bg-warning/10" },
-  in_review: { icon: AlertCircle, color: "text-info", bgColor: "bg-info/10" },
-  approved: { icon: CheckCircle2, color: "text-success", bgColor: "bg-success/10" },
-  rejected: { icon: XCircle, color: "text-destructive", bgColor: "bg-destructive/10" },
-  archived: { icon: FolderOpen, color: "text-muted-foreground", bgColor: "bg-muted" },
-};
-
-const typeConfig: Record<string, { icon: typeof FileText; color: string }> = {
-  general: { icon: File, color: "text-muted-foreground" },
-  report: { icon: FileText, color: "text-primary" },
-  contract: { icon: FileText, color: "text-destructive" },
-  proposal: { icon: FileText, color: "text-warning" },
-  policy: { icon: FileText, color: "text-info" },
-  procedure: { icon: FileText, color: "text-success" },
-  template: { icon: FileSpreadsheet, color: "text-primary" },
-  memo: { icon: FileText, color: "text-muted-foreground" },
-  minutes: { icon: FileText, color: "text-info" },
-  invoice: { icon: FileSpreadsheet, color: "text-success" },
-};
 
 export default function Documents() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -112,8 +71,16 @@ export default function Documents() {
   const { data: projects = [] } = useProjects();
   const deleteDocument = useDeleteDocument();
   const downloadFile = useDownloadFile();
+  const uploadVersion = useUploadVersion();
 
-  // Filter documents
+  // Handle file drop for quick version upload
+  const handleFileDrop = useCallback((doc: Document, file: File) => {
+    uploadVersion.mutate({
+      documentId: doc.id,
+      file,
+      changeSummary: `Upload rápido: ${file.name}`,
+    });
+  }, [uploadVersion]);
   const filteredDocs = documents.filter((doc) => {
     const matchesSearch = 
       doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -174,17 +141,7 @@ export default function Documents() {
     }
   };
 
-  const getTypeIcon = (type: string) => {
-    return typeConfig[type]?.icon || File;
-  };
-
-  const getTypeColor = (type: string) => {
-    return typeConfig[type]?.color || "text-muted-foreground";
-  };
-
-  const getTypeLabel = (type: string) => {
-    return DOCUMENT_TYPE_OPTIONS.find(t => t.value === type)?.label || type;
-  };
+  // Removed getTypeIcon, getTypeColor as they are now in separate components
 
   if (isLoading) {
     return (
@@ -378,165 +335,36 @@ export default function Documents() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDocs.map((doc) => {
-                      const TypeIcon = getTypeIcon(doc.document_type);
-                      const StatusIcon = statusConfig[doc.status as DocumentStatus]?.icon || Clock;
-                      const statusColor = statusConfig[doc.status as DocumentStatus]?.color || "text-muted-foreground";
-                      const statusBg = statusConfig[doc.status as DocumentStatus]?.bgColor || "bg-muted";
-                      
-                      return (
-                        <tr 
-                          key={doc.id} 
-                          className="border-b hover:bg-accent/50 cursor-pointer transition-colors"
-                          onClick={() => handleViewDocument(doc)}
-                        >
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className={cn("p-2 rounded-lg", statusBg)}>
-                                <TypeIcon className={cn("h-5 w-5", getTypeColor(doc.document_type))} />
-                              </div>
-                              <div>
-                                <p className="font-medium">{doc.title}</p>
-                                {doc.description && (
-                                  <p className="text-sm text-muted-foreground line-clamp-1">{doc.description}</p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <span className="text-sm">{doc.project?.name || "—"}</span>
-                          </td>
-                          <td className="p-4">
-                            <Badge variant="outline">{getTypeLabel(doc.document_type)}</Badge>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1 text-sm">
-                              <GitBranch className="h-4 w-4 text-muted-foreground" />
-                              v{doc.current_version}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <Badge className={cn("gap-1", statusBg, statusColor, "border-0")}>
-                              <StatusIcon className="h-3 w-3" />
-                              {DOCUMENT_STATUS_LABELS[doc.status as DocumentStatus]}
-                            </Badge>
-                          </td>
-                          <td className="p-4 text-sm text-muted-foreground">
-                            {format(new Date(doc.updated_at), "dd MMM yyyy", { locale: pt })}
-                          </td>
-                          <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleViewDocument(doc)}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Ver Detalhes
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleUploadVersion(doc)}>
-                                  <Upload className="h-4 w-4 mr-2" />
-                                  Nova Versão
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleStartWorkflow(doc)}>
-                                  <GitBranch className="h-4 w-4 mr-2" />
-                                  Iniciar Workflow
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDownload(doc)}>
-                                  <Download className="h-4 w-4 mr-2" />
-                                  Descarregar
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  className="text-destructive"
-                                  onClick={() => handleDeleteClick(doc)}
-                                >
-                                  Eliminar
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {filteredDocs.map((doc) => (
+                      <DocumentTableRow
+                        key={doc.id}
+                        doc={doc}
+                        onView={handleViewDocument}
+                        onUploadVersion={handleUploadVersion}
+                        onStartWorkflow={handleStartWorkflow}
+                        onDownload={handleDownload}
+                        onDelete={handleDeleteClick}
+                        onFileDrop={handleFileDrop}
+                      />
+                    ))}
                   </tbody>
                 </table>
               </div>
             </Card>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredDocs.map((doc) => {
-                const TypeIcon = getTypeIcon(doc.document_type);
-                const StatusIcon = statusConfig[doc.status as DocumentStatus]?.icon || Clock;
-                const statusColor = statusConfig[doc.status as DocumentStatus]?.color || "text-muted-foreground";
-                const statusBg = statusConfig[doc.status as DocumentStatus]?.bgColor || "bg-muted";
-                
-                return (
-                  <Card 
-                    key={doc.id} 
-                    className="hover:shadow-md transition-all cursor-pointer group"
-                    onClick={() => handleViewDocument(doc)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex flex-col h-full">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className={cn("p-3 rounded-lg", statusBg)}>
-                            <TypeIcon className={cn("h-6 w-6", getTypeColor(doc.document_type))} />
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleUploadVersion(doc)}>
-                                <Upload className="h-4 w-4 mr-2" />
-                                Nova Versão
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleStartWorkflow(doc)}>
-                                <GitBranch className="h-4 w-4 mr-2" />
-                                Iniciar Workflow
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDownload(doc)}>
-                                <Download className="h-4 w-4 mr-2" />
-                                Descarregar
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-destructive"
-                                onClick={() => handleDeleteClick(doc)}
-                              >
-                                Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <h3 className="font-medium line-clamp-2 mb-1">{doc.title}</h3>
-                        {doc.project?.name && (
-                          <p className="text-sm text-muted-foreground mb-2">{doc.project.name}</p>
-                        )}
-                        <div className="mt-auto pt-3 flex items-center justify-between">
-                          <Badge className={cn("gap-1 text-xs", statusBg, statusColor, "border-0")}>
-                            <StatusIcon className="h-3 w-3" />
-                            {DOCUMENT_STATUS_LABELS[doc.status as DocumentStatus]}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <GitBranch className="h-3 w-3" />
-                            v{doc.current_version}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {filteredDocs.map((doc) => (
+                <DocumentGridCard
+                  key={doc.id}
+                  doc={doc}
+                  onView={handleViewDocument}
+                  onUploadVersion={handleUploadVersion}
+                  onStartWorkflow={handleStartWorkflow}
+                  onDownload={handleDownload}
+                  onDelete={handleDeleteClick}
+                  onFileDrop={handleFileDrop}
+                />
+              ))}
             </div>
           )}
         </TabsContent>
