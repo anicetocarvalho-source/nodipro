@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { FileText as FileTextIcon } from 'lucide-react';
 import {
   LayoutDashboard,
   FolderKanban,
