@@ -17,6 +17,7 @@ import {
   HelpCircle,
   LogOut,
   ShieldCheck,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ export function AppSidebar() {
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
     { icon: FolderKanban, label: "Projectos", path: "/projects" },
     { icon: Briefcase, label: "Portfólio", path: "/portfolio" },
+    { icon: Layers, label: "Metodologias", path: "/methodologies" },
     { icon: BarChart3, label: "Indicadores", path: "/kpi" },
     { icon: AlertTriangle, label: "Riscos", path: "/risks", requiresPermission: "canManageRisks" },
     { icon: Users, label: "Equipa", path: "/team" },
