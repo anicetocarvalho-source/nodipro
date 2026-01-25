@@ -37,6 +37,57 @@ export function useProject(projectId: string | undefined) {
   });
 }
 
+export function useProjectSDGs(projectId: string | undefined) {
+  return useQuery({
+    queryKey: ["project-sdgs", projectId],
+    queryFn: async () => {
+      if (!projectId) return [];
+      
+      const { data, error } = await supabase
+        .from("project_sdgs")
+        .select("sdg_id, sdgs(id, number, name, color)")
+        .eq("project_id", projectId);
+      
+      if (error) throw error;
+      return (data || []).map((item: any) => item.sdgs);
+    },
+    enabled: !!projectId,
+  });
+}
+
+export function useSaveProjectSDGs() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ projectId, sdgIds }: { projectId: string; sdgIds: string[] }) => {
+      // First, delete existing associations
+      const { error: deleteError } = await supabase
+        .from("project_sdgs")
+        .delete()
+        .eq("project_id", projectId);
+      
+      if (deleteError) throw deleteError;
+      
+      // Then, insert new associations
+      if (sdgIds.length > 0) {
+        const inserts = sdgIds.map(sdgId => ({
+          project_id: projectId,
+          sdg_id: sdgId,
+        }));
+        
+        const { error: insertError } = await supabase
+          .from("project_sdgs")
+          .insert(inserts);
+        
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["project-sdgs", variables.projectId] });
+    },
+  });
+}
+
 export function useCreateProject() {
   const queryClient = useQueryClient();
   

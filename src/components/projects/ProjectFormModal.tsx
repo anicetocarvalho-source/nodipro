@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 
@@ -38,8 +38,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { useCreateProject, useUpdateProject } from "@/hooks/useProjects";
+import { useCreateProject, useUpdateProject, useProjectSDGs, useSaveProjectSDGs } from "@/hooks/useProjects";
+import { useSectors, useSDGs, useProvinces, useFunders } from "@/hooks/useGovernance";
 import { DbProject, ProjectStatus } from "@/types/database";
 
 const projectFormSchema = z.object({
@@ -52,6 +56,10 @@ const projectFormSchema = z.object({
   end_date: z.date().optional(),
   budget: z.coerce.number().min(0, "Orçamento deve ser positivo").optional(),
   spent: z.coerce.number().min(0, "Valor gasto deve ser positivo").optional(),
+  sector_id: z.string().optional(),
+  province_id: z.string().optional(),
+  funder_id: z.string().optional(),
+  sdg_ids: z.array(z.string()).optional(),
 }).refine((data) => {
   if (data.start_date && data.end_date) {
     return data.end_date >= data.start_date;
@@ -80,6 +88,12 @@ interface ProjectFormModalProps {
 export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormModalProps) {
   const createProject = useCreateProject();
   const updateProject = useUpdateProject();
+  const saveProjectSDGs = useSaveProjectSDGs();
+  const { data: sectors = [] } = useSectors();
+  const { data: sdgs = [] } = useSDGs();
+  const { data: provinces = [] } = useProvinces();
+  const { data: funders = [] } = useFunders();
+  const { data: projectSDGs = [] } = useProjectSDGs(project?.id);
   const isEditing = !!project;
   
   const form = useForm<ProjectFormValues>({
@@ -92,6 +106,10 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
       progress: 0,
       budget: undefined,
       spent: undefined,
+      sector_id: undefined,
+      province_id: undefined,
+      funder_id: undefined,
+      sdg_ids: [],
     },
   });
 
@@ -109,6 +127,10 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
           end_date: project.end_date ? new Date(project.end_date) : undefined,
           budget: project.budget ?? undefined,
           spent: project.spent ?? undefined,
+          sector_id: (project as any).sector_id || undefined,
+          province_id: (project as any).province_id || undefined,
+          funder_id: (project as any).funder_id || undefined,
+          sdg_ids: projectSDGs.map(s => s.id),
         });
       } else {
         form.reset({
@@ -119,10 +141,14 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
           progress: 0,
           budget: undefined,
           spent: undefined,
+          sector_id: undefined,
+          province_id: undefined,
+          funder_id: undefined,
+          sdg_ids: [],
         });
       }
     }
-  }, [open, project, form]);
+  }, [open, project, form, projectSDGs]);
 
   const onSubmit = async (values: ProjectFormValues) => {
     const projectData = {
@@ -136,18 +162,47 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
       budget: values.budget ?? null,
       spent: values.spent ?? null,
       program_id: project?.program_id ?? null,
+      sector_id: values.sector_id || null,
+      province_id: values.province_id || null,
+      funder_id: values.funder_id || null,
     };
 
+    let savedProject: DbProject;
     if (isEditing && project) {
-      await updateProject.mutateAsync({ id: project.id, ...projectData });
+      savedProject = await updateProject.mutateAsync({ id: project.id, ...projectData });
     } else {
-      await createProject.mutateAsync(projectData);
+      savedProject = await createProject.mutateAsync(projectData);
+    }
+    
+    // Save SDG associations
+    if (values.sdg_ids && values.sdg_ids.length > 0) {
+      await saveProjectSDGs.mutateAsync({
+        projectId: savedProject.id,
+        sdgIds: values.sdg_ids,
+      });
+    } else if (isEditing) {
+      // Clear SDGs if none selected
+      await saveProjectSDGs.mutateAsync({
+        projectId: savedProject.id,
+        sdgIds: [],
+      });
     }
     
     onOpenChange(false);
   };
 
-  const isPending = createProject.isPending || updateProject.isPending;
+  const isPending = createProject.isPending || updateProject.isPending || saveProjectSDGs.isPending;
+
+  const selectedSDGs = form.watch("sdg_ids") || [];
+  
+  const toggleSDG = (sdgId: string) => {
+    const current = form.getValues("sdg_ids") || [];
+    if (current.includes(sdgId)) {
+      form.setValue("sdg_ids", current.filter(id => id !== sdgId));
+    } else {
+      form.setValue("sdg_ids", [...current, sdgId]);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -385,6 +440,176 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
                 )}
               />
             </div>
+
+            {/* Sector, Província, Financiador */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="sector_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sector</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione o sector" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {sectors.map((sector) => (
+                          <SelectItem key={sector.id} value={sector.id}>
+                            {sector.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="province_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Província</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione a província" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {provinces.map((province) => (
+                          <SelectItem key={province.id} value={province.id}>
+                            {province.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="funder_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Financiador</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccione o financiador" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {funders.map((funder) => (
+                          <SelectItem key={funder.id} value={funder.id}>
+                            {funder.acronym ? `${funder.acronym} - ${funder.name}` : funder.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* ODS - Objetivos de Desenvolvimento Sustentável */}
+            <FormField
+              control={form.control}
+              name="sdg_ids"
+              render={() => (
+                <FormItem>
+                  <FormLabel>ODS - Objetivos de Desenvolvimento Sustentável</FormLabel>
+                  <FormDescription>
+                    Seleccione os ODS relacionados com este projecto
+                  </FormDescription>
+                  
+                  {/* Selected SDGs badges */}
+                  {selectedSDGs.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {selectedSDGs.map((sdgId) => {
+                        const sdg = sdgs.find(s => s.id === sdgId);
+                        if (!sdg) return null;
+                        return (
+                          <Badge
+                            key={sdgId}
+                            variant="secondary"
+                            className="pr-1 gap-1"
+                            style={{ backgroundColor: sdg.color ? `${sdg.color}20` : undefined }}
+                          >
+                            <span 
+                              className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white font-bold"
+                              style={{ backgroundColor: sdg.color || 'hsl(var(--primary))' }}
+                            >
+                              {sdg.number}
+                            </span>
+                            <span className="text-xs truncate max-w-[120px]">{sdg.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => toggleSDG(sdgId)}
+                              className="ml-0.5 hover:bg-muted rounded"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                        >
+                          {selectedSDGs.length > 0 
+                            ? `${selectedSDGs.length} ODS seleccionado(s)`
+                            : "Seleccione os ODS..."}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0" align="start">
+                      <ScrollArea className="h-[300px]">
+                        <div className="p-2 space-y-1">
+                          {sdgs.map((sdg) => (
+                            <div
+                              key={sdg.id}
+                              className={cn(
+                                "flex items-center gap-2 p-2 rounded-md cursor-pointer hover:bg-muted transition-colors",
+                                selectedSDGs.includes(sdg.id) && "bg-muted"
+                              )}
+                              onClick={() => toggleSDG(sdg.id)}
+                            >
+                              <Checkbox
+                                checked={selectedSDGs.includes(sdg.id)}
+                                onCheckedChange={() => toggleSDG(sdg.id)}
+                              />
+                              <span 
+                                className="w-6 h-6 rounded flex items-center justify-center text-xs text-white font-bold shrink-0"
+                                style={{ backgroundColor: sdg.color || 'hsl(var(--primary))' }}
+                              >
+                                {sdg.number}
+                              </span>
+                              <span className="text-sm">{sdg.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Botões */}
             <div className="flex justify-end gap-3 pt-4">
