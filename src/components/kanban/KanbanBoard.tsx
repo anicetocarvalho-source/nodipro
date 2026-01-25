@@ -349,6 +349,12 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
         task={editingTask}
         columnId={selectedColumnId}
         onSave={handleSaveTask}
+        projectId={projectId}
+        availableTasks={dbTasks?.map(t => ({
+          id: t.id,
+          title: t.title,
+          column_id: t.column_id,
+        })) || []}
       />
     </>
   );

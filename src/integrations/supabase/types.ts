@@ -1078,6 +1078,48 @@ export type Database = {
           },
         ]
       }
+      task_dependencies: {
+        Row: {
+          created_at: string
+          dependency_type: Database["public"]["Enums"]["dependency_type"]
+          id: string
+          lag_days: number
+          predecessor_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          dependency_type?: Database["public"]["Enums"]["dependency_type"]
+          id?: string
+          lag_days?: number
+          predecessor_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          dependency_type?: Database["public"]["Enums"]["dependency_type"]
+          id?: string
+          lag_days?: number
+          predecessor_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_dependencies_predecessor_id_fkey"
+            columns: ["predecessor_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_initials: string | null
@@ -1382,6 +1424,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_task_start: { Args: { p_task_id: string }; Returns: boolean }
+      check_circular_dependency: {
+        Args: { p_predecessor_id: string; p_task_id: string }
+        Returns: boolean
+      }
       get_user_permissions: {
         Args: { _user_id: string }
         Returns: {
@@ -1414,6 +1461,7 @@ export type Database = {
         | "portfolio_manager"
         | "project_manager"
         | "observer"
+      dependency_type: "FS" | "SS" | "FF" | "SF"
       project_status: "active" | "delayed" | "completed" | "on_hold"
       task_priority: "low" | "medium" | "high"
     }
@@ -1551,6 +1599,7 @@ export const Constants = {
         "project_manager",
         "observer",
       ],
+      dependency_type: ["FS", "SS", "FF", "SF"],
       project_status: ["active", "delayed", "completed", "on_hold"],
       task_priority: ["low", "medium", "high"],
     },

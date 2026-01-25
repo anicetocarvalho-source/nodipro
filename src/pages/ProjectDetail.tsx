@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
-import { GanttChart } from "@/components/gantt/GanttChart";
+import { GanttChartWithDependencies } from "@/components/gantt/GanttChartWithDependencies";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 import { ProjectPermissionsManager } from "@/components/projects/ProjectPermissionsManager";
 import { useProject, useDeleteProject } from "@/hooks/useProjects";
@@ -275,7 +275,7 @@ export default function ProjectDetail() {
           <Card className="overflow-hidden">
             <CardContent className="p-4">
               {activeView === "kanban" && <KanbanBoard projectId={id || ""} />}
-              {activeView === "gantt" && <GanttChart />}
+              {activeView === "gantt" && <GanttChartWithDependencies projectId={id || ""} />}
               {activeView === "list" && (
                 <div className="text-center py-12 text-muted-foreground">
                   Visualização em lista (em desenvolvimento)
