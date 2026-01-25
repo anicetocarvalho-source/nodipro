@@ -566,6 +566,36 @@ export type Database = {
           },
         ]
       }
+      funders: {
+        Row: {
+          acronym: string | null
+          country: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          type: string | null
+        }
+        Insert: {
+          acronym?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          type?: string | null
+        }
+        Update: {
+          acronym?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          type?: string | null
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -730,6 +760,42 @@ export type Database = {
           },
         ]
       }
+      project_sdgs: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          sdg_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          sdg_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          sdg_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_sdgs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_sdgs_sdg_id_fkey"
+            columns: ["sdg_id"]
+            isOneToOne: false
+            referencedRelation: "sdgs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_templates: {
         Row: {
           created_at: string
@@ -778,10 +844,12 @@ export type Database = {
           created_at: string
           description: string | null
           end_date: string | null
+          funder_id: string | null
           id: string
           name: string
           program_id: string | null
           progress: number
+          province_id: string | null
           sector_id: string | null
           spent: number | null
           start_date: string | null
@@ -795,10 +863,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date?: string | null
+          funder_id?: string | null
           id?: string
           name: string
           program_id?: string | null
           progress?: number
+          province_id?: string | null
           sector_id?: string | null
           spent?: number | null
           start_date?: string | null
@@ -812,10 +882,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           end_date?: string | null
+          funder_id?: string | null
           id?: string
           name?: string
           program_id?: string | null
           progress?: number
+          province_id?: string | null
           sector_id?: string | null
           spent?: number | null
           start_date?: string | null
@@ -825,10 +897,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "projects_funder_id_fkey"
+            columns: ["funder_id"]
+            isOneToOne: false
+            referencedRelation: "funders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "projects_program_id_fkey"
             columns: ["program_id"]
             isOneToOne: false
             referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "provinces"
             referencedColumns: ["id"]
           },
           {
@@ -846,6 +932,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      provinces: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          name: string
+          region: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          region?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          region?: string | null
+        }
+        Relationships: []
       }
       role_permissions: {
         Row: {
@@ -875,6 +985,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sdgs: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          number: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          number: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          number?: number
+        }
+        Relationships: []
       }
       sectors: {
         Row: {

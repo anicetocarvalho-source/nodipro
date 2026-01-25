@@ -9,6 +9,38 @@ export interface Sector {
   color: string | null;
 }
 
+export interface SDG {
+  id: string;
+  number: number;
+  name: string;
+  description: string | null;
+  color: string | null;
+  icon: string | null;
+}
+
+export interface Province {
+  id: string;
+  name: string;
+  code: string | null;
+  region: string | null;
+}
+
+export interface Funder {
+  id: string;
+  name: string;
+  acronym: string | null;
+  type: string | null;
+  country: string | null;
+  logo_url: string | null;
+}
+
+export interface GovernanceFilters {
+  sectorId?: string;
+  sdgId?: string;
+  provinceId?: string;
+  funderId?: string;
+}
+
 export interface GovernanceStats {
   totalPortfolios: number;
   totalPrograms: number;
@@ -67,9 +99,54 @@ export function useSectors() {
   });
 }
 
-export function useGovernanceStats(sectorFilter?: string) {
+export function useSDGs() {
   return useQuery({
-    queryKey: ["governance", "stats", sectorFilter],
+    queryKey: ["sdgs"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("sdgs")
+        .select("*")
+        .order("number");
+      
+      if (error) throw error;
+      return data as SDG[];
+    },
+  });
+}
+
+export function useProvinces() {
+  return useQuery({
+    queryKey: ["provinces"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("provinces")
+        .select("*")
+        .order("name");
+      
+      if (error) throw error;
+      return data as Province[];
+    },
+  });
+}
+
+export function useFunders() {
+  return useQuery({
+    queryKey: ["funders"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("funders")
+        .select("*")
+        .order("name");
+      
+      if (error) throw error;
+      return data as Funder[];
+    },
+  });
+}
+
+export function useGovernanceStats(filters?: GovernanceFilters) {
+  return useQuery({
+    queryKey: ["governance", "stats", filters],
     queryFn: async () => {
       // Get portfolios
       const { data: portfolios, error: portfoliosError } = await supabase
@@ -83,33 +160,56 @@ export function useGovernanceStats(sectorFilter?: string) {
         .select("id, portfolio_id");
       if (programsError) throw programsError;
 
-      // Get projects with optional sector filter
+      // Get project IDs that match SDG filter
+      let projectIdsFromSDG: string[] | null = null;
+      if (filters?.sdgId) {
+        const { data: projectSdgs, error: sdgError } = await supabase
+          .from("project_sdgs")
+          .select("project_id")
+          .eq("sdg_id", filters.sdgId);
+        if (sdgError) throw sdgError;
+        projectIdsFromSDG = projectSdgs?.map(ps => ps.project_id) || [];
+      }
+
+      // Get projects with filters
       let projectsQuery = supabase
         .from("projects")
-        .select("id, status, budget, spent, progress, sector_id, program_id");
+        .select("id, status, budget, spent, progress, sector_id, program_id, province_id, funder_id");
       
-      if (sectorFilter) {
-        projectsQuery = projectsQuery.eq("sector_id", sectorFilter);
+      if (filters?.sectorId) {
+        projectsQuery = projectsQuery.eq("sector_id", filters.sectorId);
+      }
+      if (filters?.provinceId) {
+        projectsQuery = projectsQuery.eq("province_id", filters.provinceId);
+      }
+      if (filters?.funderId) {
+        projectsQuery = projectsQuery.eq("funder_id", filters.funderId);
       }
       
       const { data: projects, error: projectsError } = await projectsQuery;
       if (projectsError) throw projectsError;
 
-      const totalBudget = projects?.reduce((sum, p) => sum + (Number(p.budget) || 0), 0) || 0;
-      const totalSpent = projects?.reduce((sum, p) => sum + (Number(p.spent) || 0), 0) || 0;
-      const avgProgress = projects?.length 
-        ? projects.reduce((sum, p) => sum + (p.progress || 0), 0) / projects.length 
+      // Apply SDG filter if set
+      let filteredProjects = projects || [];
+      if (projectIdsFromSDG !== null) {
+        filteredProjects = filteredProjects.filter(p => projectIdsFromSDG!.includes(p.id));
+      }
+
+      const totalBudget = filteredProjects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
+      const totalSpent = filteredProjects.reduce((sum, p) => sum + (Number(p.spent) || 0), 0);
+      const avgProgress = filteredProjects.length 
+        ? filteredProjects.reduce((sum, p) => sum + (p.progress || 0), 0) / filteredProjects.length 
         : 0;
       
-      const atRisk = projects?.filter(p => p.status === 'delayed').length || 0;
-      const completed = projects?.filter(p => p.status === 'completed').length || 0;
-      const onTrack = projects?.filter(p => p.status === 'active').length || 0;
+      const atRisk = filteredProjects.filter(p => p.status === 'delayed').length;
+      const completed = filteredProjects.filter(p => p.status === 'completed').length;
+      const onTrack = filteredProjects.filter(p => p.status === 'active').length;
       const executionRate = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
       return {
         totalPortfolios: portfolios?.length || 0,
         totalPrograms: programs?.length || 0,
-        totalProjects: projects?.length || 0,
+        totalProjects: filteredProjects.length,
         totalBudget,
         totalSpent,
         averageProgress: Math.round(avgProgress),
@@ -122,9 +222,9 @@ export function useGovernanceStats(sectorFilter?: string) {
   });
 }
 
-export function useSectorStats(sectorFilter?: string) {
+export function useSectorStats(filters?: GovernanceFilters) {
   return useQuery({
-    queryKey: ["governance", "sector-stats", sectorFilter],
+    queryKey: ["governance", "sector-stats", filters],
     queryFn: async () => {
       // Get sectors
       const { data: sectors, error: sectorsError } = await supabase
@@ -132,21 +232,44 @@ export function useSectorStats(sectorFilter?: string) {
         .select("*");
       if (sectorsError) throw sectorsError;
 
-      // Get all projects
+      // Get project IDs that match SDG filter
+      let projectIdsFromSDG: string[] | null = null;
+      if (filters?.sdgId) {
+        const { data: projectSdgs, error: sdgError } = await supabase
+          .from("project_sdgs")
+          .select("project_id")
+          .eq("sdg_id", filters.sdgId);
+        if (sdgError) throw sdgError;
+        projectIdsFromSDG = projectSdgs?.map(ps => ps.project_id) || [];
+      }
+
+      // Get all projects with filters
       let projectsQuery = supabase
         .from("projects")
-        .select("id, status, budget, spent, progress, sector_id");
+        .select("id, status, budget, spent, progress, sector_id, province_id, funder_id");
       
-      if (sectorFilter) {
-        projectsQuery = projectsQuery.eq("sector_id", sectorFilter);
+      if (filters?.sectorId) {
+        projectsQuery = projectsQuery.eq("sector_id", filters.sectorId);
+      }
+      if (filters?.provinceId) {
+        projectsQuery = projectsQuery.eq("province_id", filters.provinceId);
+      }
+      if (filters?.funderId) {
+        projectsQuery = projectsQuery.eq("funder_id", filters.funderId);
       }
       
       const { data: projects, error: projectsError } = await projectsQuery;
       if (projectsError) throw projectsError;
 
+      // Apply SDG filter
+      let filteredProjects = projects || [];
+      if (projectIdsFromSDG !== null) {
+        filteredProjects = filteredProjects.filter(p => projectIdsFromSDG!.includes(p.id));
+      }
+
       // Calculate stats per sector
       const sectorStats: SectorStats[] = (sectors || []).map(sector => {
-        const sectorProjects = projects?.filter(p => p.sector_id === sector.id) || [];
+        const sectorProjects = filteredProjects.filter(p => p.sector_id === sector.id);
         const budget = sectorProjects.reduce((sum, p) => sum + (Number(p.budget) || 0), 0);
         const spent = sectorProjects.reduce((sum, p) => sum + (Number(p.spent) || 0), 0);
         const progress = sectorProjects.length 
@@ -225,20 +348,43 @@ export function usePortfolioSummaries() {
   });
 }
 
-export function useProjectsByStatus(sectorFilter?: string) {
+export function useProjectsByStatus(filters?: GovernanceFilters) {
   return useQuery({
-    queryKey: ["governance", "projects-by-status", sectorFilter],
+    queryKey: ["governance", "projects-by-status", filters],
     queryFn: async () => {
+      // Get project IDs that match SDG filter
+      let projectIdsFromSDG: string[] | null = null;
+      if (filters?.sdgId) {
+        const { data: projectSdgs, error: sdgError } = await supabase
+          .from("project_sdgs")
+          .select("project_id")
+          .eq("sdg_id", filters.sdgId);
+        if (sdgError) throw sdgError;
+        projectIdsFromSDG = projectSdgs?.map(ps => ps.project_id) || [];
+      }
+
       let query = supabase
         .from("projects")
-        .select("id, status");
+        .select("id, status, sector_id, province_id, funder_id");
       
-      if (sectorFilter) {
-        query = query.eq("sector_id", sectorFilter);
+      if (filters?.sectorId) {
+        query = query.eq("sector_id", filters.sectorId);
+      }
+      if (filters?.provinceId) {
+        query = query.eq("province_id", filters.provinceId);
+      }
+      if (filters?.funderId) {
+        query = query.eq("funder_id", filters.funderId);
       }
       
       const { data, error } = await query;
       if (error) throw error;
+
+      // Apply SDG filter
+      let filteredData = data || [];
+      if (projectIdsFromSDG !== null) {
+        filteredData = filteredData.filter(p => projectIdsFromSDG!.includes(p.id));
+      }
 
       const statusCounts = {
         active: 0,
@@ -247,7 +393,7 @@ export function useProjectsByStatus(sectorFilter?: string) {
         on_hold: 0,
       };
 
-      data?.forEach(project => {
+      filteredData.forEach(project => {
         if (project.status in statusCounts) {
           statusCounts[project.status as keyof typeof statusCounts]++;
         }

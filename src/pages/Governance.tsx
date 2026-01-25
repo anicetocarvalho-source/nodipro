@@ -15,11 +15,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { ExecutiveKPICard } from "@/components/governance/ExecutiveKPICard";
-import { SectorFilter } from "@/components/governance/SectorFilter";
+import { AdvancedFilters, GovernanceFilters } from "@/components/governance/AdvancedFilters";
 import { PortfolioOverviewCard } from "@/components/governance/PortfolioOverviewCard";
 import { SectorBreakdownChart } from "@/components/governance/SectorBreakdownChart";
 import { StatusDistributionChart } from "@/components/governance/StatusDistributionChart";
@@ -27,6 +25,9 @@ import { BudgetExecutionGauge } from "@/components/governance/BudgetExecutionGau
 
 import {
   useSectors,
+  useSDGs,
+  useProvinces,
+  useFunders,
   useGovernanceStats,
   useSectorStats,
   usePortfolioSummaries,
@@ -48,16 +49,21 @@ function formatCurrency(value: number) {
 
 export default function Governance() {
   const navigate = useNavigate();
-  const [selectedSector, setSelectedSector] = useState<string | undefined>();
+  const [filters, setFilters] = useState<GovernanceFilters>({});
 
-  // Queries
+  // Reference data queries
   const { data: sectors, isLoading: loadingSectors } = useSectors();
-  const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useGovernanceStats(selectedSector);
-  const { data: sectorStats, isLoading: loadingSectorStats } = useSectorStats(selectedSector);
-  const { data: portfolios, isLoading: loadingPortfolios } = usePortfolioSummaries();
-  const { data: statusData, isLoading: loadingStatus } = useProjectsByStatus(selectedSector);
+  const { data: sdgs, isLoading: loadingSDGs } = useSDGs();
+  const { data: provinces, isLoading: loadingProvinces } = useProvinces();
+  const { data: funders, isLoading: loadingFunders } = useFunders();
 
-  const isLoading = loadingStats || loadingSectors;
+  // Filtered data queries
+  const { data: stats, isLoading: loadingStats, refetch: refetchStats } = useGovernanceStats(filters);
+  const { data: sectorStats, isLoading: loadingSectorStats } = useSectorStats(filters);
+  const { data: portfolios, isLoading: loadingPortfolios } = usePortfolioSummaries();
+  const { data: statusData, isLoading: loadingStatus } = useProjectsByStatus(filters);
+
+  const isLoading = loadingStats || loadingSectors || loadingSDGs || loadingProvinces || loadingFunders;
 
   const handleRefresh = () => {
     refetchStats();
@@ -81,12 +87,6 @@ export default function Governance() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <SectorFilter
-            sectors={sectors || []}
-            selectedSector={selectedSector}
-            onSectorChange={setSelectedSector}
-            isLoading={loadingSectors}
-          />
           <Button variant="outline" size="icon" onClick={handleRefresh}>
             <RefreshCw className="h-4 w-4" />
           </Button>
@@ -97,15 +97,16 @@ export default function Governance() {
         </div>
       </div>
 
-      {/* Selected Sector Badge */}
-      {selectedSector && sectors && (
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Filtro activo:</span>
-          <Badge variant="secondary" className="text-sm">
-            {sectors.find(s => s.id === selectedSector)?.name}
-          </Badge>
-        </div>
-      )}
+      {/* Advanced Filters */}
+      <AdvancedFilters
+        sectors={sectors || []}
+        sdgs={sdgs || []}
+        provinces={provinces || []}
+        funders={funders || []}
+        filters={filters}
+        onFiltersChange={setFilters}
+        isLoading={isLoading}
+      />
 
       {/* Executive KPIs */}
       {isLoading ? (
