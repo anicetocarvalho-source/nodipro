@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { FileText as FileTextIcon } from 'lucide-react';
 import {
   LayoutDashboard,
   FolderKanban,
@@ -19,6 +18,7 @@ import {
   LogOut,
   ShieldCheck,
   Layers,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,7 @@ export function AppSidebar() {
   // Build menu items based on permissions
   const menuItems: MenuItem[] = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: Building2, label: "Governação", path: "/governance", requiresPermission: "canViewBudget" },
     { icon: FolderKanban, label: "Projectos", path: "/projects" },
     { icon: Briefcase, label: "Portfólio", path: "/portfolio" },
     { icon: Layers, label: "Metodologias", path: "/methodologies" },

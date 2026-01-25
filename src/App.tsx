@@ -26,6 +26,7 @@ import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
+import Governance from "./pages/Governance";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/governance" element={<ManagerPageWrapper><Governance /></ManagerPageWrapper>} />
             <Route path="/projects" element={<ProtectedPageWrapper><Projects /></ProtectedPageWrapper>} />
             <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
             <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
