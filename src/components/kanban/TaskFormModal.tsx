@@ -39,8 +39,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { Task, Subtask } from "./KanbanCard";
+import { DependencySelector } from "./DependencySelector";
+import {
+  useTaskDependencies,
+  useAddTaskDependency,
+  useDeleteTaskDependency,
+  DependencyType,
+} from "@/hooks/useTaskDependencies";
 
 const teamMembers = [
   { id: "ana", name: "Ana Costa", initials: "AC" },
@@ -67,6 +75,8 @@ interface TaskFormModalProps {
   task?: Task | null;
   columnId: string;
   onSave: (task: Task, columnId: string, isNew: boolean) => void;
+  projectId?: string;
+  availableTasks?: { id: string; title: string; column_id: string }[];
 }
 
 export function TaskFormModal({
@@ -75,10 +85,17 @@ export function TaskFormModal({
   task,
   columnId,
   onSave,
+  projectId,
+  availableTasks = [],
 }: TaskFormModalProps) {
   const isEditing = !!task;
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+
+  // Dependencies hooks
+  const { data: dependencies = [], isLoading: depsLoading } = useTaskDependencies(task?.id);
+  const addDependency = useAddTaskDependency();
+  const deleteDependency = useDeleteTaskDependency();
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -358,6 +375,31 @@ export function TaskFormModal({
                   </FormItem>
                 )}
               />
+
+              {/* Dependencies Section - Only show when editing */}
+              {isEditing && task?.id && (
+                <>
+                  <Separator className="my-4" />
+                  <DependencySelector
+                    taskId={task.id}
+                    dependencies={dependencies}
+                    availableTasks={availableTasks}
+                    onAddDependency={(predecessorId, type, lagDays) => {
+                      addDependency.mutate({
+                        taskId: task.id,
+                        predecessorId,
+                        dependencyType: type,
+                        lagDays,
+                      });
+                    }}
+                    onRemoveDependency={(depId) => {
+                      deleteDependency.mutate({ id: depId, taskId: task.id });
+                    }}
+                    onUpdateDependency={() => {}}
+                    isLoading={depsLoading || addDependency.isPending || deleteDependency.isPending}
+                  />
+                </>
+              )}
 
               {/* Subtasks Section */}
               <div className="space-y-3">
