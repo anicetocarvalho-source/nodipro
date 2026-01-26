@@ -1,11 +1,12 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Calendar, MessageSquare, Paperclip, Pencil, CheckSquare } from "lucide-react";
+import { GripVertical, Calendar, MessageSquare, Paperclip, Pencil, CheckSquare, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface Subtask {
@@ -27,10 +28,16 @@ export interface Task {
   subtasks?: Subtask[];
 }
 
+export interface BlockedInfo {
+  blocked: boolean;
+  blockers: string[];
+}
+
 interface KanbanCardProps {
   task: Task;
   onEdit?: (task: Task) => void;
   onToggleSubtask?: (taskId: string, subtaskId: string) => void;
+  blockedInfo?: BlockedInfo;
 }
 
 const priorityConfig = {
@@ -39,7 +46,7 @@ const priorityConfig = {
   low: { label: "Baixa", className: "bg-muted text-muted-foreground border-muted" },
 };
 
-export function KanbanCard({ task, onEdit, onToggleSubtask }: KanbanCardProps) {
+export function KanbanCard({ task, onEdit, onToggleSubtask, blockedInfo }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -63,13 +70,16 @@ export function KanbanCard({ task, onEdit, onToggleSubtask }: KanbanCardProps) {
   const totalSubtasks = task.subtasks?.length || 0;
   const subtaskProgress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
 
+  const isBlocked = blockedInfo?.blocked ?? false;
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
       className={cn(
         "cursor-grab active:cursor-grabbing hover:shadow-md transition-all group",
-        isDragging && "opacity-50 shadow-lg rotate-2"
+        isDragging && "opacity-50 shadow-lg rotate-2",
+        isBlocked && "border-warning/60 bg-warning/5 ring-1 ring-warning/30"
       )}
     >
       <CardContent className="p-3">
@@ -92,6 +102,28 @@ export function KanbanCard({ task, onEdit, onToggleSubtask }: KanbanCardProps) {
                   />
                 ))}
               </div>
+            )}
+
+            {/* Blocked indicator */}
+            {isBlocked && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning/20 text-warning text-xs font-medium">
+                      <Lock className="h-3 w-3" />
+                      <span>Bloqueada</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="font-medium mb-1">Dependências pendentes:</p>
+                    <ul className="text-xs space-y-0.5">
+                      {blockedInfo?.blockers.map((blocker, i) => (
+                        <li key={i}>• {blocker}</li>
+                      ))}
+                    </ul>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
 
             {/* Title with Edit Button */}

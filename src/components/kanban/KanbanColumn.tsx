@@ -2,7 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { Plus, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { KanbanCard, Task } from "./KanbanCard";
+import { KanbanCard, Task, BlockedInfo } from "./KanbanCard";
 import { cn } from "@/lib/utils";
 
 interface KanbanColumnProps {
@@ -12,9 +12,10 @@ interface KanbanColumnProps {
   color: string;
   onAddTask: (columnId: string) => void;
   onEditTask: (task: Task, columnId: string) => void;
+  blockedTasks?: Record<string, BlockedInfo>;
 }
 
-export function KanbanColumn({ id, title, tasks, color, onAddTask, onEditTask }: KanbanColumnProps) {
+export function KanbanColumn({ id, title, tasks, color, onAddTask, onEditTask, blockedTasks }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
@@ -48,7 +49,12 @@ export function KanbanColumn({ id, title, tasks, color, onAddTask, onEditTask }:
       >
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <KanbanCard key={task.id} task={task} onEdit={(t) => onEditTask(t, id)} />
+            <KanbanCard 
+              key={task.id} 
+              task={task} 
+              onEdit={(t) => onEditTask(t, id)}
+              blockedInfo={blockedTasks?.[task.id]}
+            />
           ))}
         </SortableContext>
 
