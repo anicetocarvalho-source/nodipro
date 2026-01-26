@@ -14,6 +14,7 @@ import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard, Task, BlockedInfo } from "./KanbanCard";
 import { TaskFormModal } from "./TaskFormModal";
 import { useTasks, useCreateTask, useUpdateTask, useMoveTask } from "@/hooks/useTasks";
+import { useDatePropagation } from "@/hooks/useDatePropagation";
 import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
 import { DbTask, DbSubtask, TaskPriority } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,6 +77,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const moveTask = useMoveTask();
+  const propagateDates = useDatePropagation();
 
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -313,6 +315,10 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
         })),
       });
     } else {
+      // Find the original task to get the previous due date
+      const originalTask = dbTasks?.find(t => t.id === task.id);
+      const previousDueDate = originalTask?.due_date || null;
+
       updateTask.mutate({
         id: task.id,
         projectId,
@@ -323,6 +329,8 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
         assignee_initials: task.assignee?.initials || null,
         due_date: dueDate,
         labels: task.labels || null,
+        propagateDates: true,
+        previousDueDate,
         subtasks: task.subtasks?.map((st, index) => ({
           id: st.id,
           task_id: task.id,
@@ -331,6 +339,17 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
           position: index,
           created_at: new Date().toISOString(),
         })),
+      }, {
+        onSuccess: ({ shouldPropagate, newDueDate }) => {
+          // Propagate dates to dependent tasks if date changed
+          if (shouldPropagate && newDueDate) {
+            propagateDates.mutate({
+              taskId: task.id,
+              newDueDate,
+              projectId,
+            });
+          }
+        },
       });
     }
   };
