@@ -135,11 +135,15 @@ export function useUpdateTask() {
       id,
       projectId,
       subtasks,
+      propagateDates = false,
+      previousDueDate,
       ...updates
     }: Partial<DbTask> & {
       id: string;
       projectId: string;
       subtasks?: DbSubtask[];
+      propagateDates?: boolean;
+      previousDueDate?: string | null;
     }) => {
       const { data: updatedTask, error: taskError } = await supabase
         .from("tasks")
@@ -172,7 +176,16 @@ export function useUpdateTask() {
         }
       }
 
-      return { task: updatedTask as DbTask, projectId };
+      // Check if date changed and should propagate
+      const dateChanged = previousDueDate !== updatedTask.due_date;
+      const shouldPropagate = propagateDates && dateChanged && updatedTask.due_date;
+
+      return { 
+        task: updatedTask as DbTask, 
+        projectId,
+        shouldPropagate,
+        newDueDate: updatedTask.due_date,
+      };
     },
     onSuccess: ({ projectId }) => {
       queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });

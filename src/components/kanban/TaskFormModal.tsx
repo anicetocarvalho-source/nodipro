@@ -390,6 +390,7 @@ export function TaskFormModal({
                         predecessorId,
                         dependencyType: type,
                         lagDays,
+                        projectId,
                       });
                     }}
                     onRemoveDependency={(depId) => {

@@ -175,11 +175,13 @@ export function useAddTaskDependency() {
       predecessorId,
       dependencyType = 'FS',
       lagDays = 0,
+      projectId,
     }: {
       taskId: string;
       predecessorId: string;
       dependencyType?: DependencyType;
       lagDays?: number;
+      projectId?: string;
     }) => {
       // First check for circular dependency
       const { data: isCircular, error: circularError } = await supabase
@@ -205,12 +207,67 @@ export function useAddTaskDependency() {
         .single();
 
       if (error) throw error;
-      return data;
+
+      // Get predecessor's due date to calculate dependent task's new date
+      const { data: predecessor } = await supabase
+        .from("tasks")
+        .select("due_date")
+        .eq("id", predecessorId)
+        .single();
+
+      // Get current task's date
+      const { data: currentTask } = await supabase
+        .from("tasks")
+        .select("due_date, project_id")
+        .eq("id", taskId)
+        .single();
+
+      let dateUpdated = false;
+      
+      if (predecessor?.due_date && currentTask) {
+        const predecessorDate = new Date(predecessor.due_date);
+        const lagMs = lagDays * 24 * 60 * 60 * 1000;
+        let newDate = new Date(predecessorDate.getTime() + lagMs);
+        
+        // For FS, add 1 day (successor starts after predecessor ends)
+        if (dependencyType === 'FS') {
+          newDate.setDate(newDate.getDate() + 1);
+        }
+        
+        const currentDate = currentTask.due_date ? new Date(currentTask.due_date) : null;
+        
+        // Only update if current date is earlier than required
+        if (!currentDate || currentDate < newDate) {
+          const newDateStr = newDate.toISOString().split('T')[0];
+          
+          await supabase
+            .from("tasks")
+            .update({ due_date: newDateStr })
+            .eq("id", taskId);
+            
+          dateUpdated = true;
+        }
+      }
+
+      return { 
+        dependency: data, 
+        taskId, 
+        projectId: projectId || currentTask?.project_id,
+        dateUpdated,
+      };
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["task-dependencies", variables.taskId] });
+    onSuccess: ({ taskId, projectId, dateUpdated }) => {
+      queryClient.invalidateQueries({ queryKey: ["task-dependencies", taskId] });
       queryClient.invalidateQueries({ queryKey: ["project-task-dependencies"] });
-      toast.success("Dependência adicionada com sucesso!");
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ["tasks", projectId] });
+      }
+      
+      if (dateUpdated) {
+        toast.success("Dependência adicionada e data ajustada automaticamente!");
+      } else {
+        toast.success("Dependência adicionada com sucesso!");
+      }
     },
     onError: (error) => {
       toast.error("Erro ao adicionar dependência: " + error.message);
