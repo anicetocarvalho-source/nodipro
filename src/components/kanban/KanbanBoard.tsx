@@ -11,7 +11,7 @@ import {
   closestCorners,
 } from "@dnd-kit/core";
 import { KanbanColumn } from "./KanbanColumn";
-import { KanbanCard, Task } from "./KanbanCard";
+import { KanbanCard, Task, BlockedInfo } from "./KanbanCard";
 import { TaskFormModal } from "./TaskFormModal";
 import { useTasks, useCreateTask, useUpdateTask, useMoveTask } from "@/hooks/useTasks";
 import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
@@ -112,6 +112,28 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
 
     return grouped;
   }, [dbTasks, isDragging, localTasks]);
+
+  // Calculate blocked status for each task
+  const blockedTasks = useMemo(() => {
+    const result: Record<string, BlockedInfo> = {};
+    
+    if (!dependencies || !dbTasks) return result;
+    
+    for (const task of dbTasks) {
+      // Only check blocking for tasks not in active columns
+      if (!ACTIVE_COLUMNS.includes(task.column_id) && task.column_id !== "done") {
+        const taskDeps = dependencies.filter(d => d.task_id === task.id) as TaskDependencyWithDetails[];
+        if (taskDeps.length > 0) {
+          const blockInfo = isTaskBlocked(taskDeps);
+          if (blockInfo.blocked) {
+            result[task.id] = blockInfo;
+          }
+        }
+      }
+    }
+    
+    return result;
+  }, [dependencies, dbTasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -357,6 +379,7 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
               color={column.color}
               onAddTask={handleAddTask}
               onEditTask={handleEditTask}
+              blockedTasks={blockedTasks}
             />
           ))}
         </div>
