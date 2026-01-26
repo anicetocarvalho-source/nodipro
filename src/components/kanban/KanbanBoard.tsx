@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -10,13 +10,14 @@ import {
   useSensors,
   closestCorners,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
 import { KanbanColumn } from "./KanbanColumn";
-import { KanbanCard, Task, Subtask } from "./KanbanCard";
+import { KanbanCard, Task } from "./KanbanCard";
 import { TaskFormModal } from "./TaskFormModal";
 import { useTasks, useCreateTask, useUpdateTask, useMoveTask } from "@/hooks/useTasks";
+import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
 import { DbTask, DbSubtask, TaskPriority } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface Column {
   id: string;
@@ -66,8 +67,12 @@ function dbTaskToUiTask(dbTask: DbTask & { subtasks?: DbSubtask[] }): Task {
   };
 }
 
+// Columns that require dependency validation (active work states)
+const ACTIVE_COLUMNS = ["in_progress", "review"];
+
 export function KanbanBoard({ projectId }: KanbanBoardProps) {
   const { data: dbTasks, isLoading, error } = useTasks(projectId);
+  const { data: dependencies } = useProjectTaskDependencies(projectId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const moveTask = useMoveTask();
@@ -184,6 +189,24 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
 
     // Calculate new position
     const targetColumn = overColumn || activeColumn;
+    
+    // Validate dependencies when moving to active columns
+    if (ACTIVE_COLUMNS.includes(targetColumn) && !ACTIVE_COLUMNS.includes(activeColumn) && activeColumn !== "done") {
+      const taskDeps = dependencies?.filter(d => d.task_id === activeId) as TaskDependencyWithDetails[] | undefined;
+      
+      if (taskDeps && taskDeps.length > 0) {
+        const { blocked, blockers } = isTaskBlocked(taskDeps);
+        
+        if (blocked) {
+          toast.error("Tarefa bloqueada por dependências", {
+            description: `Não é possível mover para "${columns.find(c => c.id === targetColumn)?.title}". ${blockers[0]}`,
+            duration: 5000,
+          });
+          return;
+        }
+      }
+    }
+    
     const tasksInColumn = localTasks[targetColumn] || [];
     let newPosition = 0;
 
