@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Link2, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Link2, AlertTriangle, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,9 +8,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useTasks } from "@/hooks/useTasks";
 import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
+import { useCriticalPath } from "@/hooks/useCriticalPath";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface GanttChartWithDependenciesProps {
@@ -27,6 +30,7 @@ interface GanttTask {
   column_id: string;
   dependencies: TaskDependencyWithDetails[];
   isBlocked: boolean;
+  isCritical: boolean;
 }
 
 const COLUMN_PROGRESS: Record<string, number> = {
@@ -48,8 +52,20 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [daysToShow, setDaysToShow] = useState(60);
+  const [showCriticalPath, setShowCriticalPath] = useState(true);
   const svgRef = useRef<SVGSVGElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
+
+  // Calculate critical path
+  const { criticalTasks, projectEndDate } = useCriticalPath(
+    tasks?.map(t => ({ 
+      id: t.id, 
+      due_date: t.due_date, 
+      column_id: t.column_id, 
+      title: t.title 
+    })),
+    allDependencies
+  );
 
   // Group dependencies by task
   const dependenciesByTask = useMemo(() => {
@@ -81,9 +97,10 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
         column_id: task.column_id,
         dependencies: deps,
         isBlocked: blocked && task.column_id !== 'done',
+        isCritical: criticalTasks.has(task.id),
       };
     });
-  }, [tasks, dependenciesByTask]);
+  }, [tasks, dependenciesByTask, criticalTasks]);
 
   // Calculate visible date range
   const startDate = new Date(viewStart);
@@ -238,7 +255,7 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
   return (
     <div className="space-y-4">
       {/* Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="icon" onClick={handlePrev}>
             <ChevronLeft className="h-4 w-4" />
@@ -250,15 +267,47 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
             {months[viewStart.getMonth()]} {viewStart.getFullYear()}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handleZoomIn}>
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={handleZoomOut}>
-            <ZoomOut className="h-4 w-4" />
-          </Button>
+        
+        <div className="flex items-center gap-4">
+          {/* Critical Path Toggle */}
+          <div className="flex items-center gap-2">
+            <Switch
+              id="critical-path"
+              checked={showCriticalPath}
+              onCheckedChange={setShowCriticalPath}
+            />
+            <Label htmlFor="critical-path" className="text-sm cursor-pointer flex items-center gap-1">
+              <Target className="h-4 w-4 text-destructive" />
+              Caminho Crítico
+            </Label>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={handleZoomIn}>
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={handleZoomOut}>
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Project End Date Info */}
+      {projectEndDate && (
+        <div className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-4 py-2">
+          <Target className="h-4 w-4 text-destructive" />
+          <span className="text-muted-foreground">Data Final do Projecto:</span>
+          <span className="font-medium">
+            {projectEndDate.getDate()} {months[projectEndDate.getMonth()]} {projectEndDate.getFullYear()}
+          </span>
+          {criticalTasks.size > 0 && (
+            <Badge variant="outline" className="ml-2 border-destructive/50 text-destructive">
+              {criticalTasks.size} tarefa{criticalTasks.size !== 1 ? 's' : ''} no caminho crítico
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Gantt Chart */}
       <div className="border rounded-lg overflow-hidden">
@@ -277,30 +326,47 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
                     <div
                       className={cn(
                         "h-10 border-b flex items-center px-3 gap-2",
-                        task.isBlocked && "bg-warning/5"
+                        task.isBlocked && "bg-warning/5",
+                        showCriticalPath && task.isCritical && !task.isBlocked && "bg-destructive/5"
                       )}
                     >
                       {task.isBlocked && (
                         <AlertTriangle className="h-3 w-3 text-warning flex-shrink-0" />
                       )}
-                      {task.dependencies.length > 0 && !task.isBlocked && (
+                      {showCriticalPath && task.isCritical && !task.isBlocked && (
+                        <Target className="h-3 w-3 text-destructive flex-shrink-0" />
+                      )}
+                      {task.dependencies.length > 0 && !task.isBlocked && !task.isCritical && (
                         <Link2 className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                       )}
-                      <span className="text-sm truncate">{task.title}</span>
+                      <span className={cn(
+                        "text-sm truncate",
+                        showCriticalPath && task.isCritical && "font-medium text-destructive"
+                      )}>
+                        {task.title}
+                      </span>
                     </div>
                   </TooltipTrigger>
-                  {task.dependencies.length > 0 && (
-                    <TooltipContent>
-                      <div className="space-y-1">
-                        <p className="font-medium">Dependências:</p>
-                        {task.dependencies.map((dep) => (
-                          <p key={dep.id} className="text-xs">
-                            • {dep.predecessor?.title} ({dep.dependency_type})
-                          </p>
-                        ))}
-                      </div>
-                    </TooltipContent>
-                  )}
+                  <TooltipContent>
+                    <div className="space-y-1">
+                      {task.isCritical && showCriticalPath && (
+                        <p className="text-xs text-destructive font-medium">🎯 Caminho Crítico</p>
+                      )}
+                      {task.dependencies.length > 0 && (
+                        <>
+                          <p className="font-medium">Dependências:</p>
+                          {task.dependencies.map((dep) => (
+                            <p key={dep.id} className="text-xs">
+                              • {dep.predecessor?.title} ({dep.dependency_type})
+                            </p>
+                          ))}
+                        </>
+                      )}
+                      {task.dependencies.length === 0 && !task.isCritical && (
+                        <p className="text-xs text-muted-foreground">Sem dependências</p>
+                      )}
+                    </div>
+                  </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ))}
@@ -409,6 +475,8 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
                                 "h-6 rounded relative overflow-hidden min-w-[8px]",
                                 task.isBlocked
                                   ? "bg-warning/80"
+                                  : showCriticalPath && task.isCritical
+                                  ? "bg-destructive/90 ring-2 ring-destructive ring-offset-1"
                                   : task.column_id === "done"
                                   ? "bg-success/80"
                                   : "bg-primary/80"
@@ -435,6 +503,9 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
                               <p className="text-xs">
                                 Data: {task.startDate.getDate()} {months[task.startDate.getMonth()]}
                               </p>
+                            )}
+                            {showCriticalPath && task.isCritical && (
+                              <p className="text-xs text-destructive">🎯 No caminho crítico</p>
                             )}
                             {task.isBlocked && (
                               <p className="text-xs text-warning">⚠️ Bloqueada por dependência</p>
@@ -464,6 +535,10 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
         <div className="flex items-center gap-2">
           <div className="w-8 h-3 rounded bg-warning/80" />
           <span className="text-muted-foreground">Bloqueada</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-3 rounded bg-destructive/90 ring-2 ring-destructive ring-offset-1" />
+          <span className="text-muted-foreground">Caminho Crítico</span>
         </div>
         <div className="flex items-center gap-2">
           <svg width="24" height="12">
