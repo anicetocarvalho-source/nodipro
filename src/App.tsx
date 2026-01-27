@@ -4,11 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import Onboarding from "./pages/Onboarding";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Portfolio from "./pages/Portfolio";
@@ -62,28 +64,31 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/governance" element={<ManagerPageWrapper><Governance /></ManagerPageWrapper>} />
-            <Route path="/projects" element={<ProtectedPageWrapper><Projects /></ProtectedPageWrapper>} />
-            <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
-            <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
-            <Route path="/programs/:id" element={<ProtectedPageWrapper><ProgramDetail /></ProtectedPageWrapper>} />
-            <Route path="/methodologies" element={<ProtectedPageWrapper><Methodologies /></ProtectedPageWrapper>} />
-            <Route path="/kpi" element={<ProtectedPageWrapper><KPI /></ProtectedPageWrapper>} />
-            <Route path="/risks" element={<ManagerPageWrapper><Risks /></ManagerPageWrapper>} />
-            <Route path="/team" element={<ProtectedPageWrapper><Team /></ProtectedPageWrapper>} />
-            <Route path="/documents" element={<ProtectedPageWrapper><Documents /></ProtectedPageWrapper>} />
-            <Route path="/communication" element={<ProtectedPageWrapper><Communication /></ProtectedPageWrapper>} />
-            <Route path="/budget" element={<ManagerPageWrapper><Budget /></ManagerPageWrapper>} />
-            <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
-            <Route path="/profile" element={<ProtectedPageWrapper><Profile /></ProtectedPageWrapper>} />
-            <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
-            <Route path="/settings" element={<ProtectedPageWrapper><Settings /></ProtectedPageWrapper>} />
-            <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <OrganizationProvider>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/governance" element={<ManagerPageWrapper><Governance /></ManagerPageWrapper>} />
+              <Route path="/projects" element={<ProtectedPageWrapper><Projects /></ProtectedPageWrapper>} />
+              <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
+              <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
+              <Route path="/programs/:id" element={<ProtectedPageWrapper><ProgramDetail /></ProtectedPageWrapper>} />
+              <Route path="/methodologies" element={<ProtectedPageWrapper><Methodologies /></ProtectedPageWrapper>} />
+              <Route path="/kpi" element={<ProtectedPageWrapper><KPI /></ProtectedPageWrapper>} />
+              <Route path="/risks" element={<ManagerPageWrapper><Risks /></ManagerPageWrapper>} />
+              <Route path="/team" element={<ProtectedPageWrapper><Team /></ProtectedPageWrapper>} />
+              <Route path="/documents" element={<ProtectedPageWrapper><Documents /></ProtectedPageWrapper>} />
+              <Route path="/communication" element={<ProtectedPageWrapper><Communication /></ProtectedPageWrapper>} />
+              <Route path="/budget" element={<ManagerPageWrapper><Budget /></ManagerPageWrapper>} />
+              <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
+              <Route path="/profile" element={<ProtectedPageWrapper><Profile /></ProtectedPageWrapper>} />
+              <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
+              <Route path="/settings" element={<ProtectedPageWrapper><Settings /></ProtectedPageWrapper>} />
+              <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </OrganizationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
