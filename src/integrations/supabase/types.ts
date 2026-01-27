@@ -1563,6 +1563,7 @@ export type Database = {
         Args: { p_predecessor_id: string; p_task_id: string }
         Returns: boolean
       }
+      get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_permissions: {
         Args: { _user_id: string }
         Returns: {
@@ -1588,6 +1589,14 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_org_admin: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
       user_needs_onboarding: { Args: { _user_id: string }; Returns: boolean }
