@@ -629,6 +629,119 @@ export type Database = {
         }
         Relationships: []
       }
+      organization_members: {
+        Row: {
+          id: string
+          invited_by: string | null
+          is_primary: boolean | null
+          joined_at: string
+          organization_id: string
+          role: Database["public"]["Enums"]["org_member_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_by?: string | null
+          is_primary?: boolean | null
+          joined_at?: string
+          organization_id: string
+          role?: Database["public"]["Enums"]["org_member_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_by?: string | null
+          is_primary?: boolean | null
+          joined_at?: string
+          organization_id?: string
+          role?: Database["public"]["Enums"]["org_member_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          country: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entity_type: Database["public"]["Enums"]["entity_type"]
+          id: string
+          logo_url: string | null
+          name: string
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
+          province_id: string | null
+          sector_id: string | null
+          settings: Json | null
+          size: Database["public"]["Enums"]["organization_size"] | null
+          slug: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entity_type: Database["public"]["Enums"]["entity_type"]
+          id?: string
+          logo_url?: string | null
+          name: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          province_id?: string | null
+          sector_id?: string | null
+          settings?: Json | null
+          size?: Database["public"]["Enums"]["organization_size"] | null
+          slug: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entity_type?: Database["public"]["Enums"]["entity_type"]
+          id?: string
+          logo_url?: string | null
+          name?: string
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          province_id?: string | null
+          sector_id?: string | null
+          settings?: Json | null
+          size?: Database["public"]["Enums"]["organization_size"] | null
+          slug?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "provinces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organizations_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           category: string
@@ -660,6 +773,7 @@ export type Database = {
           id: string
           manager_id: string | null
           name: string
+          organization_id: string | null
           status: string
           updated_at: string
         }
@@ -669,6 +783,7 @@ export type Database = {
           id?: string
           manager_id?: string | null
           name: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -678,10 +793,19 @@ export type Database = {
           id?: string
           manager_id?: string | null
           name?: string
+          organization_id?: string | null
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "portfolios_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -847,6 +971,7 @@ export type Database = {
           funder_id: string | null
           id: string
           name: string
+          organization_id: string | null
           program_id: string | null
           progress: number
           province_id: string | null
@@ -866,6 +991,7 @@ export type Database = {
           funder_id?: string | null
           id?: string
           name: string
+          organization_id?: string | null
           program_id?: string | null
           progress?: number
           province_id?: string | null
@@ -885,6 +1011,7 @@ export type Database = {
           funder_id?: string | null
           id?: string
           name?: string
+          organization_id?: string | null
           program_id?: string | null
           progress?: number
           province_id?: string | null
@@ -901,6 +1028,13 @@ export type Database = {
             columns: ["funder_id"]
             isOneToOne: false
             referencedRelation: "funders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -1437,6 +1571,10 @@ export type Database = {
           permission_name: string
         }[]
       }
+      get_user_primary_organization: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1452,6 +1590,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_needs_onboarding: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role:
@@ -1462,6 +1601,9 @@ export type Database = {
         | "project_manager"
         | "observer"
       dependency_type: "FS" | "SS" | "FF" | "SF"
+      entity_type: "public" | "private" | "ngo"
+      org_member_role: "owner" | "admin" | "manager" | "member" | "viewer"
+      organization_size: "small" | "medium" | "large" | "enterprise"
       project_status: "active" | "delayed" | "completed" | "on_hold"
       task_priority: "low" | "medium" | "high"
     }
@@ -1600,6 +1742,9 @@ export const Constants = {
         "observer",
       ],
       dependency_type: ["FS", "SS", "FF", "SF"],
+      entity_type: ["public", "private", "ngo"],
+      org_member_role: ["owner", "admin", "manager", "member", "viewer"],
+      organization_size: ["small", "medium", "large", "enterprise"],
       project_status: ["active", "delayed", "completed", "on_hold"],
       task_priority: ["low", "medium", "high"],
     },
