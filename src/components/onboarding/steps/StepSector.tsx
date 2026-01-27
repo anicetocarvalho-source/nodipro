@@ -5,7 +5,42 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { OnboardingData } from '../OnboardingWizard';
-import { ArrowLeft } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  GraduationCap, 
+  Landmark, 
+  Building2, 
+  Heart, 
+  Cpu, 
+  Leaf, 
+  Droplets, 
+  Zap, 
+  Wheat, 
+  Scale, 
+  Users, 
+  Briefcase,
+  Shield,
+  Truck,
+  type LucideIcon
+} from 'lucide-react';
+
+// Mapa de nomes de ícones para componentes Lucide
+const iconMap: Record<string, LucideIcon> = {
+  GraduationCap,
+  Landmark,
+  Building2,
+  Heart,
+  Cpu,
+  Leaf,
+  Droplets,
+  Zap,
+  Wheat,
+  Scale,
+  Users,
+  Briefcase,
+  Shield,
+  Truck,
+};
 
 interface StepSectorProps {
   data: OnboardingData;
@@ -46,15 +81,14 @@ export function StepSector({ data, updateData, onNext, onBack }: StepSectorProps
       <div className="text-center space-y-2">
         <h2 className="text-3xl font-bold">Qual é o seu sector?</h2>
         <p className="text-muted-foreground">
-          Seleccione o sector principal de actuação
-          {data.entity_type === 'private' && ' (opcional)'}
+          Seleccione o sector principal de actuação (opcional)
         </p>
       </div>
 
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {[...Array(9)].map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-lg" />
+            <Skeleton key={i} className="h-24 rounded-lg" />
           ))}
         </div>
       ) : (
@@ -64,6 +98,9 @@ export function StepSector({ data, updateData, onNext, onBack }: StepSectorProps
             const isRecommended = recommendedSectors.some(
               (s) => sector.name.toLowerCase().includes(s.toLowerCase())
             );
+            
+            // Obter o componente de ícone do mapa
+            const IconComponent = sector.icon ? iconMap[sector.icon] : null;
 
             return (
               <Card
@@ -79,8 +116,10 @@ export function StepSector({ data, updateData, onNext, onBack }: StepSectorProps
                 }
               >
                 <CardContent className="p-4 text-center">
-                  {sector.icon && (
-                    <div className="text-2xl mb-2">{sector.icon}</div>
+                  {IconComponent && (
+                    <div className="flex justify-center mb-2">
+                      <IconComponent className="h-8 w-8 text-muted-foreground" />
+                    </div>
                   )}
                   <p className="font-medium text-sm">{sector.name}</p>
                   {isRecommended && !isSelected && (
