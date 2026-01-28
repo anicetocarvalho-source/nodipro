@@ -1,94 +1,37 @@
 import {
   FolderKanban,
   CheckCircle,
-  Clock,
-  AlertTriangle,
-  Target,
   FileCheck,
   Landmark,
   Globe,
+  Target,
+  AlertTriangle,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 interface PublicEntityDashboardProps {
   userName: string;
 }
 
-const stats = [
-  {
-    title: "Projectos Activos",
-    value: 24,
-    change: "+3 este mês",
-    changeType: "positive" as const,
-    icon: FolderKanban,
-  },
-  {
-    title: "Taxa de Execução",
-    value: "68%",
-    change: "+5% vs trimestre anterior",
-    changeType: "positive" as const,
-    icon: CheckCircle,
-  },
-  {
-    title: "Conformidade Legal",
-    value: "94%",
-    change: "12 documentos pendentes",
-    changeType: "neutral" as const,
-    icon: FileCheck,
-  },
-  {
-    title: "ODS Impactados",
-    value: 8,
-    change: "De 17 objectivos",
-    changeType: "positive" as const,
-    icon: Globe,
-  },
-];
-
-const sdgProgress = [
-  { number: 1, name: "Erradicação da Pobreza", progress: 45, color: "#E5243B" },
-  { number: 4, name: "Educação de Qualidade", progress: 72, color: "#C5192D" },
-  { number: 6, name: "Água Potável e Saneamento", progress: 58, color: "#26BDE2" },
-  { number: 8, name: "Trabalho Digno e Crescimento Económico", progress: 63, color: "#A21942" },
-  { number: 9, name: "Indústria, Inovação e Infraestrutura", progress: 41, color: "#FD6925" },
-];
-
-const complianceItems = [
-  { name: "Relatório Trimestral Q4", status: "pending", dueDate: "31 Jan 2026" },
-  { name: "Auditoria Financeira 2025", status: "in_progress", dueDate: "15 Fev 2026" },
-  { name: "Plano Anual de Actividades", status: "completed", dueDate: "15 Jan 2026" },
-  { name: "Relatório de Impacto Social", status: "pending", dueDate: "28 Fev 2026" },
-];
-
-const budgetByProvince = [
-  { province: "Luanda", allocated: 45000000, executed: 32000000 },
-  { province: "Benguela", allocated: 25000000, executed: 18500000 },
-  { province: "Huambo", allocated: 20000000, executed: 12000000 },
-  { province: "Cabinda", allocated: 15000000, executed: 9800000 },
-];
-
 export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) {
+  const {
+    stats,
+    sdgProgress,
+    budgetByProvince,
+    upcomingDeadlines,
+    isLoading,
+  } = useDashboardData();
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <Badge variant="default" className="bg-success">Concluído</Badge>;
-      case "in_progress":
-        return <Badge variant="default" className="bg-info">Em Curso</Badge>;
-      case "pending":
-        return <Badge variant="default" className="bg-warning">Pendente</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
   };
 
   const formatCurrency = (value: number) => {
@@ -99,6 +42,74 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       maximumFractionDigits: 1,
     }).format(value);
   };
+
+  const formatCompactNumber = (value: number) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return value.toString();
+  };
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case "high":
+        return <Badge variant="destructive">Alta</Badge>;
+      case "medium":
+        return <Badge variant="default" className="bg-warning">Média</Badge>;
+      default:
+        return <Badge variant="secondary">Baixa</Badge>;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <Skeleton className="xl:col-span-2 h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
+  }
+
+  const dynamicStats = [
+    {
+      title: "Projectos Activos",
+      value: stats.activeProjects,
+      change: `${stats.completedProjects} concluídos`,
+      changeType: "positive" as const,
+      icon: FolderKanban,
+    },
+    {
+      title: "Taxa de Execução",
+      value: `${stats.executionRate}%`,
+      change: `${formatCompactNumber(stats.totalSpent)} de ${formatCompactNumber(stats.totalBudget)}`,
+      changeType: stats.executionRate >= 50 ? "positive" as const : "neutral" as const,
+      icon: CheckCircle,
+    },
+    {
+      title: "Tarefas Concluídas",
+      value: `${stats.completedTasks}/${stats.totalTasks}`,
+      change: `${stats.overdueTasks} em atraso`,
+      changeType: stats.overdueTasks > 0 ? "negative" as const : "positive" as const,
+      icon: FileCheck,
+    },
+    {
+      title: "ODS Impactados",
+      value: stats.sdgsImpacted,
+      change: "De 17 objectivos",
+      changeType: "positive" as const,
+      icon: Globe,
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -122,14 +133,14 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left Column - SDG Progress */}
+        {/* Left Column - SDG Progress & Budget */}
         <div className="xl:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -139,23 +150,34 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {sdgProgress.map((sdg) => (
-                <div key={sdg.number} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                        style={{ backgroundColor: sdg.color }}
-                      >
-                        {sdg.number}
+              {sdgProgress.length > 0 ? (
+                sdgProgress.slice(0, 5).map((sdg) => {
+                  const progressPercent = Math.min(sdg.projectCount * 20, 100);
+                  return (
+                    <div key={sdg.id} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                            style={{ backgroundColor: sdg.color || "#666" }}
+                          >
+                            {sdg.number}
+                          </div>
+                          <span className="text-sm font-medium">{sdg.name}</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {sdg.projectCount} projecto{sdg.projectCount !== 1 ? "s" : ""}
+                        </span>
                       </div>
-                      <span className="text-sm font-medium">{sdg.name}</span>
+                      <Progress value={progressPercent} className="h-2" />
                     </div>
-                    <span className="text-sm text-muted-foreground">{sdg.progress}%</span>
-                  </div>
-                  <Progress value={sdg.progress} className="h-2" />
-                </div>
-              ))}
+                  );
+                })
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum ODS associado aos projectos ainda.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -165,81 +187,103 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
               <CardTitle>Execução Orçamental por Província</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {budgetByProvince.map((item) => {
-                  const percentage = Math.round((item.executed / item.allocated) * 100);
-                  return (
-                    <div key={item.province} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">{item.province}</span>
-                        <span className="text-muted-foreground">
-                          {formatCurrency(item.executed)} / {formatCurrency(item.allocated)}
-                        </span>
+              {budgetByProvince.length > 0 ? (
+                <div className="space-y-4">
+                  {budgetByProvince.map((item) => {
+                    const percentage = item.allocated > 0 
+                      ? Math.round((item.executed / item.allocated) * 100) 
+                      : 0;
+                    return (
+                      <div key={item.province} className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{item.province}</span>
+                          <span className="text-muted-foreground">
+                            {formatCurrency(item.executed)} / {formatCurrency(item.allocated)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Progress value={percentage} className="h-2 flex-1" />
+                          <span className="text-sm font-medium w-12">{percentage}%</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Progress value={percentage} className="h-2 flex-1" />
-                        <span className="text-sm font-medium w-12">{percentage}%</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum orçamento por província disponível.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Column - Compliance */}
+        {/* Right Column - Deadlines & Alerts */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileCheck className="h-5 w-5 text-primary" />
-                Conformidade e Relatórios
+                Próximos Prazos
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {complianceItems.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">Prazo: {item.dueDate}</p>
+              {upcomingDeadlines.length > 0 ? (
+                <div className="space-y-4">
+                  {upcomingDeadlines.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.projectName} • {new Date(item.dueDate).toLocaleDateString('pt-AO')}
+                        </p>
+                      </div>
+                      {getPriorityBadge(item.priority)}
                     </div>
-                    {getStatusBadge(item.status)}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum prazo próximo.
+                </p>
+              )}
             </CardContent>
           </Card>
 
           {/* Alerts */}
-          <Card className="border-warning/50 bg-warning/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-warning">
-                <AlertTriangle className="h-5 w-5" />
-                Alertas de Conformidade
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="p-3 rounded-lg bg-background">
-                  <p className="text-sm font-medium">Auditoria Pendente</p>
-                  <p className="text-xs text-muted-foreground">
-                    3 projectos aguardam validação do Tribunal de Contas
-                  </p>
+          {(stats.overdueTasks > 0 || stats.delayedProjects > 0) && (
+            <Card className="border-warning/50 bg-warning/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-warning">
+                  <AlertTriangle className="h-5 w-5" />
+                  Alertas
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {stats.overdueTasks > 0 && (
+                    <div className="p-3 rounded-lg bg-background">
+                      <p className="text-sm font-medium">Tarefas em Atraso</p>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.overdueTasks} tarefa{stats.overdueTasks !== 1 ? "s" : ""} com prazo ultrapassado
+                      </p>
+                    </div>
+                  )}
+                  {stats.delayedProjects > 0 && (
+                    <div className="p-3 rounded-lg bg-background">
+                      <p className="text-sm font-medium">Projectos Atrasados</p>
+                      <p className="text-xs text-muted-foreground">
+                        {stats.delayedProjects} projecto{stats.delayedProjects !== 1 ? "s" : ""} com status de atraso
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <div className="p-3 rounded-lg bg-background">
-                  <p className="text-sm font-medium">Documentação Incompleta</p>
-                  <p className="text-xs text-muted-foreground">
-                    2 projectos com documentos obrigatórios em falta
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

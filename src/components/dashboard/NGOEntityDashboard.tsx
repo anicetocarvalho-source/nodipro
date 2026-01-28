@@ -12,104 +12,27 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 interface NGOEntityDashboardProps {
   userName: string;
 }
 
-const stats = [
-  {
-    title: "Projectos Activos",
-    value: 18,
-    change: "+4 este trimestre",
-    changeType: "positive" as const,
-    icon: FolderKanban,
-  },
-  {
-    title: "Beneficiários Directos",
-    value: "12.5K",
-    change: "+2.3K este ano",
-    changeType: "positive" as const,
-    icon: Users,
-  },
-  {
-    title: "ODS Impactados",
-    value: 11,
-    change: "De 17 objectivos",
-    changeType: "positive" as const,
-    icon: Globe,
-  },
-  {
-    title: "Fundos Captados",
-    value: "45M",
-    change: "82% da meta anual",
-    changeType: "positive" as const,
-    icon: DollarSign,
-  },
-];
-
-const impactMetrics = [
-  { category: "Educação", beneficiaries: 4500, target: 5000, icon: "📚" },
-  { category: "Saúde", beneficiaries: 3200, target: 4000, icon: "🏥" },
-  { category: "Água e Saneamento", beneficiaries: 2800, target: 3000, icon: "💧" },
-  { category: "Segurança Alimentar", beneficiaries: 2000, target: 2500, icon: "🌾" },
-];
-
-const funders = [
-  { name: "União Europeia", amount: 15000000, status: "active", endDate: "Dez 2026" },
-  { name: "USAID", amount: 8500000, status: "active", endDate: "Jun 2026" },
-  { name: "Banco Mundial", amount: 12000000, status: "pending", endDate: "Mar 2027" },
-  { name: "Fundação Gates", amount: 5000000, status: "active", endDate: "Set 2026" },
-];
-
-const regionalPresence = [
-  { province: "Luanda", projects: 5, beneficiaries: 3500 },
-  { province: "Huambo", projects: 4, beneficiaries: 2800 },
-  { province: "Benguela", projects: 3, beneficiaries: 2200 },
-  { province: "Malanje", projects: 3, beneficiaries: 1800 },
-  { province: "Uíge", projects: 3, beneficiaries: 2200 },
-];
-
-const sdgImpact = [
-  { number: 1, name: "Erradicação da Pobreza", impact: "Alto", color: "#E5243B" },
-  { number: 2, name: "Fome Zero", impact: "Médio", color: "#DDA63A" },
-  { number: 3, name: "Saúde e Bem-Estar", impact: "Alto", color: "#4C9F38" },
-  { number: 4, name: "Educação de Qualidade", impact: "Alto", color: "#C5192D" },
-  { number: 6, name: "Água Potável", impact: "Médio", color: "#26BDE2" },
-];
-
 export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
+  const {
+    stats,
+    sdgProgress,
+    budgetByProvince,
+    funderData,
+    isLoading,
+  } = useDashboardData();
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bom dia";
     if (hour < 18) return "Boa tarde";
     return "Boa noite";
-  };
-
-  const getFunderStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return <Badge variant="default" className="bg-success">Activo</Badge>;
-      case "pending":
-        return <Badge variant="default" className="bg-warning">Pendente</Badge>;
-      case "completed":
-        return <Badge variant="secondary">Concluído</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const getImpactBadge = (impact: string) => {
-    switch (impact) {
-      case "Alto":
-        return <Badge variant="default" className="bg-success">Alto</Badge>;
-      case "Médio":
-        return <Badge variant="default" className="bg-info">Médio</Badge>;
-      case "Baixo":
-        return <Badge variant="secondary">Baixo</Badge>;
-      default:
-        return <Badge variant="secondary">{impact}</Badge>;
-    }
   };
 
   const formatCurrency = (value: number) => {
@@ -120,6 +43,72 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       maximumFractionDigits: 1,
     }).format(value);
   };
+
+  const formatCompactNumber = (value: number) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return value.toString();
+  };
+
+  const getImpactBadge = (projectCount: number) => {
+    if (projectCount >= 3) {
+      return <Badge variant="default" className="bg-success">Alto</Badge>;
+    } else if (projectCount >= 1) {
+      return <Badge variant="default" className="bg-info">Médio</Badge>;
+    }
+    return <Badge variant="secondary">Baixo</Badge>;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <Skeleton className="xl:col-span-2 h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
+  }
+
+  const dynamicStats = [
+    {
+      title: "Projectos Activos",
+      value: stats.activeProjects,
+      change: `+${stats.completedProjects} concluídos`,
+      changeType: "positive" as const,
+      icon: FolderKanban,
+    },
+    {
+      title: "Tarefas em Progresso",
+      value: stats.inProgressTasks,
+      change: `${stats.completedTasks} concluídas`,
+      changeType: "positive" as const,
+      icon: Users,
+    },
+    {
+      title: "ODS Impactados",
+      value: stats.sdgsImpacted,
+      change: "De 17 objectivos",
+      changeType: "positive" as const,
+      icon: Globe,
+    },
+    {
+      title: "Fundos Captados",
+      value: formatCompactNumber(stats.totalBudget),
+      change: `${stats.executionRate}% executado`,
+      changeType: "positive" as const,
+      icon: DollarSign,
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -143,7 +132,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
@@ -152,35 +141,46 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left Column - Impact & Funders */}
         <div className="xl:col-span-2 space-y-6">
-          {/* Impact by Category */}
+          {/* Impact by SDG */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5 text-primary" />
-                Impacto por Categoria
+                Impacto por ODS
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {impactMetrics.map((metric) => {
-                const percentage = Math.round((metric.beneficiaries / metric.target) * 100);
-                return (
-                  <div key={metric.category} className="p-4 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl">{metric.icon}</span>
-                        <span className="font-medium">{metric.category}</span>
+              {sdgProgress.length > 0 ? (
+                sdgProgress.slice(0, 5).map((sdg) => {
+                  const progressPercent = Math.min(sdg.projectCount * 20, 100);
+                  return (
+                    <div key={sdg.id} className="p-4 rounded-lg bg-muted/50">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                            style={{ backgroundColor: sdg.color || "#666" }}
+                          >
+                            {sdg.number}
+                          </div>
+                          <span className="font-medium">{sdg.name}</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          {sdg.projectCount} projecto{sdg.projectCount !== 1 ? "s" : ""}
+                        </span>
                       </div>
-                      <span className="text-sm text-muted-foreground">
-                        {metric.beneficiaries.toLocaleString()} / {metric.target.toLocaleString()} beneficiários
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <Progress value={progressPercent} className="h-2 flex-1" />
+                        <span className="text-sm font-medium w-12">{progressPercent}%</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Progress value={percentage} className="h-2 flex-1" />
-                      <span className="text-sm font-medium w-12">{percentage}%</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum ODS associado aos projectos ainda.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -193,32 +193,41 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {funders.map((funder) => (
-                  <div
-                    key={funder.name}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
-                  >
-                    <div>
-                      <p className="font-medium">{funder.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Termo: {funder.endDate}
-                      </p>
+              {funderData.length > 0 ? (
+                <div className="space-y-3">
+                  {funderData.slice(0, 5).map((funder) => (
+                    <div
+                      key={funder.id}
+                      className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
+                    >
+                      <div>
+                        <p className="font-medium">
+                          {funder.name}
+                          {funder.acronym && ` (${funder.acronym})`}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {funder.projectCount} projecto{funder.projectCount !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{formatCurrency(funder.totalAmount)}</p>
+                        <Badge variant="default" className="bg-success">Activo</Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(funder.amount)}</p>
-                      {getFunderStatusBadge(funder.status)}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum financiador associado aos projectos.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
 
         {/* Right Column - SDGs & Regional */}
         <div className="space-y-6">
-          {/* SDG Impact */}
+          {/* SDG Impact Summary */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -227,25 +236,31 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {sdgImpact.map((sdg) => (
-                  <div
-                    key={sdg.number}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                        style={{ backgroundColor: sdg.color }}
-                      >
-                        {sdg.number}
+              {sdgProgress.length > 0 ? (
+                <div className="space-y-3">
+                  {sdgProgress.slice(0, 5).map((sdg) => (
+                    <div
+                      key={sdg.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold"
+                          style={{ backgroundColor: sdg.color || "#666" }}
+                        >
+                          {sdg.number}
+                        </div>
+                        <span className="text-sm">{sdg.name}</span>
                       </div>
-                      <span className="text-sm">{sdg.name}</span>
+                      {getImpactBadge(sdg.projectCount)}
                     </div>
-                    {getImpactBadge(sdg.impact)}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Associe ODS aos seus projectos.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -258,25 +273,36 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {regionalPresence.map((region) => (
-                  <div
-                    key={region.province}
-                    className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                  >
-                    <div>
-                      <p className="font-medium">{region.province}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {region.projects} projectos
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">{region.beneficiaries.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">beneficiários</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {budgetByProvince.length > 0 ? (
+                <div className="space-y-3">
+                  {budgetByProvince.map((region) => {
+                    const percentage = region.allocated > 0
+                      ? Math.round((region.executed / region.allocated) * 100)
+                      : 0;
+                    return (
+                      <div
+                        key={region.province}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      >
+                        <div>
+                          <p className="font-medium">{region.province}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatCurrency(region.allocated)} alocados
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{percentage}%</p>
+                          <p className="text-xs text-muted-foreground">executado</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Associe províncias aos seus projectos.
+                </p>
+              )}
             </CardContent>
           </Card>
         </div>
