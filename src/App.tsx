@@ -11,6 +11,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
+import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Portfolio from "./pages/Portfolio";
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/governance" element={<ManagerPageWrapper><Governance /></ManagerPageWrapper>} />
+              <Route path="/dashboard" element={<ProtectedPageWrapper><Dashboard /></ProtectedPageWrapper>} />
               <Route path="/projects" element={<ProtectedPageWrapper><Projects /></ProtectedPageWrapper>} />
               <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
               <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
