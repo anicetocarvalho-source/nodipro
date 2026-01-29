@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowRight, BarChart3, FolderKanban, Users, Shield, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.svg";
 
@@ -28,9 +29,16 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link to="/">
-            <img src={logo} alt="NODIPRO" className="h-8 transition-all duration-300 hover:scale-105 hover:drop-shadow-md cursor-pointer" />
-          </Link>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Link to="/">
+                <img src={logo} alt="NODIPRO" className="h-8 transition-all duration-300 hover:scale-105 hover:drop-shadow-md cursor-pointer" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="bg-foreground text-background">
+              Ir para Dashboard
+            </TooltipContent>
+          </Tooltip>
           <div className="flex items-center gap-4">
             <Link to="/auth">
               <Button variant="ghost">Entrar</Button>
