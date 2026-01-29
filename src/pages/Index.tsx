@@ -28,7 +28,9 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <img src={logo} alt="NODIPRO" className="h-8 transition-all duration-300 hover:scale-105 hover:drop-shadow-md cursor-pointer" />
+          <Link to="/">
+            <img src={logo} alt="NODIPRO" className="h-8 transition-all duration-300 hover:scale-105 hover:drop-shadow-md cursor-pointer" />
+          </Link>
           <div className="flex items-center gap-4">
             <Link to="/auth">
               <Button variant="ghost">Entrar</Button>
