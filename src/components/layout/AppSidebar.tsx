@@ -47,7 +47,7 @@ export function AppSidebar() {
 
   // Build menu items based on permissions
   const menuItems: MenuItem[] = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Building2, label: "Governação", path: "/governance", requiresPermission: "canViewBudget" },
     { icon: FolderKanban, label: "Projectos", path: "/projects" },
     { icon: Briefcase, label: "Portfólio", path: "/portfolio" },
