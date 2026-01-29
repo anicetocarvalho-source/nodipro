@@ -103,10 +103,11 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         .select('*')
         .eq('user_id', user.id);
 
-      // If error or no memberships, user needs onboarding
+      // If error or no memberships, user needs onboarding (temporarily disabled)
       if (memberError || !memberships || memberships.length === 0) {
-        console.log('No organization memberships found, showing onboarding', memberError);
-        setNeedsOnboarding(true);
+        console.log('No organization memberships found (onboarding temporarily disabled)', memberError);
+        // setNeedsOnboarding(true); // Temporarily disabled
+        setNeedsOnboarding(false);
         setOrganizations([]);
         setOrganization(null);
         setMembership(null);
@@ -122,8 +123,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         .in('id', orgIds);
 
       if (orgsError || !orgsData || orgsData.length === 0) {
-        console.log('No organizations found, showing onboarding', orgsError);
-        setNeedsOnboarding(true);
+        console.log('No organizations found (onboarding temporarily disabled)', orgsError);
+        // setNeedsOnboarding(true); // Temporarily disabled
+        setNeedsOnboarding(false);
         setOrganizations([]);
         setOrganization(null);
         setMembership(null);
@@ -149,8 +151,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching organizations:', error);
-      // On any error, assume user needs onboarding
-      setNeedsOnboarding(true);
+      // On any error, assume user needs onboarding (temporarily disabled)
+      // setNeedsOnboarding(true);
+      setNeedsOnboarding(false);
     } finally {
       setLoading(false);
     }
