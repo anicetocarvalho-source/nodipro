@@ -119,16 +119,23 @@ export function AppSidebar() {
     >
       {/* Logo */}
       <div className="h-16 flex items-center justify-center px-4 border-b border-sidebar-border">
-        <NavLink to="/">
-          <img 
-            src={logoLight} 
-            alt="NODIPRO" 
-            className={cn(
-              "h-8 object-contain transition-all duration-300 hover:scale-105 hover:brightness-110 cursor-pointer",
-              collapsed ? "w-8" : "w-auto max-w-[180px]"
-            )} 
-          />
-        </NavLink>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <NavLink to="/">
+              <img 
+                src={logoLight} 
+                alt="NODIPRO" 
+                className={cn(
+                  "h-8 object-contain transition-all duration-300 hover:scale-105 hover:brightness-110 cursor-pointer",
+                  collapsed ? "w-8" : "w-auto max-w-[180px]"
+                )} 
+              />
+            </NavLink>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="bg-foreground text-background">
+            Ir para Dashboard
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Toggle button */}
