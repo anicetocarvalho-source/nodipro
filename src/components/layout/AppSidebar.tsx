@@ -123,7 +123,7 @@ export function AppSidebar() {
           src={logoLight} 
           alt="NODIPRO" 
           className={cn(
-            "h-8 object-contain transition-all duration-300",
+            "h-8 object-contain transition-all duration-300 hover:scale-105 hover:brightness-110 cursor-pointer",
             collapsed ? "w-8" : "w-auto max-w-[180px]"
           )} 
         />
