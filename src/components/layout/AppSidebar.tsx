@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuthContext } from "@/contexts/AuthContext";
+import logoLight from "@/assets/logo-light.svg";
 
 interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -117,20 +118,15 @@ export function AppSidebar() {
       )}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <span className="text-sidebar-primary-foreground font-bold text-lg">N</span>
-            </div>
-            <span className="text-sidebar-foreground font-semibold text-lg">NODIPRO</span>
-          </div>
-        )}
-        {collapsed && (
-          <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center mx-auto">
-            <span className="text-sidebar-primary-foreground font-bold text-lg">N</span>
-          </div>
-        )}
+      <div className="h-16 flex items-center justify-center px-4 border-b border-sidebar-border">
+        <img 
+          src={logoLight} 
+          alt="NODIPRO" 
+          className={cn(
+            "h-8 object-contain transition-all duration-300",
+            collapsed ? "w-8" : "w-auto max-w-[180px]"
+          )} 
+        />
       </div>
 
       {/* Toggle button */}
