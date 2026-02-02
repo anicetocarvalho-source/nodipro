@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 // Define all available permissions
 export type PermissionName =
   | "project.view" | "project.create" | "project.edit" | "project.delete" | "project.archive"
-  | "portfolio.view" | "portfolio.manage" | "portfolio.reports"
+  | "portfolio.view" | "portfolio.manage" | "portfolio.reports" | "portfolio.create" | "portfolio.edit" | "portfolio.delete"
   | "task.view" | "task.create" | "task.edit" | "task.delete" | "task.assign"
   | "document.view" | "document.upload" | "document.delete" | "document.approve"
   | "budget.view" | "budget.edit" | "budget.approve"
