@@ -34,6 +34,7 @@ import {
   BarChart3,
   Settings,
   Loader2,
+  Layers,
 } from "lucide-react";
 
 interface Permission {
@@ -51,6 +52,7 @@ interface RolePermission {
 const categoryConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   project: { label: "Projectos", icon: FolderKanban, color: "text-blue-500" },
   portfolio: { label: "Portfólio", icon: BarChart3, color: "text-purple-500" },
+  program: { label: "Programas", icon: Layers, color: "text-violet-500" },
   task: { label: "Tarefas", icon: CheckSquare, color: "text-green-500" },
   document: { label: "Documentos", icon: FileText, color: "text-orange-500" },
   budget: { label: "Orçamento", icon: Wallet, color: "text-emerald-500" },
