@@ -59,6 +59,11 @@ export default function Portfolio() {
   const canEditPortfolio = isAdmin || hasPermission("portfolio.edit");
   const canDeletePortfolio = isAdmin || hasPermission("portfolio.delete");
 
+  // Check program permissions
+  const canCreateProgram = isAdmin || hasPermission("program.create");
+  const canEditProgram = isAdmin || hasPermission("program.edit");
+  const canDeleteProgram = isAdmin || hasPermission("program.delete");
+
   const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
   const [programModalOpen, setProgramModalOpen] = useState(false);
   const [assignProjectModalOpen, setAssignProjectModalOpen] = useState(false);
@@ -186,7 +191,7 @@ export default function Portfolio() {
           </p>
         </div>
         <div className="flex gap-2">
-          {canCreatePortfolio && (
+          {canCreateProgram && (
             <Button variant="outline" onClick={() => { setSelectedProgram(null); setProgramModalOpen(true); }}>
               <Layers className="h-4 w-4 mr-2" />
               Novo Programa
@@ -425,11 +430,11 @@ export default function Portfolio() {
               <Layers className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">Sem programas</h3>
               <p className="text-muted-foreground mb-4">
-                {canCreatePortfolio 
+                {canCreateProgram 
                   ? "Crie o primeiro programa para agrupar projectos relacionados."
                   : "Ainda não existem programas criados."}
               </p>
-              {canCreatePortfolio && (
+              {canCreateProgram && (
                 <Button onClick={() => { setSelectedProgram(null); setProgramModalOpen(true); }}>
                   <Plus className="h-4 w-4 mr-2" />
                   Criar Programa
@@ -468,40 +473,42 @@ export default function Portfolio() {
                         >
                           {program.projects_at_risk === 0 ? "No Prazo" : "Em Risco"}
                         </Badge>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/programs/${program.id}`); }}>
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Ver Detalhes
-                            </DropdownMenuItem>
-                            {canEditPortfolio && (
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAssignProject(program); }}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Atribuir Projecto
+                        {(canEditProgram || canDeleteProgram) && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/programs/${program.id}`); }}>
+                                <ExternalLink className="h-4 w-4 mr-2" />
+                                Ver Detalhes
                               </DropdownMenuItem>
-                            )}
-                            {canEditPortfolio && (
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditProgram(program); }}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                            )}
-                            {canDeletePortfolio && (
-                              <DropdownMenuItem 
-                                onClick={(e) => { e.stopPropagation(); handleDeleteClick("program", program.id, program.name); }}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              {canEditProgram && (
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAssignProject(program); }}>
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Atribuir Projecto
+                                </DropdownMenuItem>
+                              )}
+                              {canEditProgram && (
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditProgram(program); }}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Editar
+                                </DropdownMenuItem>
+                              )}
+                              {canDeleteProgram && (
+                                <DropdownMenuItem 
+                                  onClick={(e) => { e.stopPropagation(); handleDeleteClick("program", program.id, program.name); }}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Eliminar
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                     </div>
                   </CardHeader>
