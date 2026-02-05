@@ -50,9 +50,13 @@ export function useAuth(): UseAuthReturn {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false);
   const { toast } = useToast();
 
   const fetchUserData = useCallback(async (userId: string) => {
+    // Prevent duplicate fetches
+    if (dataFetched) return;
+    
     try {
       // Fetch profile
       const { data: profileData } = await supabase
@@ -73,6 +77,7 @@ export function useAuth(): UseAuthReturn {
       if (roleData) {
         setRole(roleData as AppRole);
       }
+      setDataFetched(true);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
@@ -88,16 +93,20 @@ export function useAuth(): UseAuthReturn {
         // Defer Supabase calls with setTimeout to prevent deadlocks
         if (session?.user) {
           setTimeout(() => {
-            fetchUserData(session.user.id);
+            if (!dataFetched) {
+              fetchUserData(session.user.id);
+            }
           }, 0);
         } else {
           setProfile(null);
           setRole(null);
+          setDataFetched(false);
         }
 
         if (event === "SIGNED_OUT") {
           setProfile(null);
           setRole(null);
+          setDataFetched(false);
         }
       }
     );
@@ -108,14 +117,17 @@ export function useAuth(): UseAuthReturn {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchUserData(session.user.id);
+        // Only fetch if not already fetched by onAuthStateChange
+        if (!dataFetched) {
+          fetchUserData(session.user.id);
+        }
       }
       
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchUserData]);
+  }, [fetchUserData, dataFetched]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -197,6 +209,7 @@ export function useAuth(): UseAuthReturn {
     setSession(null);
     setProfile(null);
     setRole(null);
+    setDataFetched(false);
     toast({
       title: "Sessão terminada",
       description: "Até breve!",

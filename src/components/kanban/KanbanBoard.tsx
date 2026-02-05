@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, forwardRef, useImperativeHandle } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -38,6 +38,10 @@ interface KanbanBoardProps {
   projectId: string;
 }
 
+export interface KanbanBoardRef {
+  openNewTaskModal: (columnId?: string) => void;
+}
+
 // Convert DB task to UI task
 function dbTaskToUiTask(dbTask: DbTask & { subtasks?: DbSubtask[] }): Task {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -71,7 +75,7 @@ function dbTaskToUiTask(dbTask: DbTask & { subtasks?: DbSubtask[] }): Task {
 // Columns that require dependency validation (active work states)
 const ACTIVE_COLUMNS = ["in_progress", "review"];
 
-export function KanbanBoard({ projectId }: KanbanBoardProps) {
+export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ projectId }, ref) => {
   const { data: dbTasks, isLoading, error } = useTasks(projectId);
   const { data: dependencies } = useProjectTaskDependencies(projectId);
   const createTask = useCreateTask();
@@ -87,6 +91,15 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
   // Local state for optimistic updates during drag
   const [localTasks, setLocalTasks] = useState<Record<string, Task[]>>({});
   const [isDragging, setIsDragging] = useState(false);
+
+  // Expose method to open new task modal from parent
+  useImperativeHandle(ref, () => ({
+    openNewTaskModal: (columnId = "todo") => {
+      setEditingTask(null);
+      setSelectedColumnId(columnId);
+      setModalOpen(true);
+    },
+  }));
 
   // Group tasks by column
   const tasksByColumn = useMemo(() => {
@@ -423,4 +436,6 @@ export function KanbanBoard({ projectId }: KanbanBoardProps) {
       />
     </>
   );
-}
+});
+
+KanbanBoard.displayName = "KanbanBoard";
