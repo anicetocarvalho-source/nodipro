@@ -30,6 +30,7 @@ const reportTemplates = [
   { id: "4", name: "Relatório Financeiro Mensal", type: "financial", format: "PDF" },
   { id: "5", name: "Relatório de Riscos Activos", type: "risk", format: "PDF" },
   { id: "6", name: "Relatório de KPIs", type: "kpi", format: "Excel" },
+  { id: "7", name: "Análise de Desempenho e Impacto de Atrasos", type: "performance", format: "PDF", description: "Análise detalhada do desempenho dos projectos, identificando tarefas atrasadas, impacto no cronograma e recomendações de recuperação." },
 ];
 
 const recentReports = [
@@ -128,6 +129,7 @@ const typeConfig = {
   financial: { label: "Financeiro", className: "bg-warning/10 text-warning" },
   risk: { label: "Riscos", className: "bg-destructive/10 text-destructive" },
   kpi: { label: "KPIs", className: "bg-chart-5/10 text-chart-5" },
+  performance: { label: "Desempenho", className: "bg-chart-3/10 text-chart-3" },
 };
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -568,6 +570,7 @@ export default function Reports() {
                       <SelectItem value="financial">Financeiro</SelectItem>
                       <SelectItem value="risk">Riscos</SelectItem>
                       <SelectItem value="kpi">KPIs</SelectItem>
+                      <SelectItem value="performance">Desempenho e Impacto de Atrasos</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -613,13 +616,16 @@ export default function Reports() {
               {reportTemplates.map((template) => (
                 <Card key={template.id} className="hover:shadow-md transition-shadow cursor-pointer">
                   <CardContent className="p-5">
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-start gap-4">
                       <div className="p-3 rounded-lg bg-primary/10">
                         <FileText className="h-6 w-6 text-primary" />
                       </div>
                       <div className="flex-1">
                         <p className="font-medium">{template.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
+                        {'description' in template && template.description && (
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2">
                           <Badge className={cn("text-xs", typeConfig[template.type as keyof typeof typeConfig].className)}>
                             {typeConfig[template.type as keyof typeof typeConfig].label}
                           </Badge>
