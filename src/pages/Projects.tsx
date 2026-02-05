@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useProjects, useDeleteProject } from "@/hooks/useProjects";
+import { usePermissions } from "@/hooks/usePermissions";
 import { DbProject } from "@/types/database";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 
@@ -92,6 +93,7 @@ export default function Projects() {
   const [projectToDelete, setProjectToDelete] = useState<DbProject | null>(null);
   const { data: projects, isLoading, error } = useProjects();
   const deleteProject = useDeleteProject();
+  const { canCreateProject } = usePermissions();
 
   const filteredProjects = (projects || []).filter(
     (p) =>
@@ -293,13 +295,15 @@ export default function Projects() {
             Gerir e acompanhar todos os projectos da organização.
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90" onClick={() => {
-          setEditingProject(null);
-          setIsFormOpen(true);
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Projecto
-        </Button>
+        {canCreateProject && (
+          <Button className="bg-primary hover:bg-primary/90" onClick={() => {
+            setEditingProject(null);
+            setIsFormOpen(true);
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Projecto
+          </Button>
+        )}
       </div>
 
       {/* Filters & Search */}
