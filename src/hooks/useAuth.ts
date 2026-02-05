@@ -33,11 +33,17 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface UserPermissions {
+  [key: string]: boolean;
+}
+
 export interface UseAuthReturn {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
   role: AppRole | null;
+  permissions: UserPermissions;
+  permissionsLoading: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
@@ -49,6 +55,8 @@ export function useAuth(): UseAuthReturn {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [permissions, setPermissions] = useState<UserPermissions>({});
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
@@ -63,16 +71,20 @@ export function useAuth(): UseAuthReturn {
     }
     
     fetchingRef.current = true;
+    setPermissionsLoading(true);
     
     try {
-      // Fetch profile and role in parallel for efficiency
-      const [profileResult, roleResult] = await Promise.all([
+      // Fetch profile, role and permissions in parallel for efficiency
+      const [profileResult, roleResult, permissionsResult] = await Promise.all([
         supabase
           .from("profiles")
           .select("*")
           .eq("user_id", userId)
           .single(),
         supabase.rpc("get_user_role", {
+          _user_id: userId,
+        }),
+        supabase.rpc("get_user_permissions", {
           _user_id: userId,
         })
       ]);
@@ -85,17 +97,28 @@ export function useAuth(): UseAuthReturn {
         setRole(roleResult.data as AppRole);
       }
       
+      if (permissionsResult.data) {
+        const perms: UserPermissions = {};
+        permissionsResult.data.forEach((p: { permission_name: string; granted: boolean }) => {
+          perms[p.permission_name] = p.granted;
+        });
+        setPermissions(perms);
+      }
+      
       fetchedUserIdRef.current = userId;
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
       fetchingRef.current = false;
+      setPermissionsLoading(false);
     }
   }, []);
 
   const resetAuthState = useCallback(() => {
     setProfile(null);
     setRole(null);
+    setPermissions({});
+    setPermissionsLoading(true);
     fetchingRef.current = false;
     fetchedUserIdRef.current = null;
   }, []);
@@ -228,6 +251,8 @@ export function useAuth(): UseAuthReturn {
     session,
     profile,
     role,
+    permissions,
+    permissionsLoading,
     loading,
     signIn,
     signUp,

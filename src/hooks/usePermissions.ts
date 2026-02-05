@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { AppRole, roleHierarchy } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 
 // Define all available permissions
 export type PermissionName =
@@ -89,9 +88,8 @@ interface Permissions {
 }
 
 export function usePermissions(): Permissions {
-  const { role, user } = useAuthContext();
-  const [userPermissions, setUserPermissions] = useState<UserPermissions>({});
-  const [loading, setLoading] = useState(true);
+  // Get permissions directly from AuthContext (already fetched and cached)
+  const { role, permissions: userPermissions, permissionsLoading } = useAuthContext();
   
   const currentRole = role as AppRole | null;
   const roleLevel = currentRole ? roleHierarchy[currentRole] : 0;
@@ -106,43 +104,12 @@ export function usePermissions(): Permissions {
   const isManagerLevel = roleLevel >= roleHierarchy.project_manager;
   const isPortfolioLevel = roleLevel >= roleHierarchy.portfolio_manager;
 
-  // Fetch user permissions from database
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .rpc("get_user_permissions", { _user_id: user.id });
-
-        if (error) {
-          console.error("Error fetching permissions:", error);
-        } else if (data) {
-          const perms: UserPermissions = {};
-          data.forEach((p: { permission_name: string; granted: boolean }) => {
-            perms[p.permission_name] = p.granted;
-          });
-          setUserPermissions(perms);
-        }
-      } catch (error) {
-        console.error("Error fetching permissions:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPermissions();
-  }, [user?.id, role]);
-
   // Check if user has a specific permission
   const hasPermission = useCallback((permission: PermissionName, projectId?: string): boolean => {
     // Admin has all permissions
     if (isAdmin) return true;
     
-    // Check user permissions from DB
+    // Check user permissions from DB (already cached in AuthContext)
     return userPermissions[permission] === true;
   }, [isAdmin, userPermissions]);
   
@@ -202,7 +169,7 @@ export function usePermissions(): Permissions {
     
     // User permissions from DB
     userPermissions,
-    loading,
+    loading: permissionsLoading,
     
     // Check specific permission
     hasPermission,
