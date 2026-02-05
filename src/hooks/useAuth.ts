@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -50,37 +50,54 @@ export function useAuth(): UseAuthReturn {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dataFetched, setDataFetched] = useState(false);
   const { toast } = useToast();
+  
+  // Use refs to track fetch state across renders and prevent race conditions
+  const fetchingRef = useRef(false);
+  const fetchedUserIdRef = useRef<string | null>(null);
 
   const fetchUserData = useCallback(async (userId: string) => {
-    // Prevent duplicate fetches
-    if (dataFetched) return;
+    // Prevent duplicate fetches using refs (works across async boundaries)
+    if (fetchingRef.current || fetchedUserIdRef.current === userId) {
+      return;
+    }
+    
+    fetchingRef.current = true;
     
     try {
-      // Fetch profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
+      // Fetch profile and role in parallel for efficiency
+      const [profileResult, roleResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("user_id", userId)
+          .single(),
+        supabase.rpc("get_user_role", {
+          _user_id: userId,
+        })
+      ]);
 
-      if (profileData) {
-        setProfile(profileData);
+      if (profileResult.data) {
+        setProfile(profileResult.data);
       }
 
-      // Fetch role using the database function
-      const { data: roleData } = await supabase.rpc("get_user_role", {
-        _user_id: userId,
-      });
-
-      if (roleData) {
-        setRole(roleData as AppRole);
+      if (roleResult.data) {
+        setRole(roleResult.data as AppRole);
       }
-      setDataFetched(true);
+      
+      fetchedUserIdRef.current = userId;
     } catch (error) {
       console.error("Error fetching user data:", error);
+    } finally {
+      fetchingRef.current = false;
     }
+  }, []);
+
+  const resetAuthState = useCallback(() => {
+    setProfile(null);
+    setRole(null);
+    fetchingRef.current = false;
+    fetchedUserIdRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -90,23 +107,18 @@ export function useAuth(): UseAuthReturn {
         setSession(session);
         setUser(session?.user ?? null);
 
+        if (event === "SIGNED_OUT") {
+          resetAuthState();
+          return;
+        }
+
         // Defer Supabase calls with setTimeout to prevent deadlocks
         if (session?.user) {
           setTimeout(() => {
-            if (!dataFetched) {
-              fetchUserData(session.user.id);
-            }
+            fetchUserData(session.user.id);
           }, 0);
         } else {
-          setProfile(null);
-          setRole(null);
-          setDataFetched(false);
-        }
-
-        if (event === "SIGNED_OUT") {
-          setProfile(null);
-          setRole(null);
-          setDataFetched(false);
+          resetAuthState();
         }
       }
     );
@@ -117,17 +129,14 @@ export function useAuth(): UseAuthReturn {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Only fetch if not already fetched by onAuthStateChange
-        if (!dataFetched) {
-          fetchUserData(session.user.id);
-        }
+        fetchUserData(session.user.id);
       }
       
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchUserData, dataFetched]);
+  }, [fetchUserData, resetAuthState]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -207,9 +216,7 @@ export function useAuth(): UseAuthReturn {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-    setProfile(null);
-    setRole(null);
-    setDataFetched(false);
+    resetAuthState();
     toast({
       title: "Sessão terminada",
       description: "Até breve!",
