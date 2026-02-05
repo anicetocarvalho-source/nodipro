@@ -93,7 +93,7 @@ export default function Projects() {
   const [projectToDelete, setProjectToDelete] = useState<DbProject | null>(null);
   const { data: projects, isLoading, error } = useProjects();
   const deleteProject = useDeleteProject();
-  const { canCreateProject } = usePermissions();
+  const { canCreateProject, canEditProject, canDeleteProject } = usePermissions();
 
   const filteredProjects = (projects || []).filter(
     (p) =>
@@ -149,21 +149,27 @@ export default function Projects() {
                 <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
                   Ver detalhes
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  setEditingProject(project);
-                  setIsFormOpen(true);
-                }}>
-                  Editar
-                </DropdownMenuItem>
+                {canEditProject && (
+                  <DropdownMenuItem onClick={() => {
+                    setEditingProject(project);
+                    setIsFormOpen(true);
+                  }}>
+                    Editar
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem>Relatório</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => setProjectToDelete(project)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Eliminar
-                </DropdownMenuItem>
+                {canDeleteProject && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setProjectToDelete(project)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Eliminar
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
