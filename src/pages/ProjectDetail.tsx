@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
+import { KanbanBoardRef } from "@/components/kanban/KanbanBoard";
 import { GanttChartWithDependencies } from "@/components/gantt/GanttChartWithDependencies";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 import { ProjectPermissionsManager } from "@/components/projects/ProjectPermissionsManager";
@@ -81,6 +82,21 @@ export default function ProjectDetail() {
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const deleteProject = useDeleteProject();
   const { isAdmin, isPortfolioManager, isProjectManager } = usePermissions();
+  
+  const kanbanRef = useRef<KanbanBoardRef>(null);
+
+  const handleNewTask = () => {
+    if (activeView === "kanban" && kanbanRef.current) {
+      kanbanRef.current.openNewTaskModal("todo");
+    } else {
+      // Switch to kanban view and open modal
+      setActiveView("kanban");
+      // Use timeout to ensure view is rendered before opening modal
+      setTimeout(() => {
+        kanbanRef.current?.openNewTaskModal("todo");
+      }, 100);
+    }
+  };
   
   const { data: project, isLoading: projectLoading } = useProject(id);
   const { data: teamMembers, isLoading: teamLoading } = useTeamMembers(id);
@@ -171,7 +187,7 @@ export default function ProjectDetail() {
             <Settings className="h-4 w-4 mr-2" />
             Configurações
           </Button>
-          <Button className="bg-primary hover:bg-primary/90">
+          <Button className="bg-primary hover:bg-primary/90" onClick={handleNewTask}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Tarefa
           </Button>
@@ -274,7 +290,7 @@ export default function ProjectDetail() {
           {/* Views */}
           <Card className="overflow-hidden">
             <CardContent className="p-4">
-              {activeView === "kanban" && <KanbanBoard projectId={id || ""} />}
+              {activeView === "kanban" && <KanbanBoard ref={kanbanRef} projectId={id || ""} />}
               {activeView === "gantt" && <GanttChartWithDependencies projectId={id || ""} />}
               {activeView === "list" && (
                 <div className="text-center py-12 text-muted-foreground">
