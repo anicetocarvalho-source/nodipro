@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Calendar, Clock, User, Activity, Eye, BarChart3, TrendingUp, Users, FolderKanban, CheckCircle2, AlertTriangle } from "lucide-react";
+import { FileText, Download, Calendar, Clock, User, Activity, Eye, BarChart3, TrendingUp, Users, FolderKanban, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, eachMonthOfInterval, subMonths } from "date-fns";
 import { pt } from "date-fns/locale";
@@ -8,7 +8,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,107 +22,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useReportGeneration, ReportType } from "@/hooks/useReportGeneration";
+import { ReportPreviewModal } from "@/components/reports/ReportPreviewModal";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 const reportTemplates = [
-  { id: "1", name: "Relatório de Status do Projecto", type: "project", format: "PDF" },
-  { id: "2", name: "Relatório de Portfólio Executivo", type: "portfolio", format: "PDF" },
-  { id: "3", name: "Relatório de Desempenho da Equipa", type: "team", format: "Excel" },
-  { id: "4", name: "Relatório Financeiro Mensal", type: "financial", format: "PDF" },
-  { id: "5", name: "Relatório de Riscos Activos", type: "risk", format: "PDF" },
-  { id: "6", name: "Relatório de KPIs", type: "kpi", format: "Excel" },
-  { id: "7", name: "Análise de Desempenho e Impacto de Atrasos", type: "performance", format: "PDF", description: "Análise detalhada do desempenho dos projectos, identificando tarefas atrasadas, impacto no cronograma e recomendações de recuperação." },
+  { id: "1", name: "Relatório de Status do Projecto", type: "project" as ReportType, format: "PDF", description: "Estado actual dos projectos, progresso, tarefas e orçamento." },
+  { id: "2", name: "Relatório de Portfólio Executivo", type: "portfolio" as ReportType, format: "PDF", description: "Visão consolidada de portfólios, programas e distribuição orçamental." },
+  { id: "3", name: "Relatório de Desempenho da Equipa", type: "team" as ReportType, format: "Excel", description: "Produtividade por membro, alocação de tarefas e taxa de conclusão." },
+  { id: "4", name: "Relatório Financeiro", type: "financial" as ReportType, format: "PDF", description: "Execução orçamental por categoria e projecto, variações e desvios." },
+  { id: "5", name: "Relatório de Riscos Activos", type: "risk" as ReportType, format: "PDF", description: "Projectos atrasados, tarefas em atraso e orçamentos excedidos." },
+  { id: "6", name: "Relatório de KPIs", type: "kpi" as ReportType, format: "Excel", description: "Indicadores-chave de desempenho da organização." },
+  { id: "7", name: "Análise de Desempenho e Impacto de Atrasos", type: "performance" as ReportType, format: "PDF", description: "Desvio de cronograma, taxa de conclusão por projecto e impacto operacional." },
 ];
 
-const recentReports = [
-  {
-    id: "1",
-    name: "Status Projecto - Sistema Financeiro",
-    type: "project",
-    generatedBy: "João Miguel",
-    generatedAt: "10 Jan 2026, 14:30",
-    format: "PDF",
-    size: "2.4 MB",
-  },
-  {
-    id: "2",
-    name: "Portfólio Q4 2025",
-    type: "portfolio",
-    generatedBy: "Maria Silva",
-    generatedAt: "09 Jan 2026, 11:15",
-    format: "PDF",
-    size: "5.8 MB",
-  },
-  {
-    id: "3",
-    name: "Desempenho Equipa Alpha - Dezembro",
-    type: "team",
-    generatedBy: "Pedro Alves",
-    generatedAt: "08 Jan 2026, 09:00",
-    format: "Excel",
-    size: "1.2 MB",
-  },
-];
-
-const auditLogs = [
-  {
-    id: "1",
-    action: "Documento carregado",
-    details: "Proposta Comercial v2.pdf",
-    user: "João Miguel",
-    timestamp: "10 Jan 2026, 15:45",
-    module: "Documentos",
-  },
-  {
-    id: "2",
-    action: "Tarefa concluída",
-    details: "Análise de requisitos - Sprint 4",
-    user: "Maria Silva",
-    timestamp: "10 Jan 2026, 14:30",
-    module: "Projectos",
-  },
-  {
-    id: "3",
-    action: "Risco registado",
-    details: "Atraso na entrega de requisitos",
-    user: "Carlos Ferreira",
-    timestamp: "10 Jan 2026, 11:20",
-    module: "Riscos",
-  },
-  {
-    id: "4",
-    action: "Relatório gerado",
-    details: "Status Projecto - Sistema Financeiro",
-    user: "João Miguel",
-    timestamp: "10 Jan 2026, 10:00",
-    module: "Relatórios",
-  },
-  {
-    id: "5",
-    action: "Membro adicionado",
-    details: "Ana Costa → Equipa Portal Gov",
-    user: "Pedro Alves",
-    timestamp: "09 Jan 2026, 16:45",
-    module: "Equipa",
-  },
-  {
-    id: "6",
-    action: "Orçamento actualizado",
-    details: "ERP Corporativo +15%",
-    user: "Sofia Lima",
-    timestamp: "09 Jan 2026, 15:30",
-    module: "Orçamento",
-  },
-  {
-    id: "7",
-    action: "Projecto criado",
-    details: "Sistema de Recursos Humanos - TAAG",
-    user: "João Miguel",
-    timestamp: "09 Jan 2026, 09:00",
-    module: "Projectos",
-  },
-];
-
-const typeConfig = {
+const typeConfig: Record<string, { label: string; className: string }> = {
   project: { label: "Projecto", className: "bg-primary/10 text-primary" },
   portfolio: { label: "Portfólio", className: "bg-success/10 text-success" },
   team: { label: "Equipa", className: "bg-info/10 text-info" },
@@ -155,19 +70,123 @@ interface AnalyticsData {
   recentActivity: { date: string; tasks: number; projects: number }[];
 }
 
+interface GeneratedReportEntry {
+  id: string;
+  name: string;
+  type: string;
+  generatedAt: string;
+  format: string;
+}
+
 export default function Reports() {
-  const [selectedProject, setSelectedProject] = useState("");
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+  const { organization } = useOrganization();
+
+  // Report generation state
+  const [reportType, setReportType] = useState<ReportType>("project");
+  const [selectedProject, setSelectedProject] = useState("all");
+  const [reportFormat, setReportFormat] = useState<"pdf" | "excel">("pdf");
+  const { generateReport, isGenerating, reportData, setReportData } = useReportGeneration();
+
+  // Real data
+  const [realProjects, setRealProjects] = useState<{ id: string; name: string }[]>([]);
+  const [generatedHistory, setGeneratedHistory] = useState<GeneratedReportEntry[]>([]);
+
+  // Audit logs
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditModule, setAuditModule] = useState("all");
 
   useEffect(() => {
     fetchAnalytics();
+    fetchProjects();
   }, []);
+
+  const fetchProjects = async () => {
+    const { data } = await supabase
+      .from("projects")
+      .select("id, name")
+      .order("name");
+    if (data) setRealProjects(data);
+  };
+
+  const fetchAuditLogs = async () => {
+    setLoadingAuditLogs(true);
+    try {
+      const { data } = await supabase
+        .from("audit_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (data) setAuditLogs(data);
+    } catch (e) {
+      console.error("Error fetching audit logs:", e);
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    try {
+      const data = await generateReport({
+        type: reportType,
+        projectId: selectedProject,
+        format: reportFormat,
+      });
+      if (data) {
+        const entry: GeneratedReportEntry = {
+          id: crypto.randomUUID(),
+          name: data.title,
+          type: reportType,
+          generatedAt: data.generatedAt,
+          format: reportFormat.toUpperCase(),
+        };
+        setGeneratedHistory(prev => [entry, ...prev]);
+        toast.success("Relatório gerado com sucesso!");
+      }
+    } catch {
+      toast.error("Erro ao gerar o relatório. Tente novamente.");
+    }
+  };
+
+  const handleTemplateClick = async (template: typeof reportTemplates[0]) => {
+    setReportType(template.type);
+    try {
+      const data = await generateReport({
+        type: template.type,
+        projectId: "all",
+        format: template.format.toLowerCase() === "excel" ? "excel" : "pdf",
+      });
+      if (data) {
+        const entry: GeneratedReportEntry = {
+          id: crypto.randomUUID(),
+          name: data.title,
+          type: template.type,
+          generatedAt: data.generatedAt,
+          format: template.format,
+        };
+        setGeneratedHistory(prev => [entry, ...prev]);
+        toast.success("Relatório gerado com sucesso!");
+      }
+    } catch {
+      toast.error("Erro ao gerar o relatório.");
+    }
+  };
+
+  const filteredAuditLogs = auditLogs.filter(log => {
+    const matchesSearch = !auditSearch ||
+      log.action?.toLowerCase().includes(auditSearch.toLowerCase()) ||
+      log.target_name?.toLowerCase().includes(auditSearch.toLowerCase()) ||
+      log.user_name?.toLowerCase().includes(auditSearch.toLowerCase());
+    const matchesModule = auditModule === "all" || log.target_type === auditModule;
+    return matchesSearch && matchesModule;
+  });
 
   const fetchAnalytics = async () => {
     setLoadingAnalytics(true);
     try {
-      // Fetch all data in parallel
       const [projectsRes, tasksRes, teamMembersRes] = await Promise.all([
         supabase.from('projects').select('*'),
         supabase.from('tasks').select('*'),
@@ -178,23 +197,18 @@ export default function Reports() {
       const tasks = tasksRes.data || [];
       const teamMembers = teamMembersRes.data || [];
 
-      // Calculate stats
       const totalProjects = projects.length;
       const totalTasks = tasks.length;
       const completedTasks = tasks.filter(t => t.column_id === 'done').length;
       const totalTeamMembers = teamMembers.length;
 
-      // Projects by status
       const statusCounts = projects.reduce((acc, p) => {
         acc[p.status] = (acc[p.status] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
       const statusLabels: Record<string, string> = {
-        active: 'Activos',
-        delayed: 'Atrasados',
-        completed: 'Concluídos',
-        on_hold: 'Em Pausa',
+        active: 'Activos', delayed: 'Atrasados', completed: 'Concluídos', on_hold: 'Em Pausa',
       };
 
       const projectsByStatus = Object.entries(statusCounts).map(([status, count], index) => ({
@@ -203,93 +217,51 @@ export default function Reports() {
         color: COLORS[index % COLORS.length],
       }));
 
-      // Tasks by priority
       const priorityCounts = tasks.reduce((acc, t) => {
         acc[t.priority] = (acc[t.priority] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
-      const priorityLabels: Record<string, string> = {
-        high: 'Alta',
-        medium: 'Média',
-        low: 'Baixa',
-      };
+      const priorityLabels: Record<string, string> = { high: 'Alta', medium: 'Média', low: 'Baixa' };
 
-      const tasksByPriority = Object.entries(priorityCounts).map(([priority, count], index) => ({
+      const tasksByPriority = Object.entries(priorityCounts).map(([priority, count]) => ({
         name: priorityLabels[priority] || priority,
         value: count as number,
         color: priority === 'high' ? 'hsl(var(--destructive))' : priority === 'medium' ? 'hsl(var(--warning))' : 'hsl(var(--success))',
       }));
 
-      // Tasks over time (last 30 days)
-      const last30Days = eachDayOfInterval({
-        start: subDays(new Date(), 29),
-        end: new Date(),
-      });
-
+      const last30Days = eachDayOfInterval({ start: subDays(new Date(), 29), end: new Date() });
       const tasksOverTime = last30Days.map(day => {
         const dayStr = format(day, 'yyyy-MM-dd');
-        const created = tasks.filter(t => format(new Date(t.created_at), 'yyyy-MM-dd') === dayStr).length;
-        const completed = tasks.filter(t => t.column_id === 'done' && format(new Date(t.updated_at), 'yyyy-MM-dd') === dayStr).length;
         return {
           date: format(day, 'dd/MM', { locale: pt }),
-          created,
-          completed,
+          created: tasks.filter(t => format(new Date(t.created_at), 'yyyy-MM-dd') === dayStr).length,
+          completed: tasks.filter(t => t.column_id === 'done' && format(new Date(t.updated_at), 'yyyy-MM-dd') === dayStr).length,
         };
       });
 
-      // Projects over time (last 6 months)
-      const last6Months = eachMonthOfInterval({
-        start: subMonths(new Date(), 5),
-        end: new Date(),
-      });
-
+      const last6Months = eachMonthOfInterval({ start: subMonths(new Date(), 5), end: new Date() });
       const projectsOverTime = last6Months.map(month => {
         const monthStart = startOfMonth(month);
         const monthEnd = endOfMonth(month);
-        const created = projects.filter(p => {
-          const createdDate = new Date(p.created_at);
-          return createdDate >= monthStart && createdDate <= monthEnd;
-        }).length;
-        const active = projects.filter(p => {
-          const createdDate = new Date(p.created_at);
-          return createdDate <= monthEnd && p.status === 'active';
-        }).length;
         return {
           month: format(month, 'MMM', { locale: pt }),
-          created,
-          active,
+          created: projects.filter(p => { const d = new Date(p.created_at); return d >= monthStart && d <= monthEnd; }).length,
+          active: projects.filter(p => { const d = new Date(p.created_at); return d <= monthEnd && p.status === 'active'; }).length,
         };
       });
 
-      // Recent activity (last 7 days)
-      const last7Days = eachDayOfInterval({
-        start: subDays(new Date(), 6),
-        end: new Date(),
-      });
-
+      const last7Days = eachDayOfInterval({ start: subDays(new Date(), 6), end: new Date() });
       const recentActivity = last7Days.map(day => {
         const dayStr = format(day, 'yyyy-MM-dd');
-        const taskCount = tasks.filter(t => format(new Date(t.created_at), 'yyyy-MM-dd') === dayStr || format(new Date(t.updated_at), 'yyyy-MM-dd') === dayStr).length;
-        const projectCount = projects.filter(p => format(new Date(p.created_at), 'yyyy-MM-dd') === dayStr || format(new Date(p.updated_at), 'yyyy-MM-dd') === dayStr).length;
         return {
           date: format(day, 'EEE', { locale: pt }),
-          tasks: taskCount,
-          projects: projectCount,
+          tasks: tasks.filter(t => format(new Date(t.created_at), 'yyyy-MM-dd') === dayStr || format(new Date(t.updated_at), 'yyyy-MM-dd') === dayStr).length,
+          projects: projects.filter(p => format(new Date(p.created_at), 'yyyy-MM-dd') === dayStr || format(new Date(p.updated_at), 'yyyy-MM-dd') === dayStr).length,
         };
       });
 
-      setAnalytics({
-        totalProjects,
-        totalTasks,
-        completedTasks,
-        totalTeamMembers,
-        projectsByStatus,
-        tasksByPriority,
-        tasksOverTime,
-        projectsOverTime,
-        recentActivity,
-      });
+      setAnalytics({ totalProjects, totalTasks, completedTasks, totalTeamMembers, projectsByStatus, tasksByPriority, tasksOverTime, projectsOverTime, recentActivity });
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -304,7 +276,7 @@ export default function Reports() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Relatórios e Auditoria</h1>
           <p className="text-muted-foreground">
-            Gerar relatórios e consultar logs de actividade.
+            Gerar relatórios, consultar analytics e logs de actividade.
           </p>
         </div>
       </div>
@@ -317,7 +289,9 @@ export default function Reports() {
           </TabsTrigger>
           <TabsTrigger value="generate">Gerar Relatório</TabsTrigger>
           <TabsTrigger value="history">Histórico</TabsTrigger>
-          <TabsTrigger value="audit">Logs de Auditoria</TabsTrigger>
+          <TabsTrigger value="audit" onClick={() => { if (auditLogs.length === 0) fetchAuditLogs(); }}>
+            Logs de Auditoria
+          </TabsTrigger>
         </TabsList>
 
         {/* Analytics Tab */}
@@ -344,7 +318,6 @@ export default function Reports() {
                     </div>
                   </CardContent>
                 </Card>
-
                 <Card>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
@@ -359,7 +332,6 @@ export default function Reports() {
                     </div>
                   </CardContent>
                 </Card>
-
                 <Card>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
@@ -374,7 +346,6 @@ export default function Reports() {
                     </div>
                   </CardContent>
                 </Card>
-
                 <Card>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between">
@@ -395,7 +366,6 @@ export default function Reports() {
 
               {/* Charts Row 1 */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Tasks Over Time */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-semibold">Tarefas ao Longo do Tempo</CardTitle>
@@ -425,7 +395,6 @@ export default function Reports() {
                   </CardContent>
                 </Card>
 
-                {/* Projects Over Time */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-semibold">Evolução de Projectos</CardTitle>
@@ -448,7 +417,6 @@ export default function Reports() {
 
               {/* Charts Row 2 */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Projects by Status */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-semibold">Projectos por Estado</CardTitle>
@@ -456,15 +424,7 @@ export default function Reports() {
                   <CardContent>
                     <ChartContainer config={chartConfig} className="h-[200px] w-full">
                       <PieChart>
-                        <Pie
-                          data={analytics.projectsByStatus}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
+                        <Pie data={analytics.projectsByStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
                           {analytics.projectsByStatus.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
@@ -483,7 +443,6 @@ export default function Reports() {
                   </CardContent>
                 </Card>
 
-                {/* Tasks by Priority */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-semibold">Tarefas por Prioridade</CardTitle>
@@ -491,15 +450,7 @@ export default function Reports() {
                   <CardContent>
                     <ChartContainer config={chartConfig} className="h-[200px] w-full">
                       <PieChart>
-                        <Pie
-                          data={analytics.tasksByPriority}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={80}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
+                        <Pie data={analytics.tasksByPriority} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
                           {analytics.tasksByPriority.map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
@@ -518,7 +469,6 @@ export default function Reports() {
                   </CardContent>
                 </Card>
 
-                {/* Weekly Activity */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg font-semibold">Actividade Semanal</CardTitle>
@@ -549,8 +499,8 @@ export default function Reports() {
           )}
         </TabsContent>
 
+        {/* Generate Report Tab */}
         <TabsContent value="generate" className="mt-6 space-y-6">
-          {/* Report Generator */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Gerar Novo Relatório</CardTitle>
@@ -559,7 +509,7 @@ export default function Reports() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Tipo de Relatório</label>
-                  <Select>
+                  <Select value={reportType} onValueChange={(v) => setReportType(v as ReportType)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Seleccionar tipo" />
                     </SelectTrigger>
@@ -568,7 +518,7 @@ export default function Reports() {
                       <SelectItem value="portfolio">Portfólio Executivo</SelectItem>
                       <SelectItem value="team">Desempenho da Equipa</SelectItem>
                       <SelectItem value="financial">Financeiro</SelectItem>
-                      <SelectItem value="risk">Riscos</SelectItem>
+                      <SelectItem value="risk">Riscos Activos</SelectItem>
                       <SelectItem value="kpi">KPIs</SelectItem>
                       <SelectItem value="performance">Desempenho e Impacto de Atrasos</SelectItem>
                     </SelectContent>
@@ -582,16 +532,15 @@ export default function Reports() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todos os projectos</SelectItem>
-                      <SelectItem value="1">Sistema de Gestão Financeira</SelectItem>
-                      <SelectItem value="2">Portal de Serviços Públicos</SelectItem>
-                      <SelectItem value="3">App Mobile Bancário</SelectItem>
-                      <SelectItem value="4">ERP Corporativo</SelectItem>
+                      {realProjects.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Formato</label>
-                  <Select defaultValue="pdf">
+                  <Select value={reportFormat} onValueChange={(v) => setReportFormat(v as "pdf" | "excel")}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -602,9 +551,22 @@ export default function Reports() {
                   </Select>
                 </div>
               </div>
-              <Button className="bg-primary hover:bg-primary/90">
-                <FileText className="h-4 w-4 mr-2" />
-                Gerar Relatório
+              <Button
+                className="bg-primary hover:bg-primary/90"
+                onClick={handleGenerateReport}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    A gerar...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Gerar Relatório
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -612,22 +574,30 @@ export default function Reports() {
           {/* Report Templates */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Templates Disponíveis</h2>
+            <p className="text-sm text-muted-foreground mb-4">Clique num template para gerar o relatório instantaneamente.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {reportTemplates.map((template) => (
-                <Card key={template.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                <Card
+                  key={template.id}
+                  className={cn(
+                    "hover:shadow-md transition-all cursor-pointer border-2 border-transparent hover:border-primary/20",
+                    isGenerating && "opacity-50 pointer-events-none"
+                  )}
+                  onClick={() => handleTemplateClick(template)}
+                >
                   <CardContent className="p-5">
                     <div className="flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-primary/10">
-                        <FileText className="h-6 w-6 text-primary" />
+                      <div className={cn("p-3 rounded-lg", typeConfig[template.type]?.className || "bg-primary/10")}>
+                        <FileText className="h-6 w-6" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium">{template.name}</p>
-                        {'description' in template && template.description && (
+                        <p className="font-medium text-sm">{template.name}</p>
+                        {template.description && (
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{template.description}</p>
                         )}
                         <div className="flex items-center gap-2 mt-2">
-                          <Badge className={cn("text-xs", typeConfig[template.type as keyof typeof typeConfig].className)}>
-                            {typeConfig[template.type as keyof typeof typeConfig].label}
+                          <Badge className={cn("text-xs", typeConfig[template.type]?.className)}>
+                            {typeConfig[template.type]?.label}
                           </Badge>
                           <span className="text-xs text-muted-foreground">{template.format}</span>
                         </div>
@@ -640,124 +610,153 @@ export default function Reports() {
           </div>
         </TabsContent>
 
+        {/* History Tab */}
         <TabsContent value="history" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Relatórios Recentes</CardTitle>
+              <CardTitle className="text-lg">Relatórios Gerados</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {recentReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        <FileText className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{report.name}</p>
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
-                          <span className="flex items-center gap-1">
-                            <User className="h-3.5 w-3.5" />
-                            {report.generatedBy}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5" />
-                            {report.generatedAt}
-                          </span>
-                          <span>{report.size}</span>
+              {generatedHistory.length > 0 ? (
+                <div className="space-y-3">
+                  {generatedHistory.map((report) => (
+                    <div
+                      key={report.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/30 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={cn("p-2 rounded-lg", typeConfig[report.type]?.className || "bg-primary/10")}>
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{report.name}</p>
+                          <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3.5 w-3.5" />
+                              {report.generatedAt}
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Badge className={cn("text-xs", typeConfig[report.type]?.className)}>
+                          {typeConfig[report.type]?.label}
+                        </Badge>
+                        <Badge variant="secondary">{report.format}</Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{report.format}</Badge>
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-1" />
-                        Download
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">Nenhum relatório gerado ainda.</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Vá ao separador "Gerar Relatório" para criar o primeiro.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* Audit Logs Tab */}
         <TabsContent value="audit" className="mt-6 space-y-4">
-          {/* Filters */}
           <Card>
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1">
-                  <Input placeholder="Pesquisar nos logs..." />
+                  <Input
+                    placeholder="Pesquisar nos logs..."
+                    value={auditSearch}
+                    onChange={(e) => setAuditSearch(e.target.value)}
+                  />
                 </div>
-                <Select defaultValue="all">
+                <Select value={auditModule} onValueChange={setAuditModule}>
                   <SelectTrigger className="w-full sm:w-[180px]">
                     <SelectValue placeholder="Módulo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os módulos</SelectItem>
-                    <SelectItem value="projects">Projectos</SelectItem>
-                    <SelectItem value="documents">Documentos</SelectItem>
+                    <SelectItem value="project">Projectos</SelectItem>
+                    <SelectItem value="document">Documentos</SelectItem>
                     <SelectItem value="team">Equipa</SelectItem>
                     <SelectItem value="budget">Orçamento</SelectItem>
-                    <SelectItem value="risks">Riscos</SelectItem>
+                    <SelectItem value="task">Tarefas</SelectItem>
+                    <SelectItem value="portfolio">Portfólio</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Data
+                <Button variant="outline" onClick={fetchAuditLogs} disabled={loadingAuditLogs}>
+                  {loadingAuditLogs ? <Loader2 className="h-4 w-4 animate-spin" /> : <Activity className="h-4 w-4 mr-2" />}
+                  Actualizar
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* Audit Logs */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Logs de Actividade</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {auditLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-4 p-3 rounded-lg hover:bg-accent/30 transition-colors"
-                  >
-                    <div className="p-2 rounded-lg bg-muted">
-                      <Activity className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{log.action}</span>
-                        <Badge variant="secondary" className="text-xs">
-                          {log.module}
-                        </Badge>
+              {loadingAuditLogs ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : filteredAuditLogs.length > 0 ? (
+                <div className="space-y-2">
+                  {filteredAuditLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="flex items-start gap-4 p-3 rounded-lg hover:bg-accent/30 transition-colors"
+                    >
+                      <div className="p-2 rounded-lg bg-muted">
+                        <Activity className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{log.details}</p>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                        <span className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
-                          {log.user}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {log.timestamp}
-                        </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{log.action}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {log.target_type}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {log.target_name || log.old_value || log.new_value || 'Sem detalhes'}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <User className="h-3 w-3" />
+                            {log.user_name || 'Sistema'}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {format(new Date(log.created_at), "dd MMM yyyy, HH:mm", { locale: pt })}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {auditSearch || auditModule !== 'all'
+                      ? 'Nenhum log encontrado com os filtros aplicados.'
+                      : 'Nenhum log de actividade registado.'}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Report Preview Modal */}
+      <ReportPreviewModal
+        reportData={reportData}
+        onClose={() => setReportData(null)}
+      />
     </div>
   );
 }
