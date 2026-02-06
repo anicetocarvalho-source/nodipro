@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   FolderKanban,
   CheckCircle,
@@ -6,11 +7,13 @@ import {
   Globe,
   Target,
   AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
@@ -19,8 +22,10 @@ interface PublicEntityDashboardProps {
 }
 
 export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) {
+  const navigate = useNavigate();
   const {
     stats,
+    projects,
     sdgProgress,
     budgetByProvince,
     upcomingDeadlines,
@@ -60,6 +65,9 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
     }
   };
 
+  // Find the first delayed/active project for drill-down
+  const firstDelayedProject = projects.find(p => p.status === "delayed");
+
   if (isLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
@@ -87,6 +95,7 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       change: `${stats.completedProjects} concluídos`,
       changeType: "positive" as const,
       icon: FolderKanban,
+      href: "/projects",
     },
     {
       title: "Taxa de Execução",
@@ -94,6 +103,7 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       change: `${formatCompactNumber(stats.totalSpent)} de ${formatCompactNumber(stats.totalBudget)}`,
       changeType: stats.executionRate >= 50 ? "positive" as const : "neutral" as const,
       icon: CheckCircle,
+      href: "/budget",
     },
     {
       title: "Tarefas Concluídas",
@@ -101,6 +111,7 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       change: `${stats.overdueTasks} em atraso`,
       changeType: stats.overdueTasks > 0 ? "negative" as const : "positive" as const,
       icon: FileCheck,
+      href: firstDelayedProject ? `/projects/${firstDelayedProject.id}` : "/projects",
     },
     {
       title: "ODS Impactados",
@@ -108,6 +119,7 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       change: "De 17 objectivos",
       changeType: "positive" as const,
       icon: Globe,
+      href: "/governance",
     },
   ];
 
@@ -143,11 +155,15 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
         {/* Left Column - SDG Progress & Budget */}
         <div className="xl:col-span-2 space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
                 Progresso dos Objectivos de Desenvolvimento Sustentável
               </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/governance")}>
+                Ver todos
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {sdgProgress.length > 0 ? (
@@ -183,8 +199,12 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
 
           {/* Budget by Province */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Execução Orçamental por Província</CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/budget")}>
+                Ver orçamento
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
             </CardHeader>
             <CardContent>
               {budgetByProvince.length > 0 ? (
@@ -230,20 +250,27 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
             <CardContent>
               {upcomingDeadlines.length > 0 ? (
                 <div className="space-y-4">
-                  {upcomingDeadlines.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                    >
-                      <div>
-                        <p className="text-sm font-medium">{item.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {item.projectName} • {new Date(item.dueDate).toLocaleDateString('pt-AO')}
-                        </p>
-                      </div>
-                      {getPriorityBadge(item.priority)}
-                    </div>
-                  ))}
+                  {upcomingDeadlines.map((item) => {
+                    // Find the project to link to
+                    const project = projects.find(p => p.name === item.projectName);
+                    return (
+                      <button
+                        key={item.id}
+                        className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+                        onClick={() => {
+                          if (project) navigate(`/projects/${project.id}`);
+                        }}
+                      >
+                        <div>
+                          <p className="text-sm font-medium">{item.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.projectName} • {new Date(item.dueDate).toLocaleDateString('pt-AO')}
+                          </p>
+                        </div>
+                        {getPriorityBadge(item.priority)}
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-muted-foreground text-center py-4">
@@ -265,20 +292,26 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
               <CardContent>
                 <div className="space-y-3">
                   {stats.overdueTasks > 0 && (
-                    <div className="p-3 rounded-lg bg-background">
+                    <button
+                      className="w-full p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors text-left"
+                      onClick={() => navigate("/projects")}
+                    >
                       <p className="text-sm font-medium">Tarefas em Atraso</p>
                       <p className="text-xs text-muted-foreground">
                         {stats.overdueTasks} tarefa{stats.overdueTasks !== 1 ? "s" : ""} com prazo ultrapassado
                       </p>
-                    </div>
+                    </button>
                   )}
                   {stats.delayedProjects > 0 && (
-                    <div className="p-3 rounded-lg bg-background">
+                    <button
+                      className="w-full p-3 rounded-lg bg-background hover:bg-muted/50 transition-colors text-left"
+                      onClick={() => navigate("/projects")}
+                    >
                       <p className="text-sm font-medium">Projectos Atrasados</p>
                       <p className="text-xs text-muted-foreground">
                         {stats.delayedProjects} projecto{stats.delayedProjects !== 1 ? "s" : ""} com status de atraso
                       </p>
-                    </div>
+                    </button>
                   )}
                 </div>
               </CardContent>
