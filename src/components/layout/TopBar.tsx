@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
-import { Search, Bell, ChevronDown, Menu, LogOut, User, Settings, Sun, Moon, Monitor } from "lucide-react";
+import { Search, ChevronDown, Menu, LogOut, User, Settings, Sun, Moon, Monitor, Bell } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { RoleBadge } from "@/components/ui/role-badge";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { useIntegrityNotifications } from "@/hooks/useIntegrityNotifications";
 
 interface TopBarProps {
   onMobileMenuToggle?: () => void;
@@ -62,20 +63,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const [searchFocused, setSearchFocused] = useState(false);
   const { profile, role, signOut } = useAuthContext();
   const navigate = useNavigate();
-  const notificationCount = 5;
-
-  const getRoleLabel = (role: string | null) => {
-    switch (role) {
-      case "admin":
-        return "Administrador";
-      case "manager":
-        return "Gestor de Projectos";
-      case "member":
-        return "Membro";
-      default:
-        return "Utilizador";
-    }
-  };
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useIntegrityNotifications();
 
   const getInitials = (name: string | null) => {
     if (!name) return "U";
@@ -118,47 +106,14 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
         {/* Theme toggle */}
         <ThemeToggle />
 
-        {/* Notifications */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs bg-destructive">
-                  {notificationCount}
-                </Badge>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel className="flex items-center justify-between">
-              <span>Notificações</span>
-              <Button variant="ghost" size="sm" className="text-xs text-primary">
-                Marcar todas como lidas
-              </Button>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <div className="max-h-80 overflow-y-auto">
-              {[
-                { title: "Nova tarefa atribuída", desc: "Revisão do relatório trimestral", time: "5 min" },
-                { title: "Comentário em tarefa", desc: "João mencionou você em...", time: "1h" },
-                { title: "Prazo próximo", desc: "Entrega do projecto ABC em 2 dias", time: "2h" },
-                { title: "Documento aprovado", desc: "Proposta comercial foi aprovada", time: "3h" },
-                { title: "Reunião agendada", desc: "Revisão do portfólio às 15h", time: "5h" },
-              ].map((notif, i) => (
-                <DropdownMenuItem key={i} className="flex flex-col items-start p-3 cursor-pointer">
-                  <span className="font-medium text-sm">{notif.title}</span>
-                  <span className="text-xs text-muted-foreground">{notif.desc}</span>
-                  <span className="text-xs text-muted-foreground mt-1">{notif.time}</span>
-                </DropdownMenuItem>
-              ))}
-            </div>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-center text-primary justify-center">
-              Ver todas as notificações
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Real-time Integrity Notifications */}
+        <NotificationBell
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+          onClearAll={clearAll}
+        />
 
         {/* User menu */}
         <DropdownMenu>
