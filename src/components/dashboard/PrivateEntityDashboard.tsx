@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   FolderKanban,
   TrendingUp,
@@ -7,69 +8,29 @@ import {
   Zap,
   Building2,
   BarChart3,
+  ExternalLink,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 interface PrivateEntityDashboardProps {
   userName: string;
 }
 
-const stats = [
-  {
-    title: "Projectos Activos",
-    value: 12,
-    change: "+2 este mês",
-    changeType: "positive" as const,
-    icon: FolderKanban,
-  },
-  {
-    title: "ROI Médio",
-    value: "24%",
-    change: "+8% vs ano anterior",
-    changeType: "positive" as const,
-    icon: TrendingUp,
-  },
-  {
-    title: "Tempo Médio Entrega",
-    value: "45 dias",
-    change: "-5 dias vs meta",
-    changeType: "positive" as const,
-    icon: Clock,
-  },
-  {
-    title: "Receita Projectos",
-    value: "85M",
-    change: "+12% YTD",
-    changeType: "positive" as const,
-    icon: DollarSign,
-  },
-];
-
-const projectPerformance = [
-  { name: "Sistema ERP Cliente A", progress: 78, status: "on_track", revenue: 15000000 },
-  { name: "App Mobile Fintech", progress: 45, status: "at_risk", revenue: 8500000 },
-  { name: "Plataforma E-commerce", progress: 92, status: "on_track", revenue: 12000000 },
-  { name: "Integração API Bancária", progress: 60, status: "on_track", revenue: 5000000 },
-];
-
-const resourceUtilization = [
-  { name: "Desenvolvedores", utilization: 85, count: 24 },
-  { name: "Designers", utilization: 72, count: 8 },
-  { name: "Gestores de Projecto", utilization: 90, count: 6 },
-  { name: "QA/Testers", utilization: 68, count: 10 },
-];
-
-const upcomingDeadlines = [
-  { project: "Sistema ERP", milestone: "Fase 2 - Módulo Financeiro", date: "02 Fev 2026", priority: "high" },
-  { project: "App Mobile", milestone: "Beta Release", date: "15 Fev 2026", priority: "high" },
-  { project: "E-commerce", milestone: "Go-Live", date: "28 Fev 2026", priority: "medium" },
-  { project: "API Bancária", milestone: "Testes de Integração", date: "10 Mar 2026", priority: "low" },
-];
-
 export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps) {
+  const navigate = useNavigate();
+  const {
+    stats,
+    projects,
+    upcomingDeadlines: realDeadlines,
+    isLoading,
+  } = useDashboardData();
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Bom dia";
@@ -79,25 +40,14 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "on_track":
-        return <Badge variant="default" className="bg-success">No Prazo</Badge>;
-      case "at_risk":
-        return <Badge variant="default" className="bg-warning">Em Risco</Badge>;
+      case "active":
+        return <Badge variant="default" className="bg-success">Activo</Badge>;
       case "delayed":
-        return <Badge variant="default" className="bg-destructive">Atrasado</Badge>;
+        return <Badge variant="default" className="bg-warning">Atrasado</Badge>;
+      case "completed":
+        return <Badge variant="default" className="bg-info">Concluído</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "text-destructive";
-      case "medium":
-        return "text-warning";
-      default:
-        return "text-muted-foreground";
+        return <Badge variant="secondary">Em Espera</Badge>;
     }
   };
 
@@ -109,6 +59,68 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
       maximumFractionDigits: 1,
     }).format(value);
   };
+
+  const formatCompactNumber = (value: number) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+    return value.toString();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Use real data for project performance
+  const topProjects = projects
+    .filter(p => p.status === "active" || p.status === "delayed")
+    .slice(0, 4);
+
+  const dynamicStats = [
+    {
+      title: "Projectos Activos",
+      value: stats.activeProjects,
+      change: `+${stats.completedProjects} concluídos`,
+      changeType: "positive" as const,
+      icon: FolderKanban,
+      href: "/projects",
+    },
+    {
+      title: "Taxa de Execução",
+      value: `${stats.executionRate}%`,
+      change: `${formatCompactNumber(stats.totalSpent)} de ${formatCompactNumber(stats.totalBudget)}`,
+      changeType: stats.executionRate >= 50 ? "positive" as const : "neutral" as const,
+      icon: TrendingUp,
+      href: "/budget",
+    },
+    {
+      title: "Tarefas Concluídas",
+      value: `${stats.completedTasks}/${stats.totalTasks}`,
+      change: `${stats.inProgressTasks} em progresso`,
+      changeType: "positive" as const,
+      icon: Clock,
+      href: "/projects",
+    },
+    {
+      title: "Orçamento Total",
+      value: formatCompactNumber(stats.totalBudget),
+      change: `${stats.executionRate}% executado`,
+      changeType: "positive" as const,
+      icon: DollarSign,
+      href: "/budget",
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -132,68 +144,99 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}
       </div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* Left Column - Project Performance */}
+        {/* Left Column - Project Performance from real data */}
         <div className="xl:col-span-2 space-y-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-primary" />
                 Performance dos Projectos
               </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/projects")}>
+                Ver todos
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {projectPerformance.map((project) => (
-                <div key={project.name} className="p-4 rounded-lg bg-muted/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{project.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Receita: {formatCurrency(project.revenue)}
-                      </p>
+              {topProjects.length > 0 ? (
+                topProjects.map((project) => (
+                  <button
+                    key={project.id}
+                    className="w-full p-4 rounded-lg bg-muted/50 space-y-3 hover:bg-muted transition-colors text-left"
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{project.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Orçamento: {formatCurrency(project.budget || 0)}
+                        </p>
+                      </div>
+                      {getStatusBadge(project.status)}
                     </div>
-                    {getStatusBadge(project.status)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Progress value={project.progress} className="h-2 flex-1" />
-                    <span className="text-sm font-medium w-12">{project.progress}%</span>
-                  </div>
-                </div>
-              ))}
+                    <div className="flex items-center gap-2">
+                      <Progress value={project.progress} className="h-2 flex-1" />
+                      <span className="text-sm font-medium w-12">{project.progress}%</span>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum projecto activo encontrado.
+                </p>
+              )}
             </CardContent>
           </Card>
 
-          {/* Resource Utilization */}
+          {/* Team overview */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                Utilização de Recursos
+                Visão Geral da Equipa
               </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/team")}>
+                Ver equipa
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {resourceUtilization.map((resource) => (
-                  <div key={resource.name} className="p-4 rounded-lg bg-muted/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">{resource.name}</span>
-                      <span className="text-sm text-muted-foreground">{resource.count} pessoas</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Progress 
-                        value={resource.utilization} 
-                        className={`h-2 flex-1 ${resource.utilization > 85 ? '[&>div]:bg-warning' : ''}`}
-                      />
-                      <span className="text-sm font-medium w-12">{resource.utilization}%</span>
-                    </div>
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">Tarefas Activas</span>
+                    <span className="text-sm text-muted-foreground">{stats.inProgressTasks} em progresso</span>
                   </div>
-                ))}
+                  <div className="flex items-center gap-2">
+                    <Progress
+                      value={stats.totalTasks > 0 ? (stats.completedTasks / stats.totalTasks) * 100 : 0}
+                      className="h-2 flex-1"
+                    />
+                    <span className="text-sm font-medium w-12">
+                      {stats.totalTasks > 0 ? Math.round((stats.completedTasks / stats.totalTasks) * 100) : 0}%
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium">Execução Orçamental</span>
+                    <span className="text-sm text-muted-foreground">{stats.executionRate}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Progress
+                      value={stats.executionRate}
+                      className={`h-2 flex-1 ${stats.executionRate > 85 ? '[&>div]:bg-warning' : ''}`}
+                    />
+                    <span className="text-sm font-medium w-12">{stats.executionRate}%</span>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -209,24 +252,36 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {upcomingDeadlines.map((deadline, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start justify-between p-3 rounded-lg bg-muted/50"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{deadline.milestone}</p>
-                      <p className="text-xs text-muted-foreground">{deadline.project}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-sm font-medium ${getPriorityColor(deadline.priority)}`}>
-                        {deadline.date}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {realDeadlines.length > 0 ? (
+                <div className="space-y-4">
+                  {realDeadlines.map((deadline) => {
+                    const project = projects.find(p => p.name === deadline.projectName);
+                    return (
+                      <button
+                        key={deadline.id}
+                        className="w-full flex items-start justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+                        onClick={() => {
+                          if (project) navigate(`/projects/${project.id}`);
+                        }}
+                      >
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">{deadline.title}</p>
+                          <p className="text-xs text-muted-foreground">{deadline.projectName}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {new Date(deadline.dueDate).toLocaleDateString('pt-AO')}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">
+                  Nenhum prazo próximo.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -240,22 +295,34 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <span className="text-sm">Velocidade da Equipa</span>
-                  <span className="font-medium text-success">+15%</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <span className="text-sm">Satisfação do Cliente</span>
-                  <span className="font-medium">4.7/5.0</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <span className="text-sm">Bugs Críticos</span>
-                  <span className="font-medium text-warning">3</span>
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                  <span className="text-sm">Sprints Concluídos</span>
-                  <span className="font-medium">24/26</span>
-                </div>
+                <button
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  onClick={() => navigate("/projects")}
+                >
+                  <span className="text-sm">Projectos Activos</span>
+                  <span className="font-medium text-success">{stats.activeProjects}</span>
+                </button>
+                <button
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  onClick={() => navigate("/projects")}
+                >
+                  <span className="text-sm">Em Atraso</span>
+                  <span className="font-medium text-warning">{stats.delayedProjects}</span>
+                </button>
+                <button
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  onClick={() => navigate("/budget")}
+                >
+                  <span className="text-sm">Tarefas em Atraso</span>
+                  <span className="font-medium text-destructive">{stats.overdueTasks}</span>
+                </button>
+                <button
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  onClick={() => navigate("/portfolio")}
+                >
+                  <span className="text-sm">Portfólio</span>
+                  <span className="font-medium">Ver →</span>
+                </button>
               </div>
             </CardContent>
           </Card>

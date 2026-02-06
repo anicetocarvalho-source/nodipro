@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   FolderKanban,
   Heart,
@@ -7,11 +8,13 @@ import {
   Target,
   HandHeart,
   MapPin,
+  ExternalLink,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/useDashboardData";
 
@@ -20,8 +23,10 @@ interface NGOEntityDashboardProps {
 }
 
 export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
+  const navigate = useNavigate();
   const {
     stats,
+    projects,
     sdgProgress,
     budgetByProvince,
     funderData,
@@ -86,6 +91,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       change: `+${stats.completedProjects} concluídos`,
       changeType: "positive" as const,
       icon: FolderKanban,
+      href: "/projects",
     },
     {
       title: "Tarefas em Progresso",
@@ -93,6 +99,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       change: `${stats.completedTasks} concluídas`,
       changeType: "positive" as const,
       icon: Users,
+      href: "/projects",
     },
     {
       title: "ODS Impactados",
@@ -100,6 +107,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       change: "De 17 objectivos",
       changeType: "positive" as const,
       icon: Globe,
+      href: "/governance",
     },
     {
       title: "Fundos Captados",
@@ -107,6 +115,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       change: `${stats.executionRate}% executado`,
       changeType: "positive" as const,
       icon: DollarSign,
+      href: "/budget",
     },
   ];
 
@@ -143,11 +152,15 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
         <div className="xl:col-span-2 space-y-6">
           {/* Impact by SDG */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Heart className="h-5 w-5 text-primary" />
                 Impacto por ODS
               </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/governance")}>
+                Ver governação
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {sdgProgress.length > 0 ? (
@@ -186,11 +199,15 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
 
           {/* Funders */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-primary" />
                 Financiadores Activos
               </CardTitle>
+              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/budget")}>
+                Ver orçamento
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
             </CardHeader>
             <CardContent>
               {funderData.length > 0 ? (
@@ -280,9 +297,10 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
                       ? Math.round((region.executed / region.allocated) * 100)
                       : 0;
                     return (
-                      <div
+                      <button
                         key={region.province}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                        className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-left"
+                        onClick={() => navigate("/governance")}
                       >
                         <div>
                           <p className="font-medium">{region.province}</p>
@@ -294,7 +312,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
                           <p className="font-medium">{percentage}%</p>
                           <p className="text-xs text-muted-foreground">executado</p>
                         </div>
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
