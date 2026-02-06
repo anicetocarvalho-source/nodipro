@@ -35,7 +35,7 @@ export function useReportGeneration() {
       const orgId = organization.id;
 
       // Fetch all data in parallel
-      const [projectsRes, tasksRes, teamRes, budgetRes, portfoliosRes, programsRes] = await Promise.all([
+      const [projectsRes, tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes] = await Promise.all([
         supabase
           .from("projects")
           .select("*, provinces:province_id(id, name), sectors:sector_id(id, name, color), funders:funder_id(id, name, acronym)")
@@ -45,6 +45,7 @@ export function useReportGeneration() {
         supabase.from("budget_entries").select("*, cost_categories:category_id(id, name, code)"),
         supabase.from("portfolios").select("*").eq("organization_id", orgId),
         supabase.from("programs").select("*"),
+        supabase.from("documents").select("id, title, status, project_id, phase_name, document_type, created_at"),
       ]);
 
       const allProjects = projectsRes.data || [];
@@ -54,6 +55,7 @@ export function useReportGeneration() {
       const allTasks = (tasksRes.data || []).filter(t => projectIds.includes(t.project_id));
       const allTeam = (teamRes.data || []).filter(t => projectIds.includes(t.project_id));
       const allBudget = (budgetRes.data || []).filter(b => projectIds.includes(b.project_id));
+      const allDocs = (docsRes.data || []).filter(d => d.project_id && projectIds.includes(d.project_id));
       const portfolios = portfoliosRes.data || [];
       const programs = programsRes.data || [];
 
@@ -61,10 +63,10 @@ export function useReportGeneration() {
 
       switch (config.type) {
         case "project":
-          data = generateProjectReport(allProjects, allTasks, allTeam, allBudget, config.projectId, organization.name);
+          data = generateProjectReport(allProjects, allTasks, allTeam, allBudget, config.projectId, organization.name, allDocs);
           break;
         case "portfolio":
-          data = generatePortfolioReport(allProjects, portfolios, programs, allTasks, allBudget, organization.name);
+          data = generatePortfolioReport(allProjects, portfolios, programs, allTasks, allBudget, organization.name, allDocs);
           break;
         case "team":
           data = generateTeamReport(allProjects, allTasks, allTeam, organization.name);
@@ -73,10 +75,10 @@ export function useReportGeneration() {
           data = generateFinancialReport(allProjects, allBudget, organization.name);
           break;
         case "risk":
-          data = generateRiskReport(allProjects, allTasks, allBudget, organization.name);
+          data = generateRiskReport(allProjects, allTasks, allBudget, organization.name, allDocs);
           break;
         case "kpi":
-          data = generateKPIReport(allProjects, allTasks, allBudget, allTeam, organization.name);
+          data = generateKPIReport(allProjects, allTasks, allBudget, allTeam, organization.name, allDocs);
           break;
         case "performance":
           data = generatePerformanceReport(allProjects, allTasks, allBudget, organization.name);

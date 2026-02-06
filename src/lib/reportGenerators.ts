@@ -50,12 +50,13 @@ const now = () => format(new Date(), "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: 
 
 // ===== PROJECT STATUS =====
 export function generateProjectReport(
-  projects: any[], tasks: any[], team: any[], budget: any[], projectId: string | undefined, orgName: string
+  projects: any[], tasks: any[], team: any[], budget: any[], projectId: string | undefined, orgName: string, documents: any[] = []
 ): ReportData {
   const filtered = projectId && projectId !== 'all'
     ? projects.filter(p => p.id === projectId) : projects;
   const fTasks = tasks.filter(t => filtered.some(p => p.id === t.project_id));
   const fTeam = team.filter(t => filtered.some(p => p.id === t.project_id));
+  const fDocs = documents.filter(d => filtered.some(p => p.id === d.project_id));
 
   const total = fTasks.length;
   const completed = fTasks.filter(t => t.column_id === 'done').length;
@@ -90,6 +91,11 @@ export function generateProjectReport(
         ).map(([status, count]) => [status, count as number, total > 0 ? `${Math.round(((count as number) / total) * 100)}%` : '0%']),
       },
       {
+        title: "Documentos do Projecto",
+        headers: ["Título", "Tipo", "Estado", "Fase"],
+        rows: fDocs.map(d => [d.title, d.document_type || 'N/A', d.status || 'N/A', d.phase_name || 'N/A']),
+      },
+      {
         title: "Equipa do Projecto",
         headers: ["Nome", "Função", "Projecto"],
         rows: fTeam.map(m => {
@@ -103,7 +109,7 @@ export function generateProjectReport(
 
 // ===== PORTFOLIO =====
 export function generatePortfolioReport(
-  projects: any[], portfolios: any[], programs: any[], tasks: any[], budget: any[], orgName: string
+  projects: any[], portfolios: any[], programs: any[], tasks: any[], budget: any[], orgName: string, documents: any[] = []
 ): ReportData {
   const totalBudget = projects.reduce((s, p) => s + (p.budget || 0), 0);
   const totalSpent = projects.reduce((s, p) => s + (p.spent || 0), 0);
@@ -116,6 +122,7 @@ export function generatePortfolioReport(
       { label: "Portfólios", value: portfolios.length },
       { label: "Programas", value: programs.length },
       { label: "Projectos", value: projects.length },
+      { label: "Documentos", value: documents.length, subtext: `${documents.filter(d => d.status === 'approved').length} aprovados` },
       { label: "Investimento Total", value: formatCurrency(totalBudget), subtext: `${formatCurrency(totalSpent)} executado` },
     ],
     tables: [
@@ -246,11 +253,12 @@ export function generateFinancialReport(projects: any[], budget: any[], orgName:
 }
 
 // ===== RISK =====
-export function generateRiskReport(projects: any[], tasks: any[], budget: any[], orgName: string): ReportData {
+export function generateRiskReport(projects: any[], tasks: any[], budget: any[], orgName: string, documents: any[] = []): ReportData {
   const delayedProjects = projects.filter(p => p.status === 'delayed');
   const overdueTasks = tasks.filter(t => t.due_date && isPast(new Date(t.due_date)) && t.column_id !== 'done');
   const overBudget = projects.filter(p => p.budget && p.spent && p.spent > p.budget);
   const totalRisks = delayedProjects.length + overdueTasks.length + overBudget.length;
+  const pendingDocs = documents.filter(d => ['pending_review', 'in_review'].includes(d.status));
 
   return {
     title: "Relatório de Riscos Activos",
@@ -289,13 +297,14 @@ export function generateRiskReport(projects: any[], tasks: any[], budget: any[],
       ...(delayedProjects.length > 0 ? [`Rever planeamento de ${delayedProjects.length} projecto(s) com status de atraso.`] : []),
       ...(overdueTasks.length > 0 ? [`Priorizar resolução de ${overdueTasks.length} tarefa(s) com prazo ultrapassado.`] : []),
       ...(overBudget.length > 0 ? [`Auditar gastos de ${overBudget.length} projecto(s) com orçamento excedido.`] : []),
+      ...(pendingDocs.length > 0 ? [`${pendingDocs.length} documento(s) aguardam aprovação — considere priorizar a revisão.`] : []),
     ],
   };
 }
 
 // ===== KPIs =====
 export function generateKPIReport(
-  projects: any[], tasks: any[], budget: any[], team: any[], orgName: string
+  projects: any[], tasks: any[], budget: any[], team: any[], orgName: string, documents: any[] = []
 ): ReportData {
   const totalP = projects.length;
   const activeP = projects.filter(p => p.status === 'active').length;
@@ -346,6 +355,16 @@ export function generateKPIReport(
           ["Total Executado", formatCurrency(totalSpent), '-', '-'],
           ["Taxa de Execução", `${totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0}%`, '100%', totalSpent <= totalBudget ? '✅' : '🔴 Excedido'],
           ["Variação", formatCurrency(Math.abs(totalBudget - totalSpent)), 'Kz 0', totalSpent <= totalBudget ? '✅ Dentro' : '🔴 Acima'],
+        ],
+      },
+      {
+        title: "KPIs Documentais",
+        headers: ["Indicador", "Valor", "Meta", "Estado"],
+        rows: [
+          ["Total Documentos", documents.length, '-', '-'],
+          ["Aprovados", documents.filter(d => d.status === 'approved').length, '-', documents.filter(d => d.status === 'approved').length > 0 ? '✅' : '-'],
+          ["Pendentes Revisão", documents.filter(d => ['pending_review', 'in_review'].includes(d.status)).length, '0', documents.filter(d => ['pending_review', 'in_review'].includes(d.status)).length === 0 ? '✅' : '🔵 Em progresso'],
+          ["Em Rascunho", documents.filter(d => d.status === 'draft').length, '0', documents.filter(d => d.status === 'draft').length === 0 ? '✅' : '⚠️ A completar'],
         ],
       },
     ],

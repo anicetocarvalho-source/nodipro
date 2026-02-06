@@ -43,6 +43,7 @@ import { useProject, useDeleteProject } from "@/hooks/useProjects";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTasks } from "@/hooks/useTasks";
 import { usePermissions } from "@/hooks/usePermissions";
+import { ProjectIntegrityPanel } from "@/components/projects/ProjectIntegrityPanel";
 
 const formatCurrency = (value: number | null) => {
   if (value === null) return "-";
@@ -303,6 +304,9 @@ export default function ProjectDetail() {
 
         {/* Right Side - Info Panel */}
         <div className="space-y-4">
+          {/* Cross-Module Integrity Panel */}
+          <ProjectIntegrityPanel projectId={id || ""} />
+
           {/* Progress */}
           <Card>
             <CardHeader className="pb-3">
@@ -342,7 +346,7 @@ export default function ProjectDetail() {
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base">Equipa</CardTitle>
-              <Button variant="ghost" size="sm" className="text-primary text-xs">
+              <Button variant="ghost" size="sm" className="text-primary text-xs" onClick={() => navigate("/team")}>
                 Ver todos
               </Button>
             </CardHeader>
@@ -370,29 +374,6 @@ export default function ProjectDetail() {
                   Nenhum membro na equipa.
                 </p>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Budget */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Orçamento</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Planeado</span>
-                  <span className="font-medium">{formatCurrency(project.budget)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Executado</span>
-                  <span className="font-medium">{formatCurrency(project.spent)}</span>
-                </div>
-              </div>
-              <Progress value={budgetPercentage} className="h-2" />
-              <p className="text-xs text-muted-foreground text-center">
-                {budgetPercentage}% do orçamento utilizado
-              </p>
             </CardContent>
           </Card>
 
