@@ -101,6 +101,7 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedColumnId, setSelectedColumnId] = useState<string>("todo");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
   
   // Local state for optimistic updates during drag
   const [localTasks, setLocalTasks] = useState<Record<string, Task[]>>({});
@@ -147,6 +148,11 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
           }
         }
 
+        // Apply priority filter
+        if (filterPriority !== "all" && dbTask.priority !== filterPriority) {
+          continue;
+        }
+
         const uiTask = dbTaskToUiTask(dbTask);
         const column = dbTask.column_id;
         if (grouped[column]) {
@@ -158,7 +164,7 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
     }
 
     return grouped;
-  }, [dbTasks, isDragging, localTasks, filterAssignee]);
+  }, [dbTasks, isDragging, localTasks, filterAssignee, filterPriority]);
 
   // Calculate blocked status for each task
   const blockedTasks = useMemo(() => {
@@ -424,15 +430,20 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
     );
   }
 
-  const isFiltering = filterAssignee !== "all";
+  const isFiltering = filterAssignee !== "all" || filterPriority !== "all";
   const totalFiltered = isFiltering
     ? Object.values(tasksByColumn).reduce((sum, col) => sum + col.length, 0)
     : null;
 
+  const clearFilters = () => {
+    setFilterAssignee("all");
+    setFilterPriority("all");
+  };
+
   return (
     <>
       {/* Filter bar */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <div className="flex items-center gap-1.5 text-muted-foreground">
           <Filter className="h-4 w-4" />
           <span className="text-sm font-medium">Filtrar:</span>
@@ -458,6 +469,32 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
             ))}
           </SelectContent>
         </Select>
+        <Select value={filterPriority} onValueChange={setFilterPriority}>
+          <SelectTrigger className="w-[160px] h-8 text-sm">
+            <SelectValue placeholder="Prioridade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas prioridades</SelectItem>
+            <SelectItem value="high">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-destructive" />
+                Alta
+              </div>
+            </SelectItem>
+            <SelectItem value="medium">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-warning" />
+                Média
+              </div>
+            </SelectItem>
+            <SelectItem value="low">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-success" />
+                Baixa
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
         {isFiltering && (
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-xs">
@@ -467,7 +504,7 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
               variant="ghost"
               size="sm"
               className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => setFilterAssignee("all")}
+              onClick={clearFilters}
             >
               <X className="h-3.5 w-3.5 mr-1" />
               Limpar
