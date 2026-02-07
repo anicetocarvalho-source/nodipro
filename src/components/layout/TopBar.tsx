@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { Search, ChevronDown, Menu, LogOut, User, Settings, Sun, Moon, Monitor, Bell } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { GlobalSearchCommand } from "@/components/layout/GlobalSearchCommand";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,10 +60,22 @@ function ThemeToggle() {
 }
 
 export function TopBar({ onMobileMenuToggle }: TopBarProps) {
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { profile, role, signOut } = useAuthContext();
   const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useIntegrityNotifications();
+
+  // Keyboard shortcut: Ctrl/Cmd + K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const getInitials = (name: string | null) => {
     if (!name) return "U";
@@ -87,19 +99,19 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
         <Menu className="h-5 w-5" />
       </Button>
 
-      {/* Search */}
-      <div className={cn(
-        "relative flex-1 max-w-md mx-4 transition-all duration-200",
-        searchFocused && "max-w-lg"
-      )}>
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Pesquisar projectos, tarefas, documentos..."
-          className="pl-9 bg-secondary/50 border-transparent focus:border-primary focus:bg-background"
-          onFocus={() => setSearchFocused(true)}
-          onBlur={() => setSearchFocused(false)}
-        />
-      </div>
+      {/* Search trigger */}
+      <button
+        onClick={() => setSearchOpen(true)}
+        className="relative flex-1 max-w-md mx-4 flex items-center gap-2 h-10 rounded-md border border-transparent bg-secondary/50 px-3 text-sm text-muted-foreground hover:bg-secondary hover:border-border transition-colors cursor-pointer"
+      >
+        <Search className="h-4 w-4 shrink-0" />
+        <span className="flex-1 text-left truncate">Pesquisar projectos, tarefas, documentos...</span>
+        <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+          ⌘K
+        </kbd>
+      </button>
+
+      <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
 
       {/* Right section */}
       <div className="flex items-center gap-2 lg:gap-4">
