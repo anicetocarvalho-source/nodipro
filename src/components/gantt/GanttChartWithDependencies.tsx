@@ -482,7 +482,7 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
       )}
 
       {/* Gantt Chart */}
-      <div className="border rounded-lg overflow-hidden">
+      <div className="border rounded-lg overflow-hidden relative">
         <div className="flex">
           {/* Task Names Column */}
           <div className="w-64 flex-shrink-0 bg-muted/30 border-r">
@@ -609,76 +609,6 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
               })}
             </svg>
 
-            {/* Dependency Edit Popover */}
-            {selectedDep && (
-              <div
-                className="absolute z-20"
-                style={{
-                  left: `${selectedDep.anchorX}px`,
-                  top: `${selectedDep.anchorY}px`,
-                  transform: 'translate(-50%, -100%)',
-                }}
-              >
-                <div className="bg-popover border rounded-lg shadow-lg p-4 w-72 space-y-3 mb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Link2 className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">Editar Dependência</span>
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedDep(null)}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-
-                  <div className="text-xs text-muted-foreground space-y-0.5">
-                    <p><span className="font-medium">De:</span> {selectedDep.fromTitle}</p>
-                    <p><span className="font-medium">Para:</span> {selectedDep.toTitle}</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Tipo de Dependência</Label>
-                    <Select value={editDepType} onValueChange={(v) => setEditDepType(v as DependencyType)}>
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(Object.keys(DEPENDENCY_TYPE_LABELS) as DependencyType[]).map((type) => (
-                          <SelectItem key={type} value={type}>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="font-mono text-[10px]">{type}</Badge>
-                              <span className="text-xs">{DEPENDENCY_TYPE_LABELS[type]}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs">Atraso (dias)</Label>
-                    <Input
-                      type="number"
-                      min={-365}
-                      max={365}
-                      value={editLagDays}
-                      onChange={(e) => setEditLagDays(parseInt(e.target.value) || 0)}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1 h-8 text-xs" onClick={handleSaveDep}>
-                      <Pencil className="h-3 w-3 mr-1" />
-                      Guardar
-                    </Button>
-                    <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={handleDeleteDep}>
-                      <X className="h-3 w-3 mr-1" />
-                      Remover
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Month Headers */}
             <div className="flex h-6 border-b bg-muted/50">
@@ -791,6 +721,77 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
             })}
           </div>
         </div>
+
+        {/* Dependency Edit Popover - positioned over the entire chart */}
+        {selectedDep && (
+          <div
+            className="absolute z-50"
+            style={{
+              left: `${selectedDep.anchorX + 256}px`,
+              top: `${selectedDep.anchorY}px`,
+              transform: 'translate(-50%, -100%)',
+            }}
+          >
+            <div className="bg-popover border rounded-lg shadow-lg p-4 w-72 space-y-3 mb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Link2 className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Editar Dependência</span>
+                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedDep(null)}>
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+
+              <div className="text-xs text-muted-foreground space-y-0.5">
+                <p><span className="font-medium">De:</span> {selectedDep.fromTitle}</p>
+                <p><span className="font-medium">Para:</span> {selectedDep.toTitle}</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Tipo de Dependência</Label>
+                <Select value={editDepType} onValueChange={(v) => setEditDepType(v as DependencyType)}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(DEPENDENCY_TYPE_LABELS) as DependencyType[]).map((type) => (
+                      <SelectItem key={type} value={type}>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="font-mono text-[10px]">{type}</Badge>
+                          <span className="text-xs">{DEPENDENCY_TYPE_LABELS[type]}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs">Atraso (dias)</Label>
+                <Input
+                  type="number"
+                  min={-365}
+                  max={365}
+                  value={editLagDays}
+                  onChange={(e) => setEditLagDays(parseInt(e.target.value) || 0)}
+                  className="h-8 text-xs"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 h-8 text-xs" onClick={handleSaveDep}>
+                  <Pencil className="h-3 w-3 mr-1" />
+                  Guardar
+                </Button>
+                <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={handleDeleteDep}>
+                  <X className="h-3 w-3 mr-1" />
+                  Remover
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Legend */}
