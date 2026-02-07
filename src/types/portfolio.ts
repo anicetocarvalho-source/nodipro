@@ -5,6 +5,7 @@ export interface DbPortfolio {
   name: string;
   description: string | null;
   manager_id: string | null;
+  organization_id: string | null;
   status: 'active' | 'inactive' | 'archived';
   created_at: string;
   updated_at: string;
