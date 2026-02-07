@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -45,6 +45,8 @@ import { useTasks } from "@/hooks/useTasks";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ProjectIntegrityPanel } from "@/components/projects/ProjectIntegrityPanel";
 import { TaskListView } from "@/components/tasks/TaskListView";
+import { ScrumDashboard } from "@/components/scrum/ScrumDashboard";
+import { ProjectMethodology, PROJECT_METHODOLOGY_OPTIONS } from "@/types/database";
 
 const formatCurrency = (value: number | null) => {
   if (value === null) return "-";
@@ -105,6 +107,10 @@ export default function ProjectDetail() {
   const { data: tasks } = useTasks(id);
   
   const canManagePermissions = isAdmin || isPortfolioManager || isProjectManager;
+  
+  const methodology = (project as any)?.methodology as ProjectMethodology | undefined;
+  const isScrum = methodology === 'scrum' || methodology === 'hybrid';
+  const methodologyLabel = PROJECT_METHODOLOGY_OPTIONS.find(m => m.value === methodology)?.label || 'Cascata';
 
   if (projectLoading) {
     return (
@@ -157,6 +163,9 @@ export default function ProjectDetail() {
                 {project.status === 'active' ? 'Activo' : 
                  project.status === 'delayed' ? 'Atrasado' :
                  project.status === 'completed' ? 'Concluído' : 'Pausado'}
+              </Badge>
+              <Badge variant="outline" className="text-xs">
+                {methodologyLabel}
               </Badge>
             </div>
             <p className="text-muted-foreground mt-1">{project.client || "Sem cliente"}</p>
@@ -301,6 +310,9 @@ export default function ProjectDetail() {
 
         {/* Right Side - Info Panel */}
         <div className="space-y-4">
+          {/* Scrum Dashboard - only for Scrum/Hybrid projects */}
+          {isScrum && <ScrumDashboard projectId={id || ""} />}
+
           {/* Cross-Module Integrity Panel */}
           <ProjectIntegrityPanel projectId={id || ""} />
 
