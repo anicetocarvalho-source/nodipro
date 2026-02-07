@@ -45,13 +45,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCreateProject, useUpdateProject, useProjectSDGs, useSaveProjectSDGs } from "@/hooks/useProjects";
 import { useSectors, useSDGs, useProvinces, useFunders } from "@/hooks/useGovernance";
-import { DbProject, ProjectStatus } from "@/types/database";
+import { DbProject, ProjectStatus, PROJECT_METHODOLOGY_OPTIONS, ProjectMethodology } from "@/types/database";
 
 const projectFormSchema = z.object({
   name: z.string().trim().min(1, "Nome é obrigatório").max(100, "Nome deve ter no máximo 100 caracteres"),
   description: z.string().trim().max(1000, "Descrição deve ter no máximo 1000 caracteres").optional(),
   client: z.string().trim().max(100, "Cliente deve ter no máximo 100 caracteres").optional(),
   status: z.enum(["active", "delayed", "completed", "on_hold"] as const),
+  methodology: z.enum(["waterfall", "scrum", "kanban", "hybrid"] as const),
   progress: z.coerce.number().min(0, "Progresso mínimo é 0").max(100, "Progresso máximo é 100"),
   start_date: z.date().optional(),
   end_date: z.date().optional(),
@@ -105,6 +106,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
       description: "",
       client: "",
       status: "active",
+      methodology: "waterfall",
       progress: 0,
       budget: undefined,
       spent: undefined,
@@ -124,6 +126,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
           description: project.description || "",
           client: project.client || "",
           status: project.status,
+          methodology: (project as any).methodology || "waterfall",
           progress: project.progress,
           start_date: project.start_date ? new Date(project.start_date) : undefined,
           end_date: project.end_date ? new Date(project.end_date) : undefined,
@@ -140,6 +143,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
           description: "",
           client: "",
           status: "active",
+          methodology: "waterfall",
           progress: 0,
           budget: undefined,
           spent: undefined,
@@ -158,6 +162,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
       description: values.description || null,
       client: values.client || null,
       status: values.status,
+      methodology: values.methodology,
       progress: values.progress,
       start_date: values.start_date ? format(values.start_date, "yyyy-MM-dd") : null,
       end_date: values.end_date ? format(values.end_date, "yyyy-MM-dd") : null,
@@ -265,6 +270,38 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
                   <FormControl>
                     <Input placeholder="Ex: Empresa ABC, Lda" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Metodologia */}
+            <FormField
+              control={form.control}
+              name="methodology"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Metodologia</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione a metodologia" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PROJECT_METHODOLOGY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          <div>
+                            <span className="font-medium">{option.label}</span>
+                            <span className="text-xs text-muted-foreground ml-2">{option.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Define as funcionalidades disponíveis (Sprints, Kanban, etc.)
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

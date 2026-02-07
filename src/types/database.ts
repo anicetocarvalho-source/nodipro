@@ -2,6 +2,8 @@
 
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type ProjectStatus = 'active' | 'delayed' | 'completed' | 'on_hold';
+export type ProjectMethodology = 'waterfall' | 'scrum' | 'kanban' | 'hybrid';
+export type ScrumRole = 'product_owner' | 'scrum_master' | 'dev_team';
 export type TaskItemType = 'epic' | 'story' | 'task';
 export type SprintStatus = 'planning' | 'active' | 'completed' | 'cancelled';
 export type RetroCategory = 'went_well' | 'needs_improvement' | 'keep_doing' | 'change' | 'props';
@@ -10,6 +12,17 @@ export type BriefingStatus = 'draft' | 'published' | 'archived';
 export type BriefingModuleType = 'section' | 'objective' | 'requirement' | 'dependency';
 
 export const PROJECT_STATUS_OPTIONS = ['active', 'delayed', 'completed', 'on_hold'] as const;
+export const PROJECT_METHODOLOGY_OPTIONS: { value: ProjectMethodology; label: string; description: string }[] = [
+  { value: 'waterfall', label: 'Cascata (Waterfall)', description: 'Fases sequenciais e previsíveis' },
+  { value: 'scrum', label: 'Scrum', description: 'Sprints iterativos com cerimónias ágeis' },
+  { value: 'kanban', label: 'Kanban', description: 'Fluxo contínuo e visual' },
+  { value: 'hybrid', label: 'Híbrido', description: 'Combina fases sequenciais com sprints' },
+];
+export const SCRUM_ROLE_OPTIONS: { value: ScrumRole; label: string; description: string }[] = [
+  { value: 'product_owner', label: 'Product Owner', description: 'Responsável pelo backlog e prioridades' },
+  { value: 'scrum_master', label: 'Scrum Master', description: 'Facilitador e guardião do processo Scrum' },
+  { value: 'dev_team', label: 'Development Team', description: 'Equipa de desenvolvimento auto-organizada' },
+];
 export const TASK_ITEM_TYPES: { value: TaskItemType; label: string; color: string }[] = [
   { value: 'epic', label: 'Épico', color: 'bg-purple-500' },
   { value: 'story', label: 'História', color: 'bg-blue-500' },
@@ -30,6 +43,7 @@ export interface DbProject {
   description: string | null;
   client: string | null;
   status: ProjectStatus;
+  methodology: ProjectMethodology;
   progress: number;
   start_date: string | null;
   end_date: string | null;
@@ -38,6 +52,28 @@ export interface DbProject {
   program_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface DbScrumConfig {
+  id: string;
+  project_id: string;
+  default_sprint_duration_days: number;
+  definition_of_done: string[];
+  sprint_planning_duration_hours: number;
+  daily_standup_duration_minutes: number;
+  sprint_review_duration_hours: number;
+  retrospective_duration_hours: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DbScrumRoleAssignment {
+  id: string;
+  project_id: string;
+  user_id: string;
+  user_name: string | null;
+  scrum_role: ScrumRole;
+  created_at: string;
 }
 
 export interface DbTask {
@@ -173,10 +209,11 @@ export interface DbBriefingModule {
 }
 
 // Insert types
-export type DbProjectInsert = Omit<DbProject, 'id' | 'created_at' | 'updated_at'> & {
+export type DbProjectInsert = Omit<DbProject, 'id' | 'created_at' | 'updated_at' | 'methodology'> & {
   id?: string;
   created_at?: string;
   updated_at?: string;
+  methodology?: ProjectMethodology;
 };
 
 export type DbTaskInsert = Omit<DbTask, 'id' | 'created_at' | 'updated_at' | 'item_type' | 'parent_id' | 'story_points' | 'sprint_id'> & {

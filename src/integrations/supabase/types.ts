@@ -1109,6 +1109,88 @@ export type Database = {
           },
         ]
       }
+      project_scrum_config: {
+        Row: {
+          created_at: string
+          daily_standup_duration_minutes: number | null
+          default_sprint_duration_days: number
+          definition_of_done: string[] | null
+          id: string
+          project_id: string
+          retrospective_duration_hours: number | null
+          sprint_planning_duration_hours: number | null
+          sprint_review_duration_hours: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_standup_duration_minutes?: number | null
+          default_sprint_duration_days?: number
+          definition_of_done?: string[] | null
+          id?: string
+          project_id: string
+          retrospective_duration_hours?: number | null
+          sprint_planning_duration_hours?: number | null
+          sprint_review_duration_hours?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_standup_duration_minutes?: number | null
+          default_sprint_duration_days?: number
+          definition_of_done?: string[] | null
+          id?: string
+          project_id?: string
+          retrospective_duration_hours?: number | null
+          sprint_planning_duration_hours?: number | null
+          sprint_review_duration_hours?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_scrum_config_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: true
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_scrum_roles: {
+        Row: {
+          created_at: string
+          id: string
+          project_id: string
+          scrum_role: Database["public"]["Enums"]["scrum_role"]
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          project_id: string
+          scrum_role: Database["public"]["Enums"]["scrum_role"]
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          project_id?: string
+          scrum_role?: Database["public"]["Enums"]["scrum_role"]
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_scrum_roles_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_sdgs: {
         Row: {
           created_at: string
@@ -1195,6 +1277,7 @@ export type Database = {
           end_date: string | null
           funder_id: string | null
           id: string
+          methodology: Database["public"]["Enums"]["project_methodology"]
           name: string
           organization_id: string | null
           program_id: string | null
@@ -1215,6 +1298,7 @@ export type Database = {
           end_date?: string | null
           funder_id?: string | null
           id?: string
+          methodology?: Database["public"]["Enums"]["project_methodology"]
           name: string
           organization_id?: string | null
           program_id?: string | null
@@ -1235,6 +1319,7 @@ export type Database = {
           end_date?: string | null
           funder_id?: string | null
           id?: string
+          methodology?: Database["public"]["Enums"]["project_methodology"]
           name?: string
           organization_id?: string | null
           program_id?: string | null
@@ -2121,7 +2206,9 @@ export type Database = {
       entity_type: "public" | "private" | "ngo"
       org_member_role: "owner" | "admin" | "manager" | "member" | "viewer"
       organization_size: "small" | "medium" | "large" | "enterprise"
+      project_methodology: "waterfall" | "scrum" | "kanban" | "hybrid"
       project_status: "active" | "delayed" | "completed" | "on_hold"
+      scrum_role: "product_owner" | "scrum_master" | "dev_team"
       task_priority: "low" | "medium" | "high"
     }
     CompositeTypes: {
@@ -2262,7 +2349,9 @@ export const Constants = {
       entity_type: ["public", "private", "ngo"],
       org_member_role: ["owner", "admin", "manager", "member", "viewer"],
       organization_size: ["small", "medium", "large", "enterprise"],
+      project_methodology: ["waterfall", "scrum", "kanban", "hybrid"],
       project_status: ["active", "delayed", "completed", "on_hold"],
+      scrum_role: ["product_owner", "scrum_master", "dev_team"],
       task_priority: ["low", "medium", "high"],
     },
   },
