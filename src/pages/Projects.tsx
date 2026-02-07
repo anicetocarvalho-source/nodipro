@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -11,6 +11,8 @@ import {
   ChevronDown,
   Loader2,
   Trash2,
+  FolderKanban,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,7 @@ import { useProjects, useDeleteProject } from "@/hooks/useProjects";
 import { usePermissions } from "@/hooks/usePermissions";
 import { DbProject } from "@/types/database";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
+import { SprintsView } from "@/components/sprints/SprintsView";
 
 const statusConfig = {
   active: { label: "Activo", className: "bg-success/10 text-success" },
@@ -86,6 +89,9 @@ const formatCurrency = (value: number | null) => {
 
 export default function Projects() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeSection = searchParams.get("tab") === "sprints" ? "sprints" : "projects";
+  
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -104,21 +110,13 @@ export default function Projects() {
   const getProjectsByStatus = (status: string) =>
     filteredProjects.filter((p) => p.status === status);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64 text-destructive">
-        Erro ao carregar projectos: {error.message}
-      </div>
-    );
-  }
+  const handleSectionChange = (section: string) => {
+    if (section === "sprints") {
+      setSearchParams({ tab: "sprints" });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   const renderProjectCard = (project: DbProject) => {
     const risk = getRiskLevel(project.progress, project.end_date);
@@ -301,7 +299,7 @@ export default function Projects() {
             Gerir e acompanhar todos os projectos da organização.
           </p>
         </div>
-        {canCreateProject && (
+        {activeSection === "projects" && canCreateProject && (
           <Button className="bg-primary hover:bg-primary/90" onClick={() => {
             setEditingProject(null);
             setIsFormOpen(true);
@@ -312,78 +310,108 @@ export default function Projects() {
         )}
       </div>
 
-      {/* Filters & Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Pesquisar projectos..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem>Todos</DropdownMenuItem>
-              <DropdownMenuItem>Activos</DropdownMenuItem>
-              <DropdownMenuItem>Atrasados</DropdownMenuItem>
-              <DropdownMenuItem>Concluídos</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <div className="flex border rounded-lg overflow-hidden">
-            <Button
-              variant={viewMode === "grid" ? "secondary" : "ghost"}
-              size="icon"
-              onClick={() => setViewMode("grid")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "secondary" : "ghost"}
-              size="icon"
-              onClick={() => setViewMode("list")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <Tabs defaultValue="all">
+      {/* Section Tabs: Projects | Sprints */}
+      <Tabs value={activeSection} onValueChange={handleSectionChange}>
         <TabsList>
-          <TabsTrigger value="all">Todos ({filteredProjects.length})</TabsTrigger>
-          <TabsTrigger value="active">
-            Activos ({getProjectsByStatus("active").length})
+          <TabsTrigger value="projects" className="flex items-center gap-2">
+            <FolderKanban className="h-4 w-4" />
+            Projectos
           </TabsTrigger>
-          <TabsTrigger value="delayed">
-            Atrasados ({getProjectsByStatus("delayed").length})
-          </TabsTrigger>
-          <TabsTrigger value="completed">
-            Concluídos ({getProjectsByStatus("completed").length})
+          <TabsTrigger value="sprints" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Sprints
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-6">
-          {renderProjects(filteredProjects)}
+        <TabsContent value="projects" className="mt-6 space-y-6">
+          {/* Filters & Search */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Pesquisar projectos..."
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                    <ChevronDown className="h-4 w-4 ml-2" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Todos</DropdownMenuItem>
+                  <DropdownMenuItem>Activos</DropdownMenuItem>
+                  <DropdownMenuItem>Atrasados</DropdownMenuItem>
+                  <DropdownMenuItem>Concluídos</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <div className="flex border rounded-lg overflow-hidden">
+                <Button
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
+                  size="icon"
+                  onClick={() => setViewMode("grid")}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
+                  size="icon"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Loading / Error / Content */}
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-64 text-destructive">
+              Erro ao carregar projectos: {error.message}
+            </div>
+          ) : (
+            <Tabs defaultValue="all">
+              <TabsList>
+                <TabsTrigger value="all">Todos ({filteredProjects.length})</TabsTrigger>
+                <TabsTrigger value="active">
+                  Activos ({getProjectsByStatus("active").length})
+                </TabsTrigger>
+                <TabsTrigger value="delayed">
+                  Atrasados ({getProjectsByStatus("delayed").length})
+                </TabsTrigger>
+                <TabsTrigger value="completed">
+                  Concluídos ({getProjectsByStatus("completed").length})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all" className="mt-6">
+                {renderProjects(filteredProjects)}
+              </TabsContent>
+              <TabsContent value="active" className="mt-6">
+                {renderProjects(getProjectsByStatus("active"))}
+              </TabsContent>
+              <TabsContent value="delayed" className="mt-6">
+                {renderProjects(getProjectsByStatus("delayed"))}
+              </TabsContent>
+              <TabsContent value="completed" className="mt-6">
+                {renderProjects(getProjectsByStatus("completed"))}
+              </TabsContent>
+            </Tabs>
+          )}
         </TabsContent>
-        <TabsContent value="active" className="mt-6">
-          {renderProjects(getProjectsByStatus("active"))}
-        </TabsContent>
-        <TabsContent value="delayed" className="mt-6">
-          {renderProjects(getProjectsByStatus("delayed"))}
-        </TabsContent>
-        <TabsContent value="completed" className="mt-6">
-          {renderProjects(getProjectsByStatus("completed"))}
+
+        <TabsContent value="sprints" className="mt-6">
+          <SprintsView />
         </TabsContent>
       </Tabs>
 
