@@ -30,6 +30,7 @@ import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import Governance from "./pages/Governance";
+import Sprints from "./pages/Sprints";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedPageWrapper><Dashboard /></ProtectedPageWrapper>} />
               <Route path="/projects" element={<ProtectedPageWrapper><Projects /></ProtectedPageWrapper>} />
               <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
+              <Route path="/sprints" element={<ProtectedPageWrapper><Sprints /></ProtectedPageWrapper>} />
               <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
               <Route path="/programs/:id" element={<ProtectedPageWrapper><ProgramDetail /></ProtectedPageWrapper>} />
               <Route path="/methodologies" element={<ProtectedPageWrapper><Methodologies /></ProtectedPageWrapper>} />

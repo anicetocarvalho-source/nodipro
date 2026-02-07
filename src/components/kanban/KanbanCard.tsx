@@ -26,6 +26,8 @@ export interface Task {
   attachments?: number;
   labels?: string[];
   subtasks?: Subtask[];
+  itemType?: "epic" | "story" | "task";
+  storyPoints?: number;
 }
 
 export interface BlockedInfo {
@@ -92,17 +94,28 @@ export function KanbanCard({ task, onEdit, onToggleSubtask, blockedInfo }: Kanba
             <GripVertical className="h-4 w-4" />
           </button>
           <div className="flex-1 min-w-0 space-y-2">
-            {/* Labels */}
-            {task.labels && task.labels.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {task.labels.map((label) => (
-                  <div
-                    key={label}
-                    className="h-1.5 w-8 rounded-full bg-primary"
-                  />
-                ))}
-              </div>
-            )}
+            {/* Item type + Labels */}
+            <div className="flex flex-wrap gap-1 items-center">
+              {task.itemType && task.itemType !== "task" && (
+                <Badge variant="outline" className={cn(
+                  "text-[10px] h-4 px-1.5",
+                  task.itemType === "epic" ? "border-purple-400 text-purple-600 dark:text-purple-400 bg-purple-500/10" : "border-blue-400 text-blue-600 dark:text-blue-400 bg-blue-500/10"
+                )}>
+                  {task.itemType === "epic" ? "Épico" : "História"}
+                </Badge>
+              )}
+              {task.storyPoints && task.storyPoints > 0 ? (
+                <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-mono">
+                  {task.storyPoints} pts
+                </Badge>
+              ) : null}
+              {task.labels && task.labels.length > 0 && task.labels.map((label) => (
+                <div
+                  key={label}
+                  className="h-1.5 w-8 rounded-full bg-primary"
+                />
+              ))}
+            </div>
 
             {/* Blocked indicator */}
             {isBlocked && (

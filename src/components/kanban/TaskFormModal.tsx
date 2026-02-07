@@ -57,6 +57,8 @@ const taskFormSchema = z.object({
   priority: z.enum(["high", "medium", "low"], { required_error: "Seleccione uma prioridade" }),
   assigneeId: z.string().optional(),
   dueDate: z.date().optional(),
+  itemType: z.enum(["epic", "story", "task"]).default("task"),
+  storyPoints: z.number().min(0).max(100).optional(),
 });
 
 type TaskFormValues = z.infer<typeof taskFormSchema>;
@@ -104,6 +106,8 @@ export function TaskFormModal({
       priority: "medium",
       assigneeId: undefined,
       dueDate: undefined,
+      itemType: "task",
+      storyPoints: 0,
     },
   });
 
@@ -120,6 +124,8 @@ export function TaskFormModal({
           priority: task.priority,
           assigneeId: assignee?.id || undefined,
           dueDate: task.dueDate ? parsePortugueseDate(task.dueDate) : undefined,
+          itemType: (task as any).itemType || "task",
+          storyPoints: (task as any).storyPoints || 0,
         });
         setSubtasks(task.subtasks || []);
       } else {
@@ -129,6 +135,8 @@ export function TaskFormModal({
           priority: "medium",
           assigneeId: undefined,
           dueDate: undefined,
+          itemType: "task",
+          storyPoints: 0,
         });
         setSubtasks([]);
       }
@@ -208,6 +216,8 @@ export function TaskFormModal({
       attachments: task?.attachments,
       labels: task?.labels,
       subtasks: subtasks.length > 0 ? subtasks : undefined,
+      itemType: values.itemType,
+      storyPoints: values.storyPoints || 0,
     };
 
     onSave(newTask, columnId, !isEditing);
@@ -231,14 +241,73 @@ export function TaskFormModal({
         <ScrollArea className="max-h-[calc(90vh-180px)] pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Item Type + Title */}
+              <div className="grid grid-cols-3 gap-3">
+                <FormField
+                  control={form.control}
+                  name="itemType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="epic">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-purple-500" />
+                              Épico
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="story">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-blue-500" />
+                              História
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="task">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-green-500" />
+                              Tarefa
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Título *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Implementar módulo de relatórios" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="title"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título *</FormLabel>
+                    <FormLabel>Descrição</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Implementar módulo de relatórios" {...field} />
+                      <Textarea
+                        placeholder="Descreva os detalhes..."
+                        className="resize-none"
+                        rows={3}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -264,7 +333,7 @@ export function TaskFormModal({
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="priority"
@@ -298,6 +367,20 @@ export function TaskFormModal({
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="storyPoints"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Story Points</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} max={100} placeholder="0" {...field} onChange={(e) => field.onChange(Number(e.target.value))} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
