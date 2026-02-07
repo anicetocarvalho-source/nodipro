@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CalendarIcon, Loader2, X } from "lucide-react";
@@ -94,6 +95,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
   const { data: provinces = [] } = useProvinces();
   const { data: funders = [] } = useFunders();
   const { data: projectSDGs = [] } = useProjectSDGs(project?.id);
+  const { organization } = useOrganization();
   const isEditing = !!project;
   
   const form = useForm<ProjectFormValues>({
@@ -165,6 +167,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
       sector_id: values.sector_id || null,
       province_id: values.province_id || null,
       funder_id: values.funder_id || null,
+      organization_id: organization?.id || null,
     };
 
     let savedProject: DbProject;
