@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Link2, AlertTriangle, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { useTasks } from "@/hooks/useTasks";
+import { useTasks, useUpdateTask } from "@/hooks/useTasks";
+import { useDatePropagation } from "@/hooks/useDatePropagation";
 import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
 import { useCriticalPath } from "@/hooks/useCriticalPath";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TaskFormModal } from "@/components/kanban/TaskFormModal";
+import { Task } from "@/components/kanban/KanbanCard";
+import { DbTask, TaskPriority } from "@/types/database";
 
 interface GanttChartWithDependenciesProps {
   projectId: string;
@@ -46,6 +50,8 @@ const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "
 export function GanttChartWithDependencies({ projectId }: GanttChartWithDependenciesProps) {
   const { data: tasks, isLoading: tasksLoading } = useTasks(projectId);
   const { data: allDependencies, isLoading: depsLoading } = useProjectTaskDependencies(projectId);
+  const updateTask = useUpdateTask();
+  const propagateDates = useDatePropagation();
   
   const [viewStart, setViewStart] = useState(() => {
     const now = new Date();
@@ -53,6 +59,9 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
   });
   const [daysToShow, setDaysToShow] = useState(60);
   const [showCriticalPath, setShowCriticalPath] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingColumnId, setEditingColumnId] = useState<string>("todo");
   const svgRef = useRef<SVGSVGElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -169,6 +178,98 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
   const handleZoomOut = () => {
     setDaysToShow(Math.min(120, daysToShow + 15));
   };
+
+  // Convert DbTask to UI Task for modal
+  const dbTaskToUiTask = useCallback((dbTask: DbTask & { subtasks?: any[] }): Task => {
+    let dueDate: string | undefined;
+    if (dbTask.due_date) {
+      const date = new Date(dbTask.due_date);
+      dueDate = `${date.getDate()} ${months[date.getMonth()]}`;
+    }
+    return {
+      id: dbTask.id,
+      title: dbTask.title,
+      description: dbTask.description || undefined,
+      priority: dbTask.priority as "high" | "medium" | "low",
+      assignee: dbTask.assignee_name && dbTask.assignee_initials
+        ? { name: dbTask.assignee_name, initials: dbTask.assignee_initials }
+        : undefined,
+      dueDate,
+      comments: dbTask.comments_count || undefined,
+      attachments: dbTask.attachments_count || undefined,
+      labels: dbTask.labels || undefined,
+      itemType: dbTask.item_type as "epic" | "story" | "task" | undefined,
+      storyPoints: dbTask.story_points || undefined,
+    };
+  }, []);
+
+  const handleTaskClick = useCallback((taskId: string) => {
+    if (!tasks) return;
+    const dbTask = tasks.find(t => t.id === taskId);
+    if (!dbTask) return;
+    const uiTask = dbTaskToUiTask(dbTask);
+    setEditingTask(uiTask);
+    setEditingColumnId(dbTask.column_id);
+    setModalOpen(true);
+  }, [tasks, dbTaskToUiTask]);
+
+  const handleSaveTask = useCallback((task: Task, columnId: string, isNew: boolean) => {
+    if (isNew || !tasks) return;
+
+    let dueDate: string | null = null;
+    if (task.dueDate) {
+      const monthMap: Record<string, number> = {
+        Jan: 0, Fev: 1, Mar: 2, Abr: 3, Mai: 4, Jun: 5,
+        Jul: 6, Ago: 7, Set: 8, Out: 9, Nov: 10, Dez: 11,
+      };
+      const parts = task.dueDate.split(" ");
+      if (parts.length === 2) {
+        const day = parseInt(parts[0]);
+        const month = monthMap[parts[1]];
+        if (!isNaN(day) && month !== undefined) {
+          const date = new Date(2026, month, day);
+          dueDate = date.toISOString().split("T")[0];
+        }
+      }
+    }
+
+    const originalTask = tasks.find(t => t.id === task.id);
+    const previousDueDate = originalTask?.due_date || null;
+
+    updateTask.mutate({
+      id: task.id,
+      projectId,
+      title: task.title,
+      description: task.description || null,
+      priority: task.priority as TaskPriority,
+      assignee_name: task.assignee?.name || null,
+      assignee_initials: task.assignee?.initials || null,
+      due_date: dueDate,
+      labels: task.labels || null,
+      propagateDates: true,
+      previousDueDate,
+      subtasks: task.subtasks?.map((st, index) => ({
+        id: st.id,
+        task_id: task.id,
+        title: st.title,
+        completed: st.completed,
+        position: index,
+        created_at: new Date().toISOString(),
+      })),
+    }, {
+      onSuccess: ({ shouldPropagate, newDueDate }) => {
+        if (shouldPropagate && newDueDate) {
+          propagateDates.mutate({ taskId: task.id, newDueDate, projectId });
+        }
+      },
+    });
+  }, [tasks, projectId, updateTask, propagateDates]);
+
+  // Available tasks for dependency selector
+  const availableTasks = useMemo(() =>
+    (tasks || []).map(t => ({ id: t.id, title: t.title, column_id: t.column_id })),
+    [tasks]
+  );
 
   // Calculate dependency lines
   const dependencyLines = useMemo(() => {
@@ -324,8 +425,9 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
+                      onClick={() => handleTaskClick(task.id)}
                       className={cn(
-                        "h-10 border-b flex items-center px-3 gap-2",
+                        "h-10 border-b flex items-center px-3 gap-2 cursor-pointer hover:bg-muted/50 transition-colors",
                         task.isBlocked && "bg-warning/5",
                         showCriticalPath && task.isCritical && !task.isBlocked && "bg-destructive/5"
                       )}
@@ -469,6 +571,7 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
                           <div
                             className="absolute top-1/2 -translate-y-1/2 cursor-pointer"
                             style={{ left: position.left, width: position.width }}
+                            onClick={() => handleTaskClick(task.id)}
                           >
                             <div
                               className={cn(
@@ -548,6 +651,16 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
           <span className="text-muted-foreground">Dependência</span>
         </div>
       </div>
+
+      <TaskFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        task={editingTask}
+        columnId={editingColumnId}
+        onSave={handleSaveTask}
+        projectId={projectId}
+        availableTasks={availableTasks}
+      />
     </div>
   );
 }
