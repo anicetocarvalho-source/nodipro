@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -49,15 +49,7 @@ import {
   useDeleteTaskDependency,
   DependencyType,
 } from "@/hooks/useTaskDependencies";
-
-const teamMembers = [
-  { id: "ana", name: "Ana Costa", initials: "AC" },
-  { id: "pedro", name: "Pedro Andrade", initials: "PA" },
-  { id: "sofia", name: "Sofia Lima", initials: "SL" },
-  { id: "joao", name: "João Martins", initials: "JM" },
-  { id: "carlos", name: "Carlos Ferreira", initials: "CF" },
-  { id: "maria", name: "Maria Santos", initials: "MS" },
-];
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 const taskFormSchema = z.object({
   title: z.string().min(3, "O título deve ter pelo menos 3 caracteres").max(100, "O título deve ter no máximo 100 caracteres"),
@@ -91,6 +83,13 @@ export function TaskFormModal({
   const isEditing = !!task;
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+
+  // Team members from database
+  const { data: dbTeamMembers = [] } = useTeamMembers(projectId);
+  const teamMembers = useMemo(() => 
+    dbTeamMembers.map(m => ({ id: m.id, name: m.name, initials: m.initials })),
+    [dbTeamMembers]
+  );
 
   // Dependencies hooks
   const { data: dependencies = [], isLoading: depsLoading } = useTaskDependencies(task?.id);
