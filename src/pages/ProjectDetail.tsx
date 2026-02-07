@@ -44,6 +44,7 @@ import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { useTasks } from "@/hooks/useTasks";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ProjectIntegrityPanel } from "@/components/projects/ProjectIntegrityPanel";
+import { TaskListView } from "@/components/tasks/TaskListView";
 
 const formatCurrency = (value: number | null) => {
   if (value === null) return "-";
@@ -293,11 +294,7 @@ export default function ProjectDetail() {
             <CardContent className="p-4">
               {activeView === "kanban" && <KanbanBoard ref={kanbanRef} projectId={id || ""} />}
               {activeView === "gantt" && <GanttChartWithDependencies projectId={id || ""} />}
-              {activeView === "list" && (
-                <div className="text-center py-12 text-muted-foreground">
-                  Visualização em lista (em desenvolvimento)
-                </div>
-              )}
+              {activeView === "list" && <TaskListView projectId={id || ""} />}
             </CardContent>
           </Card>
         </div>
