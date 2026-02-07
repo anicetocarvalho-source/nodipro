@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
 import {
@@ -31,8 +31,12 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { DbTask } from "@/types/database";
-import { useTasks } from "@/hooks/useTasks";
+import { DbTask, DbSubtask, TaskPriority } from "@/types/database";
+import { useTasks, useUpdateTask } from "@/hooks/useTasks";
+import { useDatePropagation } from "@/hooks/useDatePropagation";
+import { useProjectTaskDependencies } from "@/hooks/useTaskDependencies";
+import { TaskFormModal } from "@/components/kanban/TaskFormModal";
+import { Task } from "@/components/kanban/KanbanCard";
 
 const priorityConfig: Record<string, { label: string; className: string; order: number }> = {
   high: { label: "Alta", className: "bg-destructive/10 text-destructive border-destructive/30", order: 1 },
@@ -57,11 +61,109 @@ interface TaskListViewProps {
 
 export function TaskListView({ projectId }: TaskListViewProps) {
   const { data: tasks = [], isLoading } = useTasks(projectId);
+  const updateTask = useUpdateTask();
+  const propagateDates = useDatePropagation();
+  const { data: allDependencies } = useProjectTaskDependencies(projectId);
   const [search, setSearch] = useState("");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [sortField, setSortField] = useState<SortField>("updated_at");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingColumnId, setEditingColumnId] = useState<string>("todo");
+
+  // Convert DbTask to UI Task for the modal
+  const dbTaskToUiTask = useCallback((dbTask: DbTask & { subtasks?: any[] }): Task => {
+    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    let dueDate: string | undefined;
+    if (dbTask.due_date) {
+      const date = new Date(dbTask.due_date);
+      dueDate = `${date.getDate()} ${months[date.getMonth()]}`;
+    }
+    return {
+      id: dbTask.id,
+      title: dbTask.title,
+      description: dbTask.description || undefined,
+      priority: dbTask.priority as "high" | "medium" | "low",
+      assignee: dbTask.assignee_name && dbTask.assignee_initials
+        ? { name: dbTask.assignee_name, initials: dbTask.assignee_initials }
+        : undefined,
+      dueDate,
+      comments: dbTask.comments_count || undefined,
+      attachments: dbTask.attachments_count || undefined,
+      labels: dbTask.labels || undefined,
+      itemType: dbTask.item_type as "epic" | "story" | "task" | undefined,
+      storyPoints: dbTask.story_points || undefined,
+    };
+  }, []);
+
+  const handleRowClick = useCallback((dbTask: DbTask) => {
+    const uiTask = dbTaskToUiTask(dbTask);
+    setEditingTask(uiTask);
+    setEditingColumnId(dbTask.column_id);
+    setModalOpen(true);
+  }, [dbTaskToUiTask]);
+
+  const handleSaveTask = useCallback((task: Task, columnId: string, isNew: boolean) => {
+    if (isNew) return; // List view only edits existing tasks
+
+    let dueDate: string | null = null;
+    if (task.dueDate) {
+      const months: Record<string, number> = {
+        Jan: 0, Fev: 1, Mar: 2, Abr: 3, Mai: 4, Jun: 5,
+        Jul: 6, Ago: 7, Set: 8, Out: 9, Nov: 10, Dez: 11,
+      };
+      const parts = task.dueDate.split(" ");
+      if (parts.length === 2) {
+        const day = parseInt(parts[0]);
+        const month = months[parts[1]];
+        if (!isNaN(day) && month !== undefined) {
+          const date = new Date(2026, month, day);
+          dueDate = date.toISOString().split("T")[0];
+        }
+      }
+    }
+
+    const originalTask = tasks.find(t => t.id === task.id);
+    const previousDueDate = originalTask?.due_date || null;
+
+    updateTask.mutate({
+      id: task.id,
+      projectId,
+      title: task.title,
+      description: task.description || null,
+      priority: task.priority as TaskPriority,
+      assignee_name: task.assignee?.name || null,
+      assignee_initials: task.assignee?.initials || null,
+      due_date: dueDate,
+      labels: task.labels || null,
+      propagateDates: true,
+      previousDueDate,
+      subtasks: task.subtasks?.map((st, index) => ({
+        id: st.id,
+        task_id: task.id,
+        title: st.title,
+        completed: st.completed,
+        position: index,
+        created_at: new Date().toISOString(),
+      })),
+    }, {
+      onSuccess: ({ shouldPropagate, newDueDate }) => {
+        if (shouldPropagate && newDueDate) {
+          propagateDates.mutate({ taskId: task.id, newDueDate, projectId });
+        }
+      },
+    });
+  }, [tasks, projectId, updateTask, propagateDates]);
+
+  // Available tasks for dependency selector
+  const availableTasks = useMemo(() =>
+    tasks.map(t => ({ id: t.id, title: t.title, column_id: t.column_id })),
+    [tasks]
+  );
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -274,7 +376,7 @@ export function TaskListView({ projectId }: TaskListViewProps) {
                 const overdue = isDueOverdue(task.due_date) && task.column_id !== "done";
 
                 return (
-                  <TableRow key={task.id} className="group hover:bg-muted/30">
+                  <TableRow key={task.id} className="group hover:bg-muted/30 cursor-pointer" onClick={() => handleRowClick(task)}>
                     <TableCell>
                       <div className="space-y-0.5">
                         <p className={cn(
@@ -334,6 +436,16 @@ export function TaskListView({ projectId }: TaskListViewProps) {
           </Table>
         </div>
       )}
+
+      <TaskFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        task={editingTask}
+        columnId={editingColumnId}
+        onSave={handleSaveTask}
+        projectId={projectId}
+        availableTasks={availableTasks}
+      />
     </div>
   );
 }
