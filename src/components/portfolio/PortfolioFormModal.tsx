@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DbPortfolio, DbPortfolioInsert } from "@/types/portfolio";
 import { useCreatePortfolio, useUpdatePortfolio } from "@/hooks/usePortfolios";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 interface PortfolioFormModalProps {
   open: boolean;
@@ -21,6 +22,7 @@ export function PortfolioFormModal({ open, onOpenChange, portfolio }: PortfolioF
 
   const createPortfolio = useCreatePortfolio();
   const updatePortfolio = useUpdatePortfolio();
+  const { organization } = useOrganization();
 
   useEffect(() => {
     if (portfolio) {
@@ -42,6 +44,7 @@ export function PortfolioFormModal({ open, onOpenChange, portfolio }: PortfolioF
       description: description || null,
       status,
       manager_id: null,
+      organization_id: organization?.id || null,
     };
 
     if (portfolio) {
