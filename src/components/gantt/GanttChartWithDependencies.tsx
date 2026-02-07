@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Link2, AlertTriangle, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Link2, AlertTriangle, Target, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,12 +8,33 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useTasks, useUpdateTask } from "@/hooks/useTasks";
 import { useDatePropagation } from "@/hooks/useDatePropagation";
-import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
+import {
+  useProjectTaskDependencies,
+  useUpdateTaskDependency,
+  useDeleteTaskDependency,
+  isTaskBlocked,
+  TaskDependencyWithDetails,
+  DependencyType,
+  DEPENDENCY_TYPE_LABELS,
+} from "@/hooks/useTaskDependencies";
 import { useCriticalPath } from "@/hooks/useCriticalPath";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TaskFormModal } from "@/components/kanban/TaskFormModal";
@@ -51,6 +72,8 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
   const { data: tasks, isLoading: tasksLoading } = useTasks(projectId);
   const { data: allDependencies, isLoading: depsLoading } = useProjectTaskDependencies(projectId);
   const updateTask = useUpdateTask();
+  const updateDependency = useUpdateTaskDependency();
+  const deleteDependency = useDeleteTaskDependency();
   const propagateDates = useDatePropagation();
   
   const [viewStart, setViewStart] = useState(() => {
@@ -62,6 +85,9 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingColumnId, setEditingColumnId] = useState<string>("todo");
+  const [selectedDep, setSelectedDep] = useState<{ id: string; taskId: string; type: DependencyType; lagDays: number; fromTitle: string; toTitle: string; anchorX: number; anchorY: number } | null>(null);
+  const [editDepType, setEditDepType] = useState<DependencyType>("FS");
+  const [editLagDays, setEditLagDays] = useState(0);
   const svgRef = useRef<SVGSVGElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -277,14 +303,20 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
       id: string;
       fromTaskId: string;
       toTaskId: string;
-      type: string;
+      taskId: string;
+      type: DependencyType;
+      lagDays: number;
+      fromTitle: string;
+      toTitle: string;
       path: string;
+      midX: number;
+      midY: number;
     }[] = [];
 
     if (!allDependencies || !timelineRef.current) return lines;
 
     const rowHeight = 40;
-    const headerHeight = 48; // 24px for month + 24px for days
+    const headerHeight = 48;
 
     for (const dep of allDependencies) {
       const fromTask = ganttTasks.find((t) => t.id === dep.predecessor_id);
@@ -300,10 +332,8 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
       const fromIndex = ganttTasks.findIndex((t) => t.id === fromTask.id);
       const toIndex = ganttTasks.findIndex((t) => t.id === toTask.id);
 
-      // Calculate pixel positions
       const containerWidth = timelineRef.current.scrollWidth || 1000;
       
-      // For FS: line starts from end of predecessor, goes to start of successor
       const fromX = (parseFloat(fromPos.left) / 100 * containerWidth) + 
                    (parseFloat(fromPos.width) / 100 * containerWidth);
       const toX = parseFloat(toPos.left) / 100 * containerWidth;
@@ -311,23 +341,64 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
       const fromY = headerHeight + (fromIndex * rowHeight) + (rowHeight / 2);
       const toY = headerHeight + (toIndex * rowHeight) + (rowHeight / 2);
 
-      // Create path with right angles
-      const midX = fromX + 10;
+      const lineMidX = fromX + 10;
       const path = fromIndex === toIndex
         ? `M ${fromX} ${fromY} L ${toX} ${toY}`
-        : `M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`;
+        : `M ${fromX} ${fromY} L ${lineMidX} ${fromY} L ${lineMidX} ${toY} L ${toX} ${toY}`;
+
+      // Calculate midpoint for popover anchor
+      const anchorX = fromIndex === toIndex ? (fromX + toX) / 2 : lineMidX;
+      const anchorY = (fromY + toY) / 2;
 
       lines.push({
         id: dep.id,
         fromTaskId: dep.predecessor_id,
         toTaskId: dep.task_id,
+        taskId: dep.task_id,
         type: dep.dependency_type,
+        lagDays: dep.lag_days,
+        fromTitle: fromTask.title,
+        toTitle: toTask.title,
         path,
+        midX: anchorX,
+        midY: anchorY,
       });
     }
 
     return lines;
   }, [allDependencies, ganttTasks, daysToShow, viewStart]);
+
+  const handleDepLineClick = useCallback((line: typeof dependencyLines[0], e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedDep({
+      id: line.id,
+      taskId: line.taskId,
+      type: line.type,
+      lagDays: line.lagDays,
+      fromTitle: line.fromTitle,
+      toTitle: line.toTitle,
+      anchorX: line.midX,
+      anchorY: line.midY,
+    });
+    setEditDepType(line.type);
+    setEditLagDays(line.lagDays);
+  }, []);
+
+  const handleSaveDep = useCallback(() => {
+    if (!selectedDep) return;
+    updateDependency.mutate({
+      id: selectedDep.id,
+      dependencyType: editDepType,
+      lagDays: editLagDays,
+    });
+    setSelectedDep(null);
+  }, [selectedDep, editDepType, editLagDays, updateDependency]);
+
+  const handleDeleteDep = useCallback(() => {
+    if (!selectedDep) return;
+    deleteDependency.mutate({ id: selectedDep.id, taskId: selectedDep.taskId });
+    setSelectedDep(null);
+  }, [selectedDep, deleteDependency]);
 
   if (tasksLoading || depsLoading) {
     return (
@@ -479,8 +550,8 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
             {/* SVG for dependency lines */}
             <svg
               ref={svgRef}
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{ width: '100%', height: `${48 + ganttTasks.length * 40}px` }}
+              className="absolute inset-0 z-10"
+              style={{ width: '100%', height: `${48 + ganttTasks.length * 40}px`, pointerEvents: 'none' }}
             >
               <defs>
                 <marker
@@ -497,20 +568,117 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
                     opacity="0.6"
                   />
                 </marker>
+                <marker
+                  id="arrowhead-selected"
+                  markerWidth="10"
+                  markerHeight="7"
+                  refX="9"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon
+                    points="0 0, 10 3.5, 0 7"
+                    fill="hsl(var(--primary))"
+                  />
+                </marker>
               </defs>
-              {dependencyLines.map((line) => (
-                <path
-                  key={line.id}
-                  d={line.path}
-                  stroke="hsl(var(--muted-foreground))"
-                  strokeWidth="1.5"
-                  fill="none"
-                  opacity="0.6"
-                  markerEnd="url(#arrowhead)"
-                  strokeDasharray={line.type !== 'FS' ? "4 2" : undefined}
-                />
-              ))}
+              {dependencyLines.map((line) => {
+                const isSelected = selectedDep?.id === line.id;
+                return (
+                  <g key={line.id} style={{ pointerEvents: 'auto', cursor: 'pointer' }} onClick={(e) => handleDepLineClick(line, e as unknown as React.MouseEvent)}>
+                    {/* Invisible wider path for easier clicking */}
+                    <path
+                      d={line.path}
+                      stroke="transparent"
+                      strokeWidth="12"
+                      fill="none"
+                    />
+                    {/* Visible path */}
+                    <path
+                      d={line.path}
+                      stroke={isSelected ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))"}
+                      strokeWidth={isSelected ? 2.5 : 1.5}
+                      fill="none"
+                      opacity={isSelected ? 1 : 0.6}
+                      markerEnd={isSelected ? "url(#arrowhead-selected)" : "url(#arrowhead)"}
+                      strokeDasharray={line.type !== 'FS' ? "4 2" : undefined}
+                      className="transition-all duration-150"
+                    />
+                  </g>
+                );
+              })}
             </svg>
+
+            {/* Dependency Edit Popover */}
+            {selectedDep && (
+              <div
+                className="absolute z-20"
+                style={{
+                  left: `${selectedDep.anchorX}px`,
+                  top: `${selectedDep.anchorY}px`,
+                  transform: 'translate(-50%, -100%)',
+                }}
+              >
+                <div className="bg-popover border rounded-lg shadow-lg p-4 w-72 space-y-3 mb-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">Editar Dependência</span>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedDep(null)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    <p><span className="font-medium">De:</span> {selectedDep.fromTitle}</p>
+                    <p><span className="font-medium">Para:</span> {selectedDep.toTitle}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Tipo de Dependência</Label>
+                    <Select value={editDepType} onValueChange={(v) => setEditDepType(v as DependencyType)}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(DEPENDENCY_TYPE_LABELS) as DependencyType[]).map((type) => (
+                          <SelectItem key={type} value={type}>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="font-mono text-[10px]">{type}</Badge>
+                              <span className="text-xs">{DEPENDENCY_TYPE_LABELS[type]}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Atraso (dias)</Label>
+                    <Input
+                      type="number"
+                      min={-365}
+                      max={365}
+                      value={editLagDays}
+                      onChange={(e) => setEditLagDays(parseInt(e.target.value) || 0)}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 h-8 text-xs" onClick={handleSaveDep}>
+                      <Pencil className="h-3 w-3 mr-1" />
+                      Guardar
+                    </Button>
+                    <Button size="sm" variant="destructive" className="h-8 text-xs" onClick={handleDeleteDep}>
+                      <X className="h-3 w-3 mr-1" />
+                      Remover
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Month Headers */}
             <div className="flex h-6 border-b bg-muted/50">
