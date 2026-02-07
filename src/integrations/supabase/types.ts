@@ -59,6 +59,63 @@ export type Database = {
         }
         Relationships: []
       }
+      briefing_modules: {
+        Row: {
+          briefing_id: string
+          content: string | null
+          created_at: string
+          id: string
+          level: number
+          module_type: string | null
+          parent_id: string | null
+          position: number
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          briefing_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          level?: number
+          module_type?: string | null
+          parent_id?: string | null
+          position?: number
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          briefing_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          level?: number
+          module_type?: string | null
+          parent_id?: string | null
+          position?: number
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "briefing_modules_briefing_id_fkey"
+            columns: ["briefing_id"]
+            isOneToOne: false
+            referencedRelation: "project_briefings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "briefing_modules_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "briefing_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_alerts: {
         Row: {
           alert_type: string
@@ -1011,6 +1068,47 @@ export type Database = {
           },
         ]
       }
+      project_briefings: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          project_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          project_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          project_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_briefings_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_sdgs: {
         Row: {
           created_at: string
@@ -1218,6 +1316,158 @@ export type Database = {
         }
         Relationships: []
       }
+      retrospective_actions: {
+        Row: {
+          assignee_id: string | null
+          assignee_name: string | null
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          retrospective_id: string
+          status: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          created_at?: string
+          description: string
+          due_date?: string | null
+          id?: string
+          retrospective_id: string
+          status?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          assignee_name?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          retrospective_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retrospective_actions_retrospective_id_fkey"
+            columns: ["retrospective_id"]
+            isOneToOne: false
+            referencedRelation: "sprint_retrospectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retrospective_feedback: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          retrospective_id: string
+          satisfaction_rating: number | null
+          user_id: string
+          user_name: string | null
+          velocity_rating: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          retrospective_id: string
+          satisfaction_rating?: number | null
+          user_id: string
+          user_name?: string | null
+          velocity_rating?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          retrospective_id?: string
+          satisfaction_rating?: number | null
+          user_id?: string
+          user_name?: string | null
+          velocity_rating?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retrospective_feedback_retrospective_id_fkey"
+            columns: ["retrospective_id"]
+            isOneToOne: false
+            referencedRelation: "sprint_retrospectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retrospective_items: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          category: string
+          content: string
+          created_at: string
+          id: string
+          retrospective_id: string
+          votes_count: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          retrospective_id: string
+          votes_count?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          retrospective_id?: string
+          votes_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retrospective_items_retrospective_id_fkey"
+            columns: ["retrospective_id"]
+            isOneToOne: false
+            referencedRelation: "sprint_retrospectives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retrospective_votes: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retrospective_votes_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "retrospective_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -1303,6 +1553,107 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      sprint_retrospectives: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          facilitator_id: string | null
+          facilitator_name: string | null
+          id: string
+          project_id: string
+          sprint_id: string
+          status: string
+          summary: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          facilitator_id?: string | null
+          facilitator_name?: string | null
+          id?: string
+          project_id: string
+          sprint_id: string
+          status?: string
+          summary?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          facilitator_id?: string | null
+          facilitator_name?: string | null
+          id?: string
+          project_id?: string
+          sprint_id?: string
+          status?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sprint_retrospectives_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sprint_retrospectives_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sprints: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_date: string
+          goal: string | null
+          id: string
+          name: string
+          project_id: string
+          start_date: string
+          status: string
+          updated_at: string
+          velocity: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          goal?: string | null
+          id?: string
+          name: string
+          project_id: string
+          start_date: string
+          status?: string
+          updated_at?: string
+          velocity?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          goal?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+          velocity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sprints_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subtasks: {
         Row: {
@@ -1392,11 +1743,15 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          item_type: string
           labels: string[] | null
+          parent_id: string | null
           phase_name: string | null
           position: number
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string
+          sprint_id: string | null
+          story_points: number | null
           title: string
           updated_at: string
         }
@@ -1410,11 +1765,15 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          item_type?: string
           labels?: string[] | null
+          parent_id?: string | null
           phase_name?: string | null
           position?: number
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id: string
+          sprint_id?: string | null
+          story_points?: number | null
           title: string
           updated_at?: string
         }
@@ -1428,20 +1787,38 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          item_type?: string
           labels?: string[] | null
+          parent_id?: string | null
           phase_name?: string | null
           position?: number
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string
+          sprint_id?: string | null
+          story_points?: number | null
           title?: string
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "tasks_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "sprints"
             referencedColumns: ["id"]
           },
         ]

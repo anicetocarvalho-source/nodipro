@@ -81,6 +81,8 @@ function dbTaskToUiTask(dbTask: DbTask & { subtasks?: DbSubtask[] }): Task {
       title: st.title,
       completed: st.completed,
     })),
+    itemType: dbTask.item_type as "epic" | "story" | "task" | undefined,
+    storyPoints: dbTask.story_points || undefined,
   };
 }
 
@@ -351,13 +353,15 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
           description: task.description || null,
           priority: task.priority as TaskPriority,
           column_id: columnId,
-          position: 0, // Add at beginning
+          position: 0,
           assignee_name: task.assignee?.name || null,
           assignee_initials: task.assignee?.initials || null,
           due_date: dueDate,
           labels: task.labels || null,
           comments_count: 0,
           attachments_count: 0,
+          item_type: (task as any).itemType || "task",
+          story_points: (task as any).storyPoints || 0,
         },
         subtasks: task.subtasks?.map((st) => ({
           title: st.title,
