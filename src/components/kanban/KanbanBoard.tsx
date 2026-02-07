@@ -10,14 +10,26 @@ import {
   useSensors,
   closestCorners,
 } from "@dnd-kit/core";
+import { Filter, X } from "lucide-react";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard, Task, BlockedInfo } from "./KanbanCard";
 import { TaskFormModal } from "./TaskFormModal";
 import { useTasks, useCreateTask, useUpdateTask, useMoveTask } from "@/hooks/useTasks";
 import { useDatePropagation } from "@/hooks/useDatePropagation";
 import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { DbTask, DbSubtask, TaskPriority } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
 interface Column {
@@ -78,6 +90,7 @@ const ACTIVE_COLUMNS = ["in_progress", "review"];
 export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ projectId }, ref) => {
   const { data: dbTasks, isLoading, error } = useTasks(projectId);
   const { data: dependencies } = useProjectTaskDependencies(projectId);
+  const { data: teamMembers = [] } = useTeamMembers(projectId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const moveTask = useMoveTask();
@@ -87,6 +100,7 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [selectedColumnId, setSelectedColumnId] = useState<string>("todo");
+  const [filterAssignee, setFilterAssignee] = useState<string>("all");
   
   // Local state for optimistic updates during drag
   const [localTasks, setLocalTasks] = useState<Record<string, Task[]>>({});
@@ -101,7 +115,16 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
     },
   }));
 
-  // Group tasks by column
+  // Unique assignees from tasks for filter options
+  const assigneeOptions = useMemo(() => {
+    if (!dbTasks) return [];
+    const seen = new Set<string>();
+    return dbTasks
+      .filter((t) => t.assignee_name && !seen.has(t.assignee_name) && seen.add(t.assignee_name))
+      .map((t) => ({ name: t.assignee_name!, initials: t.assignee_initials || "?" }));
+  }, [dbTasks]);
+
+  // Group tasks by column (with assignee filter)
   const tasksByColumn = useMemo(() => {
     if (isDragging) return localTasks;
     
@@ -115,6 +138,15 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
 
     if (dbTasks) {
       for (const dbTask of dbTasks) {
+        // Apply assignee filter
+        if (filterAssignee !== "all") {
+          if (filterAssignee === "unassigned") {
+            if (dbTask.assignee_name) continue;
+          } else if (dbTask.assignee_name !== filterAssignee) {
+            continue;
+          }
+        }
+
         const uiTask = dbTaskToUiTask(dbTask);
         const column = dbTask.column_id;
         if (grouped[column]) {
@@ -126,7 +158,7 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
     }
 
     return grouped;
-  }, [dbTasks, isDragging, localTasks]);
+  }, [dbTasks, isDragging, localTasks, filterAssignee]);
 
   // Calculate blocked status for each task
   const blockedTasks = useMemo(() => {
@@ -392,8 +424,58 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
     );
   }
 
+  const isFiltering = filterAssignee !== "all";
+  const totalFiltered = isFiltering
+    ? Object.values(tasksByColumn).reduce((sum, col) => sum + col.length, 0)
+    : null;
+
   return (
     <>
+      {/* Filter bar */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-1.5 text-muted-foreground">
+          <Filter className="h-4 w-4" />
+          <span className="text-sm font-medium">Filtrar:</span>
+        </div>
+        <Select value={filterAssignee} onValueChange={setFilterAssignee}>
+          <SelectTrigger className="w-[200px] h-8 text-sm">
+            <SelectValue placeholder="Responsável" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os responsáveis</SelectItem>
+            <SelectItem value="unassigned">Sem atribuição</SelectItem>
+            {assigneeOptions.map((member) => (
+              <SelectItem key={member.name} value={member.name}>
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-5 w-5">
+                    <AvatarFallback className="text-[9px] bg-primary/10 text-primary">
+                      {member.initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  {member.name}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {isFiltering && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {totalFiltered} tarefa{totalFiltered !== 1 ? "s" : ""}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setFilterAssignee("all")}
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Limpar
+            </Button>
+          </div>
+        )}
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
