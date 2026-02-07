@@ -19,7 +19,6 @@ import {
   ShieldCheck,
   Layers,
   Building2,
-  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,6 @@ export function AppSidebar() {
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: Building2, label: "Governação", path: "/governance", requiresPermission: "canViewBudget" },
     { icon: FolderKanban, label: "Projectos", path: "/projects" },
-    { icon: Zap, label: "Sprints", path: "/sprints" },
     { icon: Briefcase, label: "Portfólio", path: "/portfolio" },
     { icon: Layers, label: "Metodologias", path: "/methodologies" },
     { icon: BarChart3, label: "Indicadores", path: "/kpi" },
