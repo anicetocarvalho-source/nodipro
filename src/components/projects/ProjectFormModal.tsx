@@ -6,6 +6,7 @@ import { z } from "zod";
 import { CalendarIcon, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { pt } from "date-fns/locale";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -45,7 +46,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useCreateProject, useUpdateProject, useProjectSDGs, useSaveProjectSDGs } from "@/hooks/useProjects";
 import { useSectors, useSDGs, useProvinces, useFunders } from "@/hooks/useGovernance";
-import { DbProject, ProjectStatus, PROJECT_METHODOLOGY_OPTIONS, ProjectMethodology } from "@/types/database";
+import { DbProject, ProjectStatus, PROJECT_METHODOLOGY_OPTIONS } from "@/types/database";
 
 const projectFormSchema = z.object({
   name: z.string().trim().min(1, "Nome é obrigatório").max(100, "Nome deve ter no máximo 100 caracteres"),
@@ -157,46 +158,54 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
   }, [open, project, form, projectSDGs]);
 
   const onSubmit = async (values: ProjectFormValues) => {
-    const projectData = {
-      name: values.name,
-      description: values.description || null,
-      client: values.client || null,
-      status: values.status,
-      methodology: values.methodology,
-      progress: values.progress,
-      start_date: values.start_date ? format(values.start_date, "yyyy-MM-dd") : null,
-      end_date: values.end_date ? format(values.end_date, "yyyy-MM-dd") : null,
-      budget: values.budget ?? null,
-      spent: values.spent ?? null,
-      program_id: project?.program_id ?? null,
-      sector_id: values.sector_id || null,
-      province_id: values.province_id || null,
-      funder_id: values.funder_id || null,
-      organization_id: organization?.id || null,
-    };
+    try {
+      const projectData = {
+        name: values.name,
+        description: values.description || null,
+        client: values.client || null,
+        status: values.status,
+        methodology: values.methodology,
+        progress: isEditing ? values.progress : 0,
+        start_date: values.start_date ? format(values.start_date, "yyyy-MM-dd") : null,
+        end_date: values.end_date ? format(values.end_date, "yyyy-MM-dd") : null,
+        budget: values.budget ?? null,
+        spent: isEditing ? (values.spent ?? null) : null,
+        program_id: project?.program_id ?? null,
+        sector_id: values.sector_id || null,
+        province_id: values.province_id || null,
+        funder_id: values.funder_id || null,
+        organization_id: organization?.id || null,
+      };
 
-    let savedProject: DbProject;
-    if (isEditing && project) {
-      savedProject = await updateProject.mutateAsync({ id: project.id, ...projectData });
-    } else {
-      savedProject = await createProject.mutateAsync(projectData);
+      let savedProject: DbProject;
+      if (isEditing && project) {
+        savedProject = await updateProject.mutateAsync({ id: project.id, ...projectData });
+      } else {
+        savedProject = await createProject.mutateAsync(projectData);
+      }
+      
+      // Save SDG associations
+      if (values.sdg_ids && values.sdg_ids.length > 0) {
+        await saveProjectSDGs.mutateAsync({
+          projectId: savedProject.id,
+          sdgIds: values.sdg_ids,
+        });
+      } else if (isEditing) {
+        await saveProjectSDGs.mutateAsync({
+          projectId: savedProject.id,
+          sdgIds: [],
+        });
+      }
+      
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error("Erro ao guardar projecto:", error);
+      toast.error(
+        isEditing 
+          ? "Erro ao actualizar o projecto. Verifique os dados e tente novamente."
+          : "Erro ao criar o projecto. Verifique os dados e tente novamente."
+      );
     }
-    
-    // Save SDG associations
-    if (values.sdg_ids && values.sdg_ids.length > 0) {
-      await saveProjectSDGs.mutateAsync({
-        projectId: savedProject.id,
-        sdgIds: values.sdg_ids,
-      });
-    } else if (isEditing) {
-      // Clear SDGs if none selected
-      await saveProjectSDGs.mutateAsync({
-        projectId: savedProject.id,
-        sdgIds: [],
-      });
-    }
-    
-    onOpenChange(false);
   };
 
   const isPending = createProject.isPending || updateProject.isPending || saveProjectSDGs.isPending;
@@ -220,7 +229,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
           <DialogDescription>
             {isEditing 
               ? "Modifique os dados do projecto." 
-              : "Preencha os dados para criar um novo projecto."}
+              : "Preencha os dados essenciais para criar um novo projecto. Poderá adicionar mais detalhes depois."}
           </DialogDescription>
         </DialogHeader>
 
@@ -251,7 +260,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
                   <FormControl>
                     <Textarea 
                       placeholder="Descreva o objectivo e escopo do projecto..."
-                      className="min-h-[100px]"
+                      className="min-h-[80px]"
                       {...field}
                     />
                   </FormControl>
@@ -307,47 +316,49 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
               )}
             />
 
-            {/* Status e Progresso */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccione o estado" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {statusOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {/* Status e Progresso - only show on edit */}
+            {isEditing && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione o estado" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {statusOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="progress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Progresso (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" min={0} max={100} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                <FormField
+                  control={form.control}
+                  name="progress"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Progresso (%)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} max={100} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
             {/* Datas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -432,8 +443,8 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
               />
             </div>
 
-            {/* Orçamento */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Orçamento - show budget on create, spent only on edit */}
+            <div className={cn("grid gap-4", isEditing ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1")}>
               <FormField
                 control={form.control}
                 name="budget"
@@ -457,28 +468,30 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="spent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor Gasto (AOA)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min={0} 
-                        placeholder="0"
-                        {...field}
-                        value={field.value ?? ""}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Valor já executado
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {isEditing && (
+                <FormField
+                  control={form.control}
+                  name="spent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor Executado (AOA)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          min={0} 
+                          placeholder="0"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Valor já executado do orçamento
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             {/* Sector, Província, Financiador */}
