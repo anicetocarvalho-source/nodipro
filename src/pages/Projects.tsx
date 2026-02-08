@@ -13,6 +13,8 @@ import {
   Trash2,
   FolderKanban,
   Zap,
+  Pencil,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,60 +42,25 @@ import {
 import { cn } from "@/lib/utils";
 import { useProjects, useDeleteProject } from "@/hooks/useProjects";
 import { usePermissions } from "@/hooks/usePermissions";
-import { DbProject } from "@/types/database";
+import { DbProject, ProjectStatus } from "@/types/database";
 import { ProjectFormModal } from "@/components/projects/ProjectFormModal";
 import { SprintsView } from "@/components/sprints/SprintsView";
-
-const statusConfig = {
-  active: { label: "Activo", className: "bg-success/10 text-success" },
-  delayed: { label: "Atrasado", className: "bg-destructive/10 text-destructive" },
-  completed: { label: "Concluído", className: "bg-primary/10 text-primary" },
-  on_hold: { label: "Pausado", className: "bg-warning/10 text-warning" },
-};
-
-const getRiskLevel = (progress: number, endDate: string | null): "low" | "medium" | "high" | "critical" => {
-  if (!endDate) return "low";
-  const now = new Date();
-  const deadline = new Date(endDate);
-  const daysRemaining = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (progress >= 90) return "low";
-  if (daysRemaining < 0) return "critical";
-  if (daysRemaining < 7 && progress < 80) return "high";
-  if (daysRemaining < 30 && progress < 60) return "medium";
-  return "low";
-};
-
-const riskConfig = {
-  low: { label: "Baixo", className: "bg-success/10 text-success" },
-  medium: { label: "Médio", className: "bg-warning/10 text-warning" },
-  high: { label: "Alto", className: "bg-destructive/10 text-destructive" },
-  critical: { label: "Crítico", className: "bg-destructive text-destructive-foreground" },
-};
-
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return "-";
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const date = new Date(dateStr);
-  return `${date.getDate().toString().padStart(2, '0')} ${months[date.getMonth()]} ${date.getFullYear()}`;
-};
-
-const formatCurrency = (value: number | null) => {
-  if (value === null) return "-";
-  return new Intl.NumberFormat("pt-AO", {
-    style: "decimal",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value) + " AOA";
-};
+import {
+  statusConfig,
+  riskConfig,
+  getRiskLevel,
+  formatDate,
+  formatCurrency,
+} from "@/lib/projectUtils";
 
 export default function Projects() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeSection = searchParams.get("tab") === "sprints" ? "sprints" : "projects";
-  
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "all">("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<DbProject | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<DbProject | null>(null);
@@ -101,11 +68,13 @@ export default function Projects() {
   const deleteProject = useDeleteProject();
   const { canCreateProject, canEditProject, canDeleteProject } = usePermissions();
 
-  const filteredProjects = (projects || []).filter(
-    (p) =>
+  const filteredProjects = (projects || []).filter((p) => {
+    const matchesSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.client?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
-  );
+      (p.client?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+    const matchesStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   const getProjectsByStatus = (status: string) =>
     filteredProjects.filter((p) => p.status === status);
@@ -118,9 +87,24 @@ export default function Projects() {
     }
   };
 
+  const handleFilterSelect = (status: ProjectStatus | "all") => {
+    setStatusFilter(status);
+  };
+
+  const handleEditProject = (project: DbProject, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingProject(project);
+    setIsFormOpen(true);
+  };
+
+  const handleDeleteProject = (project: DbProject, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setProjectToDelete(project);
+  };
+
   const renderProjectCard = (project: DbProject) => {
     const risk = getRiskLevel(project.progress, project.end_date);
-    
+
     return (
       <Card
         key={project.id}
@@ -144,24 +128,22 @@ export default function Projects() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate(`/projects/${project.id}`)}>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }}>
+                  <Eye className="h-4 w-4 mr-2" />
                   Ver detalhes
                 </DropdownMenuItem>
                 {canEditProject && (
-                  <DropdownMenuItem onClick={() => {
-                    setEditingProject(project);
-                    setIsFormOpen(true);
-                  }}>
+                  <DropdownMenuItem onClick={(e) => handleEditProject(project, e)}>
+                    <Pencil className="h-4 w-4 mr-2" />
                     Editar
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem>Relatório</DropdownMenuItem>
                 {canDeleteProject && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
-                      onClick={() => setProjectToDelete(project)}
+                      onClick={(e) => handleDeleteProject(project, e)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Eliminar
@@ -212,7 +194,7 @@ export default function Projects() {
 
   const renderProjectRow = (project: DbProject) => {
     const risk = getRiskLevel(project.progress, project.end_date);
-    
+
     return (
       <tr
         key={project.id}
@@ -243,9 +225,37 @@ export default function Projects() {
           </Badge>
         </td>
         <td className="p-4">
-          <Button variant="ghost" size="icon" onClick={(e) => e.stopPropagation()}>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }}>
+                <Eye className="h-4 w-4 mr-2" />
+                Ver detalhes
+              </DropdownMenuItem>
+              {canEditProject && (
+                <DropdownMenuItem onClick={(e) => handleEditProject(project, e)}>
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Editar
+                </DropdownMenuItem>
+              )}
+              {canDeleteProject && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={(e) => handleDeleteProject(project, e)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </td>
       </tr>
     );
@@ -289,6 +299,8 @@ export default function Projects() {
     );
   };
 
+  const activeFilterLabel = statusFilter === "all" ? "Todos" : statusConfig[statusFilter].label;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -300,10 +312,13 @@ export default function Projects() {
           </p>
         </div>
         {activeSection === "projects" && canCreateProject && (
-          <Button className="bg-primary hover:bg-primary/90" onClick={() => {
-            setEditingProject(null);
-            setIsFormOpen(true);
-          }}>
+          <Button
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => {
+              setEditingProject(null);
+              setIsFormOpen(true);
+            }}
+          >
             <Plus className="h-4 w-4 mr-2" />
             Novo Projecto
           </Button>
@@ -340,15 +355,27 @@ export default function Projects() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline">
                     <Filter className="h-4 w-4 mr-2" />
-                    Filtros
+                    {activeFilterLabel}
                     <ChevronDown className="h-4 w-4 ml-2" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem>Todos</DropdownMenuItem>
-                  <DropdownMenuItem>Activos</DropdownMenuItem>
-                  <DropdownMenuItem>Atrasados</DropdownMenuItem>
-                  <DropdownMenuItem>Concluídos</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleFilterSelect("all")}>
+                    Todos
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => handleFilterSelect("active")}>
+                    Activos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleFilterSelect("delayed")}>
+                    Atrasados
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleFilterSelect("on_hold")}>
+                    Pausados
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleFilterSelect("completed")}>
+                    Concluídos
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <div className="flex border rounded-lg overflow-hidden">
@@ -389,6 +416,9 @@ export default function Projects() {
                 <TabsTrigger value="delayed">
                   Atrasados ({getProjectsByStatus("delayed").length})
                 </TabsTrigger>
+                <TabsTrigger value="on_hold">
+                  Pausados ({getProjectsByStatus("on_hold").length})
+                </TabsTrigger>
                 <TabsTrigger value="completed">
                   Concluídos ({getProjectsByStatus("completed").length})
                 </TabsTrigger>
@@ -403,6 +433,9 @@ export default function Projects() {
               <TabsContent value="delayed" className="mt-6">
                 {renderProjects(getProjectsByStatus("delayed"))}
               </TabsContent>
+              <TabsContent value="on_hold" className="mt-6">
+                {renderProjects(getProjectsByStatus("on_hold"))}
+              </TabsContent>
               <TabsContent value="completed" className="mt-6">
                 {renderProjects(getProjectsByStatus("completed"))}
               </TabsContent>
@@ -415,8 +448,8 @@ export default function Projects() {
         </TabsContent>
       </Tabs>
 
-      <ProjectFormModal 
-        open={isFormOpen} 
+      <ProjectFormModal
+        open={isFormOpen}
         onOpenChange={(open) => {
           setIsFormOpen(open);
           if (!open) setEditingProject(null);
@@ -429,7 +462,7 @@ export default function Projects() {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar projecto</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem a certeza que deseja eliminar o projecto "{projectToDelete?.name}"? 
+              Tem a certeza que deseja eliminar o projecto "{projectToDelete?.name}"?
               Esta acção é irreversível e eliminará todas as tarefas associadas.
             </AlertDialogDescription>
           </AlertDialogHeader>

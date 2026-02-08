@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -34,6 +34,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { KanbanBoardRef } from "@/components/kanban/KanbanBoard";
 import { GanttChartWithDependencies } from "@/components/gantt/GanttChartWithDependencies";
@@ -46,36 +47,14 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { ProjectIntegrityPanel } from "@/components/projects/ProjectIntegrityPanel";
 import { TaskListView } from "@/components/tasks/TaskListView";
 import { ScrumDashboard } from "@/components/scrum/ScrumDashboard";
-import { ProjectMethodology, PROJECT_METHODOLOGY_OPTIONS } from "@/types/database";
-
-const formatCurrency = (value: number | null) => {
-  if (value === null) return "-";
-  return new Intl.NumberFormat("pt-AO", {
-    style: "decimal",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value) + " AOA";
-};
-
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return "-";
-  const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  const date = new Date(dateStr);
-  return `${date.getDate().toString().padStart(2, '0')} ${months[date.getMonth()]} ${date.getFullYear()}`;
-};
-
-const getRiskLevel = (progress: number, endDate: string | null): { label: string; className: string } => {
-  if (!endDate) return { label: "Baixo", className: "text-success" };
-  const now = new Date();
-  const deadline = new Date(endDate);
-  const daysRemaining = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  
-  if (progress >= 90) return { label: "Baixo", className: "text-success" };
-  if (daysRemaining < 0) return { label: "Crítico", className: "text-destructive" };
-  if (daysRemaining < 7 && progress < 80) return { label: "Alto", className: "text-destructive" };
-  if (daysRemaining < 30 && progress < 60) return { label: "Médio", className: "text-warning" };
-  return { label: "Baixo", className: "text-success" };
-};
+import { PROJECT_METHODOLOGY_OPTIONS } from "@/types/database";
+import {
+  statusConfig,
+  riskConfig,
+  getRiskLevel,
+  formatDate,
+  formatCurrency,
+} from "@/lib/projectUtils";
 
 export default function ProjectDetail() {
   const { id } = useParams();
@@ -86,31 +65,30 @@ export default function ProjectDetail() {
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const deleteProject = useDeleteProject();
   const { isAdmin, isPortfolioManager, isProjectManager } = usePermissions();
-  
+
   const kanbanRef = useRef<KanbanBoardRef>(null);
 
   const handleNewTask = () => {
     if (activeView === "kanban" && kanbanRef.current) {
       kanbanRef.current.openNewTaskModal("todo");
     } else {
-      // Switch to kanban view and open modal
       setActiveView("kanban");
-      // Use timeout to ensure view is rendered before opening modal
       setTimeout(() => {
         kanbanRef.current?.openNewTaskModal("todo");
       }, 100);
     }
   };
-  
+
   const { data: project, isLoading: projectLoading } = useProject(id);
   const { data: teamMembers, isLoading: teamLoading } = useTeamMembers(id);
   const { data: tasks } = useTasks(id);
-  
+
   const canManagePermissions = isAdmin || isPortfolioManager || isProjectManager;
-  
-  const methodology = (project as any)?.methodology as ProjectMethodology | undefined;
-  const isScrum = methodology === 'scrum' || methodology === 'hybrid';
-  const methodologyLabel = PROJECT_METHODOLOGY_OPTIONS.find(m => m.value === methodology)?.label || 'Cascata';
+
+  const methodology = project?.methodology;
+  const isScrum = methodology === "scrum" || methodology === "hybrid";
+  const methodologyLabel =
+    PROJECT_METHODOLOGY_OPTIONS.find((m) => m.value === methodology)?.label || "Cascata";
 
   if (projectLoading) {
     return (
@@ -129,18 +107,20 @@ export default function ProjectDetail() {
     );
   }
 
-  const budgetPercentage = project.budget && project.spent 
-    ? Math.round((Number(project.spent) / Number(project.budget)) * 100)
-    : 0;
+  const budgetPercentage =
+    project.budget && project.spent
+      ? Math.round((Number(project.spent) / Number(project.budget)) * 100)
+      : 0;
 
   const risk = getRiskLevel(project.progress, project.end_date);
+  const statusInfo = statusConfig[project.status];
 
   // Calculate task stats from real data
   const taskStats = {
     totalTasks: tasks?.length || 0,
-    completedTasks: tasks?.filter(t => t.column_id === 'done').length || 0,
-    inProgress: tasks?.filter(t => t.column_id === 'in_progress').length || 0,
-    pending: tasks?.filter(t => ['backlog', 'todo'].includes(t.column_id)).length || 0,
+    completedTasks: tasks?.filter((t) => t.column_id === "done").length || 0,
+    inProgress: tasks?.filter((t) => t.column_id === "in_progress").length || 0,
+    pending: tasks?.filter((t) => ["backlog", "todo"].includes(t.column_id)).length || 0,
   };
 
   return (
@@ -159,10 +139,8 @@ export default function ProjectDetail() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
-              <Badge className="bg-success/10 text-success">
-                {project.status === 'active' ? 'Activo' : 
-                 project.status === 'delayed' ? 'Atrasado' :
-                 project.status === 'completed' ? 'Concluído' : 'Pausado'}
+              <Badge className={cn(statusInfo.className)}>
+                {statusInfo.label}
               </Badge>
               <Badge variant="outline" className="text-xs">
                 {methodologyLabel}
@@ -176,8 +154,8 @@ export default function ProjectDetail() {
             <Pencil className="h-4 w-4 mr-2" />
             Editar
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="text-destructive hover:text-destructive"
             onClick={() => setIsDeleteDialogOpen(true)}
           >
@@ -262,12 +240,14 @@ export default function ProjectDetail() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <AlertTriangle className={`h-4 w-4 ${risk.className}`} />
+              <div className={cn("p-2 rounded-lg", riskConfig[risk].className.split(" ")[0])}>
+                <AlertTriangle className={cn("h-4 w-4", riskConfig[risk].className.split(" ")[1])} />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Risco</p>
-                <p className={`text-sm font-semibold ${risk.className}`}>{risk.label}</p>
+                <p className={cn("text-sm font-semibold", riskConfig[risk].className.split(" ")[1])}>
+                  {riskConfig[risk].label}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -329,9 +309,13 @@ export default function ProjectDetail() {
                     {taskStats.completedTasks}/{taskStats.totalTasks}
                   </span>
                 </div>
-                <Progress 
-                  value={taskStats.totalTasks > 0 ? (taskStats.completedTasks / taskStats.totalTasks) * 100 : 0} 
-                  className="h-2" 
+                <Progress
+                  value={
+                    taskStats.totalTasks > 0
+                      ? (taskStats.completedTasks / taskStats.totalTasks) * 100
+                      : 0
+                  }
+                  className="h-2"
                 />
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
@@ -355,7 +339,12 @@ export default function ProjectDetail() {
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base">Equipa</CardTitle>
-              <Button variant="ghost" size="sm" className="text-primary text-xs" onClick={() => navigate("/team")}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary text-xs"
+                onClick={() => navigate("/team")}
+              >
                 Ver todos
               </Button>
             </CardHeader>
@@ -374,7 +363,9 @@ export default function ProjectDetail() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{member.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{member.role || "Membro"}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {member.role || "Membro"}
+                      </p>
                     </div>
                   </div>
                 ))
@@ -407,9 +398,13 @@ export default function ProjectDetail() {
                         <span className="text-primary truncate">{task.title}</span>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {task.column_id === 'done' ? 'Concluído' : 
-                         task.column_id === 'in_progress' ? 'Em progresso' :
-                         task.column_id === 'review' ? 'Em revisão' : 'Pendente'}
+                        {task.column_id === "done"
+                          ? "Concluído"
+                          : task.column_id === "in_progress"
+                          ? "Em progresso"
+                          : task.column_id === "review"
+                          ? "Em revisão"
+                          : "Pendente"}
                       </p>
                     </div>
                   </div>
@@ -424,8 +419,8 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      <ProjectFormModal 
-        open={isEditModalOpen} 
+      <ProjectFormModal
+        open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         project={project}
       />
@@ -435,8 +430,8 @@ export default function ProjectDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Eliminar projecto</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem a certeza que deseja eliminar o projecto "{project.name}"? 
-              Esta acção é irreversível e eliminará todas as tarefas associadas.
+              Tem a certeza que deseja eliminar o projecto "{project.name}"? Esta acção é
+              irreversível e eliminará todas as tarefas associadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
