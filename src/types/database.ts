@@ -50,6 +50,11 @@ export interface DbProject {
   budget: number | null;
   spent: number | null;
   program_id: string | null;
+  sector_id: string | null;
+  province_id: string | null;
+  funder_id: string | null;
+  organization_id: string | null;
+  template_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -209,11 +214,16 @@ export interface DbBriefingModule {
 }
 
 // Insert types
-export type DbProjectInsert = Omit<DbProject, 'id' | 'created_at' | 'updated_at' | 'methodology'> & {
+export type DbProjectInsert = Omit<DbProject, 'id' | 'created_at' | 'updated_at' | 'methodology' | 'sector_id' | 'province_id' | 'funder_id' | 'organization_id' | 'template_id'> & {
   id?: string;
   created_at?: string;
   updated_at?: string;
   methodology?: ProjectMethodology;
+  sector_id?: string | null;
+  province_id?: string | null;
+  funder_id?: string | null;
+  organization_id?: string | null;
+  template_id?: string | null;
 };
 
 export type DbTaskInsert = Omit<DbTask, 'id' | 'created_at' | 'updated_at' | 'item_type' | 'parent_id' | 'story_points' | 'sprint_id'> & {
