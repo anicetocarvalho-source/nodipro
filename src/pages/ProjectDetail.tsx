@@ -17,6 +17,7 @@ import {
   Pencil,
   Trash2,
   Shield,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -115,7 +123,6 @@ export default function ProjectDetail() {
   const risk = getRiskLevel(project.progress, project.end_date);
   const statusInfo = statusConfig[project.status];
 
-  // Calculate task stats from real data
   const taskStats = {
     totalTasks: tasks?.length || 0,
     completedTasks: tasks?.filter((t) => t.column_id === "done").length || 0,
@@ -137,7 +144,7 @@ export default function ProjectDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
               <Badge className={cn(statusInfo.className)}>
                 {statusInfo.label}
@@ -149,37 +156,47 @@ export default function ProjectDetail() {
             <p className="text-muted-foreground mt-1">{project.client || "Sem cliente"}</p>
           </div>
         </div>
+        {/* Consolidated actions: primary + dropdown for secondary */}
         <div className="flex items-center gap-2 ml-12 lg:ml-0">
-          <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
-          <Button
-            variant="outline"
-            className="text-destructive hover:text-destructive"
-            onClick={() => setIsDeleteDialogOpen(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Eliminar
-          </Button>
-          <Button variant="outline">
-            <FileText className="h-4 w-4 mr-2" />
-            Relatório
-          </Button>
-          {canManagePermissions && (
-            <Button variant="outline" onClick={() => setIsPermissionsOpen(true)}>
-              <Shield className="h-4 w-4 mr-2" />
-              Permissões
-            </Button>
-          )}
-          <Button variant="outline">
-            <Settings className="h-4 w-4 mr-2" />
-            Configurações
-          </Button>
           <Button className="bg-primary hover:bg-primary/90" onClick={handleNewTask}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Tarefa
           </Button>
+          <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Editar
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>
+                <FileText className="h-4 w-4 mr-2" />
+                Gerar Relatório
+              </DropdownMenuItem>
+              {canManagePermissions && (
+                <DropdownMenuItem onClick={() => setIsPermissionsOpen(true)}>
+                  <Shield className="h-4 w-4 mr-2" />
+                  Permissões
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem>
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar Projecto
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -290,10 +307,8 @@ export default function ProjectDetail() {
 
         {/* Right Side - Info Panel */}
         <div className="space-y-4">
-          {/* Scrum Dashboard - only for Scrum/Hybrid projects */}
           {isScrum && <ScrumDashboard projectId={id || ""} />}
 
-          {/* Cross-Module Integrity Panel */}
           <ProjectIntegrityPanel projectId={id || ""} />
 
           {/* Progress */}
