@@ -48,6 +48,11 @@ import { useCreateProject, useUpdateProject, useProjectSDGs, useSaveProjectSDGs 
 import { useSectors, useSDGs, useProvinces, useFunders } from "@/hooks/useGovernance";
 import { DbProject, ProjectStatus, PROJECT_METHODOLOGY_OPTIONS } from "@/types/database";
 
+const optionalNumber = z.preprocess(
+  (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+  z.number().min(0, "Valor deve ser positivo").optional()
+);
+
 const projectFormSchema = z.object({
   name: z.string().trim().min(1, "Nome é obrigatório").max(100, "Nome deve ter no máximo 100 caracteres"),
   description: z.string().trim().max(1000, "Descrição deve ter no máximo 1000 caracteres").optional(),
@@ -57,8 +62,8 @@ const projectFormSchema = z.object({
   progress: z.coerce.number().min(0, "Progresso mínimo é 0").max(100, "Progresso máximo é 100"),
   start_date: z.date().optional(),
   end_date: z.date().optional(),
-  budget: z.coerce.number().min(0, "Orçamento deve ser positivo").optional(),
-  spent: z.coerce.number().min(0, "Valor gasto deve ser positivo").optional(),
+  budget: optionalNumber,
+  spent: optionalNumber,
   sector_id: z.string().optional(),
   province_id: z.string().optional(),
   funder_id: z.string().optional(),
