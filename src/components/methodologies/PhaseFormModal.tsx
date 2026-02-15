@@ -24,10 +24,15 @@ import { Button } from "@/components/ui/button";
 import { useCreateTemplatePhase, useUpdateTemplatePhase } from "@/hooks/useMethodologies";
 import { TemplatePhase } from "@/types/methodology";
 
+const optionalNumber = z.preprocess(
+  (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
+  z.number().min(1, "Duração mínima é 1 dia").optional()
+);
+
 const formSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   description: z.string().optional(),
-  duration_days: z.coerce.number().min(1, "Duração mínima é 1 dia").optional(),
+  duration_days: optionalNumber,
   position: z.coerce.number().min(0),
 });
 
