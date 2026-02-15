@@ -314,24 +314,6 @@ export function TaskFormModal({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Descreva os detalhes da tarefa..."
-                        className="resize-none"
-                        rows={3}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               <div className="grid grid-cols-3 gap-4">
                 <FormField
