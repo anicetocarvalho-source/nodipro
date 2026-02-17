@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Grid3X3, TreePine } from "lucide-react";
+import { Plus, Grid3X3, TreePine, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import { LogFrameLevelCard } from "@/components/logframe/LogFrameLevelCard";
 import { LogFrameLevelFormModal } from "@/components/logframe/LogFrameLevelFormModal";
 import { LogFrameIndicatorFormModal } from "@/components/logframe/LogFrameIndicatorFormModal";
 import { cn } from "@/lib/utils";
+import { TheoryOfChange } from "@/components/logframe/TheoryOfChange";
 
 export default function LogFrame() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
@@ -160,6 +161,7 @@ export default function LogFrame() {
           <div className="flex items-center justify-between mb-4">
             <TabsList>
               <TabsTrigger value="tree" className="gap-2"><TreePine className="h-4 w-4" /> Hierarquia</TabsTrigger>
+              <TabsTrigger value="toc" className="gap-2"><GitBranch className="h-4 w-4" /> Teoria da Mudança</TabsTrigger>
               <TabsTrigger value="matrix" className="gap-2"><Grid3X3 className="h-4 w-4" /> Matriz</TabsTrigger>
             </TabsList>
             <Button onClick={() => handleAddRoot("goal")} className="gap-2">
@@ -191,6 +193,14 @@ export default function LogFrame() {
                   />
                 ))}
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="toc">
+            {isLoading ? (
+              <div className="space-y-3">{[1, 2, 3].map(i => <Skeleton key={i} className="h-24 w-full" />)}</div>
+            ) : (
+              <TheoryOfChange levels={levels} indicators={indicators} />
             )}
           </TabsContent>
 
