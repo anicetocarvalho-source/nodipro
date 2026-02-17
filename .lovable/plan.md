@@ -11,9 +11,9 @@
 - ✅ 1.3 Equipa (dados reais via team_members)
 - ✅ 1.4 Configurações (persistência via tabela user_settings)
 
-### ✅ Categoria 2: Funcionalidades Institucionais — CONCLUÍDO (~95%)
+### ✅ Categoria 2: Funcionalidades Institucionais — CONCLUÍDO (100%)
 - ✅ 2.1 LogFrame (tabelas + página + hooks)
-- ⚠️ 2.2 Teoria da Mudança (visualização interactiva pendente — requer módulo de diagrama avançado)
+- ✅ 2.2 Teoria da Mudança (visualização interactiva da cadeia de resultados no LogFrame)
 - ✅ 2.3 Procurement (tabelas + página + hooks)
 - ✅ 2.4 Gestão de Stakeholders (tabela + página + matriz poder/interesse)
 - ✅ 2.5 Change Requests (tabela + fluxo de aprovação)
@@ -36,5 +36,5 @@
 - user_settings ✅
 - audit_trigger_func() ✅ (aplicado a projects, tasks, budget_entries, documents, risks, procurement_plans, contracts, change_requests, stakeholders, logframe_levels)
 
-## Itens Pendentes
-- ⚠️ Teoria da Mudança — visualização interactiva de cadeia de resultados (requer biblioteca de diagramas avançada)
+
+## ✅ Plano Estratégico 100% Concluído
