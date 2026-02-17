@@ -1,27 +1,7 @@
 import { useLocation, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ChevronRight, Home } from "lucide-react";
 import { useProject } from "@/hooks/useProjects";
-
-const routeLabels: Record<string, string> = {
-  dashboard: "Dashboard",
-  projects: "Projectos",
-  portfolio: "Portfólio",
-  governance: "Governação",
-  methodologies: "Metodologias",
-  kpi: "Indicadores",
-  risks: "Riscos",
-  team: "Equipa",
-  documents: "Documentos",
-  communication: "Comunicação",
-  budget: "Orçamento",
-  reports: "Relatórios",
-  settings: "Configurações",
-  help: "Ajuda",
-  admin: "Administração",
-  profile: "Perfil",
-  programs: "Programas",
-  sprints: "Sprints",
-};
 
 function ProjectName({ id }: { id: string }) {
   const { data: project } = useProject(id);
@@ -29,10 +9,10 @@ function ProjectName({ id }: { id: string }) {
 }
 
 export function Breadcrumbs() {
+  const { t } = useTranslation();
   const location = useLocation();
   const pathSegments = location.pathname.split("/").filter(Boolean);
 
-  // Don't show on root or dashboard
   if (pathSegments.length <= 1) return null;
 
   const isUUID = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(s);
@@ -52,12 +32,11 @@ export function Breadcrumbs() {
         if (isId && parentSegment === "projects") {
           label = <ProjectName id={segment} />;
         } else if (isId && parentSegment === "programs") {
-          label = "Detalhe";
+          label = t("breadcrumbs.detail");
         } else {
-          label = routeLabels[segment] || segment;
+          label = t(`breadcrumbs.${segment}`, segment);
         }
 
-        // Handle query params (e.g., ?tab=sprints)
         const searchParams = new URLSearchParams(location.search);
         const tab = searchParams.get("tab");
         
@@ -68,13 +47,11 @@ export function Breadcrumbs() {
               <span className="text-foreground font-medium truncate max-w-[200px]">
                 {label}
                 {tab && index === pathSegments.length - 1 && (
-                  <span> / {routeLabels[tab] || tab}</span>
+                  <span> / {t(`breadcrumbs.${tab}`, tab)}</span>
                 )}
               </span>
             ) : (
-              <Link to={path} className="hover:text-foreground transition-colors truncate max-w-[200px]">
-                {label}
-              </Link>
+              <Link to={path} className="hover:text-foreground transition-colors truncate max-w-[200px]">{label}</Link>
             )}
           </span>
         );
