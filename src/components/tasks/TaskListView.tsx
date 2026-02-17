@@ -32,7 +32,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { DbTask, DbSubtask, TaskPriority } from "@/types/database";
-import { useTasks, useUpdateTask } from "@/hooks/useTasks";
+import { useTasks, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
 import { useDatePropagation } from "@/hooks/useDatePropagation";
 import { useProjectTaskDependencies } from "@/hooks/useTaskDependencies";
 import { TaskFormModal } from "@/components/kanban/TaskFormModal";
@@ -62,6 +62,7 @@ interface TaskListViewProps {
 export function TaskListView({ projectId }: TaskListViewProps) {
   const { data: tasks = [], isLoading } = useTasks(projectId);
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
   const propagateDates = useDatePropagation();
   const { data: allDependencies } = useProjectTaskDependencies(projectId);
   const [search, setSearch] = useState("");
@@ -443,6 +444,9 @@ export function TaskListView({ projectId }: TaskListViewProps) {
         task={editingTask}
         columnId={editingColumnId}
         onSave={handleSaveTask}
+        onDelete={(taskId) => {
+          deleteTask.mutate({ taskId, projectId });
+        }}
         projectId={projectId}
         availableTasks={availableTasks}
       />

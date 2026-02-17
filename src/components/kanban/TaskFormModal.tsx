@@ -1,4 +1,16 @@
 import { useEffect, useState, useMemo } from "react";
+import { Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -69,6 +81,7 @@ interface TaskFormModalProps {
   task?: Task | null;
   columnId: string;
   onSave: (task: Task, columnId: string, isNew: boolean) => void;
+  onDelete?: (taskId: string) => void;
   projectId?: string;
   availableTasks?: { id: string; title: string; column_id: string }[];
 }
@@ -79,6 +92,7 @@ export function TaskFormModal({
   task,
   columnId,
   onSave,
+  onDelete,
   projectId,
   availableTasks = [],
 }: TaskFormModalProps) {
@@ -543,12 +557,48 @@ export function TaskFormModal({
               </div>
 
               <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {isEditing ? "Guardar Alterações" : "Criar Tarefa"}
-                </Button>
+                <div className="flex w-full justify-between">
+                  {isEditing && onDelete && task ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button type="button" variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Eliminar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Eliminar tarefa?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acção é irreversível. A tarefa "{task.title}" e todas as suas subtarefas serão eliminadas permanentemente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              onDelete(task.id);
+                              onOpenChange(false);
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Eliminar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit">
+                      {isEditing ? "Guardar Alterações" : "Criar Tarefa"}
+                    </Button>
+                  </div>
+                </div>
               </DialogFooter>
             </form>
           </Form>

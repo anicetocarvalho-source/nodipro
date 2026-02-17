@@ -14,7 +14,7 @@ import { Filter, X } from "lucide-react";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanCard, Task, BlockedInfo } from "./KanbanCard";
 import { TaskFormModal } from "./TaskFormModal";
-import { useTasks, useCreateTask, useUpdateTask, useMoveTask } from "@/hooks/useTasks";
+import { useTasks, useCreateTask, useUpdateTask, useMoveTask, useDeleteTask } from "@/hooks/useTasks";
 import { useDatePropagation } from "@/hooks/useDatePropagation";
 import { useProjectTaskDependencies, isTaskBlocked, TaskDependencyWithDetails } from "@/hooks/useTaskDependencies";
 import { useTeamMembers } from "@/hooks/useTeamMembers";
@@ -95,6 +95,7 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
   const { data: teamMembers = [] } = useTeamMembers(projectId);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
   const moveTask = useMoveTask();
   const propagateDates = useDatePropagation();
 
@@ -550,6 +551,11 @@ export const KanbanBoard = forwardRef<KanbanBoardRef, KanbanBoardProps>(({ proje
         task={editingTask}
         columnId={selectedColumnId}
         onSave={handleSaveTask}
+        onDelete={(taskId) => {
+          if (projectId) {
+            deleteTask.mutate({ taskId, projectId });
+          }
+        }}
         projectId={projectId}
         availableTasks={dbTasks?.map(t => ({
           id: t.id,
