@@ -307,6 +307,86 @@ export type Database = {
           },
         ]
       }
+      change_requests: {
+        Row: {
+          change_type: string | null
+          created_at: string
+          description: string | null
+          id: string
+          impact_budget: number | null
+          impact_description: string | null
+          impact_schedule: string | null
+          impact_scope: string | null
+          implemented_at: string | null
+          justification: string | null
+          priority: string | null
+          project_id: string
+          requested_by: string | null
+          requested_by_name: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_name: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          change_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          impact_budget?: number | null
+          impact_description?: string | null
+          impact_schedule?: string | null
+          impact_scope?: string | null
+          implemented_at?: string | null
+          justification?: string | null
+          priority?: string | null
+          project_id: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          change_type?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          impact_budget?: number | null
+          impact_description?: string | null
+          impact_schedule?: string | null
+          impact_scope?: string | null
+          implemented_at?: string | null
+          justification?: string | null
+          priority?: string | null
+          project_id?: string
+          requested_by?: string | null
+          requested_by_name?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           amount: number | null
@@ -1509,6 +1589,62 @@ export type Database = {
           },
         ]
       }
+      project_baselines: {
+        Row: {
+          baseline_date: string
+          baseline_number: number
+          budget_snapshot: Json | null
+          created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          project_id: string
+          schedule_snapshot: Json | null
+          scope_snapshot: Json | null
+        }
+        Insert: {
+          baseline_date?: string
+          baseline_number?: number
+          budget_snapshot?: Json | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          project_id: string
+          schedule_snapshot?: Json | null
+          scope_snapshot?: Json | null
+        }
+        Update: {
+          baseline_date?: string
+          baseline_number?: number
+          budget_snapshot?: Json | null
+          created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          project_id?: string
+          schedule_snapshot?: Json | null
+          scope_snapshot?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_baselines_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_briefings: {
         Row: {
           created_at: string
@@ -2249,6 +2385,84 @@ export type Database = {
           },
         ]
       }
+      stakeholders: {
+        Row: {
+          category: string | null
+          communication_frequency: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          engagement_strategy: string | null
+          id: string
+          influence: number | null
+          interest: number | null
+          name: string
+          notes: string | null
+          organization_id: string | null
+          organization_name: string | null
+          phone: string | null
+          project_id: string
+          role: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          communication_frequency?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          engagement_strategy?: string | null
+          id?: string
+          influence?: number | null
+          interest?: number | null
+          name: string
+          notes?: string | null
+          organization_id?: string | null
+          organization_name?: string | null
+          phone?: string | null
+          project_id: string
+          role?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          communication_frequency?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          engagement_strategy?: string | null
+          id?: string
+          influence?: number | null
+          interest?: number | null
+          name?: string
+          notes?: string | null
+          organization_id?: string | null
+          organization_name?: string | null
+          phone?: string | null
+          project_id?: string
+          role?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stakeholders_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stakeholders_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subtasks: {
         Row: {
           completed: boolean
@@ -2731,6 +2945,30 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          created_at: string
+          id: string
+          preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

@@ -87,7 +87,9 @@
     "operations": "Operações",
     "management": "Gestão",
     "goToDashboard": "Ir para Dashboard",
-    "logout": "Sair"
+    "logout": "Sair",
+    "stakeholders": "Stakeholders",
+    "changeRequests": "Pedidos de Mudança"
   },
   "auth": {
     "welcome": "Bem-vindo de volta",
@@ -537,7 +539,9 @@
     "profile": "Perfil",
     "programs": "Programas",
     "sprints": "Sprints",
-    "detail": "Detalhe"
+    "detail": "Detalhe",
+    "stakeholders": "Stakeholders",
+    "change-requests": "Pedidos de Mudança"
   },
   "procurement": {
     "title": "Gestão de Aquisições",
@@ -547,5 +551,65 @@
   },
   "onboarding": {
     "welcome": "Bem-vindo ao NODIPRO"
+  },
+  "stakeholders": {
+    "title": "Gestão de Stakeholders",
+    "subtitle": "Registar e classificar partes interessadas com análise de poder/interesse.",
+    "add": "Novo Stakeholder",
+    "list": "Lista",
+    "powerInterestMatrix": "Matriz Poder/Interesse",
+    "noStakeholders": "Nenhum stakeholder registado.",
+    "highInfluence": "Alta Influência",
+    "highInterest": "Alto Interesse",
+    "engaged": "Envolvidos",
+    "influence": "Influência",
+    "interest": "Interesse",
+    "categoryLabel": "Categoria",
+    "catInternal": "Interno",
+    "catExternal": "Externo",
+    "catGovernment": "Governo",
+    "catDonor": "Doador",
+    "catCommunity": "Comunidade",
+    "catPartner": "Parceiro",
+    "organizationName": "Organização",
+    "engagementStrategy": "Estratégia de Envolvimento",
+    "manageClosely": "Gerir de Perto (Alta Influência + Alto Interesse)",
+    "keepSatisfied": "Manter Satisfeito (Alta Influência + Baixo Interesse)",
+    "keepInformed": "Manter Informado (Baixa Influência + Alto Interesse)",
+    "monitor": "Monitorar (Baixa Influência + Baixo Interesse)"
+  },
+  "changeRequests": {
+    "title": "Pedidos de Mudança",
+    "subtitle": "Processo formal para registar, avaliar e aprovar alterações.",
+    "new": "Novo Pedido",
+    "pending": "Pendentes",
+    "approved": "Aprovados",
+    "rejected": "Rejeitados",
+    "noRequests": "Nenhum pedido de mudança registado.",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "justification": "Justificação",
+    "impactDescription": "Descrição do Impacto",
+    "budgetImpact": "Impacto Orçamental",
+    "status_submitted": "Submetido",
+    "status_under_review": "Em Análise",
+    "status_approved": "Aprovado",
+    "status_rejected": "Rejeitado",
+    "status_deferred": "Diferido",
+    "status_implemented": "Implementado",
+    "type_scope": "Escopo",
+    "type_schedule": "Cronograma",
+    "type_budget": "Orçamento",
+    "type_resource": "Recursos",
+    "type_quality": "Qualidade",
+    "type_other": "Outro"
+  },
+  "baselines": {
+    "title": "Gestão de Baselines",
+    "subtitle": "Guardar versões base do cronograma e orçamento para comparação.",
+    "create": "Criar Baseline",
+    "noBaselines": "Nenhuma baseline registada.",
+    "scheduleSnapshot": "Snapshot do Cronograma",
+    "budgetSnapshot": "Snapshot do Orçamento"
   }
 }

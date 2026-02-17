@@ -87,7 +87,9 @@
     "operations": "Operations",
     "management": "Management",
     "goToDashboard": "Go to Dashboard",
-    "logout": "Logout"
+    "logout": "Logout",
+    "stakeholders": "Stakeholders",
+    "changeRequests": "Change Requests"
   },
   "auth": {
     "welcome": "Welcome back",
@@ -537,7 +539,9 @@
     "profile": "Profile",
     "programs": "Programs",
     "sprints": "Sprints",
-    "detail": "Detail"
+    "detail": "Detail",
+    "stakeholders": "Stakeholders",
+    "change-requests": "Change Requests"
   },
   "procurement": {
     "title": "Procurement Management",
@@ -547,5 +551,65 @@
   },
   "onboarding": {
     "welcome": "Welcome to NODIPRO"
+  },
+  "stakeholders": {
+    "title": "Stakeholder Management",
+    "subtitle": "Register and classify stakeholders with power/interest analysis.",
+    "add": "New Stakeholder",
+    "list": "List",
+    "powerInterestMatrix": "Power/Interest Matrix",
+    "noStakeholders": "No stakeholders registered.",
+    "highInfluence": "High Influence",
+    "highInterest": "High Interest",
+    "engaged": "Engaged",
+    "influence": "Influence",
+    "interest": "Interest",
+    "categoryLabel": "Category",
+    "catInternal": "Internal",
+    "catExternal": "External",
+    "catGovernment": "Government",
+    "catDonor": "Donor",
+    "catCommunity": "Community",
+    "catPartner": "Partner",
+    "organizationName": "Organization",
+    "engagementStrategy": "Engagement Strategy",
+    "manageClosely": "Manage Closely (High Influence + High Interest)",
+    "keepSatisfied": "Keep Satisfied (High Influence + Low Interest)",
+    "keepInformed": "Keep Informed (Low Influence + High Interest)",
+    "monitor": "Monitor (Low Influence + Low Interest)"
+  },
+  "changeRequests": {
+    "title": "Change Requests",
+    "subtitle": "Formal process to register, evaluate and approve changes.",
+    "new": "New Request",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "noRequests": "No change requests registered.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "justification": "Justification",
+    "impactDescription": "Impact Description",
+    "budgetImpact": "Budget Impact",
+    "status_submitted": "Submitted",
+    "status_under_review": "Under Review",
+    "status_approved": "Approved",
+    "status_rejected": "Rejected",
+    "status_deferred": "Deferred",
+    "status_implemented": "Implemented",
+    "type_scope": "Scope",
+    "type_schedule": "Schedule",
+    "type_budget": "Budget",
+    "type_resource": "Resources",
+    "type_quality": "Quality",
+    "type_other": "Other"
+  },
+  "baselines": {
+    "title": "Baseline Management",
+    "subtitle": "Save baseline versions of schedule and budget for comparison.",
+    "create": "Create Baseline",
+    "noBaselines": "No baselines registered.",
+    "scheduleSnapshot": "Schedule Snapshot",
+    "budgetSnapshot": "Budget Snapshot"
   }
 }
