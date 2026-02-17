@@ -21,6 +21,7 @@ import {
   Layers,
   Building2,
   Grid3X3,
+  Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -79,6 +80,7 @@ export function AppSidebar() {
         { icon: Layers, label: "Metodologias", path: "/methodologies" },
         { icon: Grid3X3, label: "Quadro Lógico", path: "/logframe" },
         { icon: BarChart3, label: "Indicadores", path: "/kpi" },
+        { icon: Gauge, label: "Valor Ganho (EVM)", path: "/evm", requiresPermission: "canViewBudget" },
         { icon: AlertTriangle, label: "Riscos", path: "/risks", requiresPermission: "canManageRisks" },
         { icon: Users, label: "Equipa", path: "/team" },
       ],

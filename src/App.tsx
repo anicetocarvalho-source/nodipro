@@ -32,6 +32,7 @@ import NotFound from "./pages/NotFound";
 import Governance from "./pages/Governance";
 import Sprints from "./pages/Sprints";
 import LogFrame from "./pages/LogFrame";
+import EVM from "./pages/EVM";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/projects/:id" element={<ProtectedPageWrapper><ProjectDetail /></ProtectedPageWrapper>} />
               <Route path="/sprints" element={<ProtectedPageWrapper><Sprints /></ProtectedPageWrapper>} />
               <Route path="/logframe" element={<ProtectedPageWrapper><LogFrame /></ProtectedPageWrapper>} />
+              <Route path="/evm" element={<ManagerPageWrapper><EVM /></ManagerPageWrapper>} />
               <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
               <Route path="/programs/:id" element={<ProtectedPageWrapper><ProgramDetail /></ProtectedPageWrapper>} />
               <Route path="/methodologies" element={<ProtectedPageWrapper><Methodologies /></ProtectedPageWrapper>} />
