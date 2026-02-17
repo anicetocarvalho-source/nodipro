@@ -866,6 +866,163 @@ export type Database = {
         }
         Relationships: []
       }
+      kpi_definitions: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          critical_threshold: number | null
+          description: string | null
+          direction: string
+          frequency: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          organization_id: string | null
+          project_id: string | null
+          target_value: number | null
+          unit: string | null
+          updated_at: string
+          warning_threshold: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          critical_threshold?: number | null
+          description?: string | null
+          direction?: string
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          organization_id?: string | null
+          project_id?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+          warning_threshold?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          critical_threshold?: number | null
+          description?: string | null
+          direction?: string
+          frequency?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          organization_id?: string | null
+          project_id?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+          warning_threshold?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_definitions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_definitions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kpi_measurements: {
+        Row: {
+          created_at: string
+          id: string
+          kpi_id: string
+          measured_at: string
+          measured_by: string | null
+          notes: string | null
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kpi_id: string
+          measured_at?: string
+          measured_by?: string | null
+          notes?: string | null
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kpi_id?: string
+          measured_at?: string
+          measured_by?: string | null
+          notes?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_measurements_kpi_id_fkey"
+            columns: ["kpi_id"]
+            isOneToOne: false
+            referencedRelation: "kpi_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons_learned: {
+        Row: {
+          author_id: string | null
+          author_name: string | null
+          created_at: string
+          description: string | null
+          id: string
+          lesson_type: string
+          project_id: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_name?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lesson_type?: string
+          project_id: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          author_name?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lesson_type?: string
+          project_id?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_learned_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logframe_indicators: {
         Row: {
           baseline_date: string | null
@@ -1837,6 +1994,74 @@ export type Database = {
           },
         ]
       }
+      risks: {
+        Row: {
+          category: string | null
+          contingency: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          impact: string
+          mitigation: string | null
+          owner_id: string | null
+          owner_name: string | null
+          probability: string
+          project_id: string
+          status: string
+          title: string
+          trigger_conditions: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          contingency?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          impact?: string
+          mitigation?: string | null
+          owner_id?: string | null
+          owner_name?: string | null
+          probability?: string
+          project_id: string
+          status?: string
+          title: string
+          trigger_conditions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          contingency?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          impact?: string
+          mitigation?: string | null
+          owner_id?: string | null
+          owner_name?: string | null
+          probability?: string
+          project_id?: string
+          status?: string
+          title?: string
+          trigger_conditions?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -2255,31 +2480,56 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          department: string | null
+          email: string | null
           id: string
           initials: string
           name: string
+          organization_id: string | null
+          phone: string | null
           project_id: string
           role: string | null
+          status: string | null
+          user_id: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          department?: string | null
+          email?: string | null
           id?: string
           initials: string
           name: string
+          organization_id?: string | null
+          phone?: string | null
           project_id: string
           role?: string | null
+          status?: string | null
+          user_id?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          department?: string | null
+          email?: string | null
           id?: string
           initials?: string
           name?: string
+          organization_id?: string | null
+          phone?: string | null
           project_id?: string
           role?: string | null
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "team_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "team_members_project_id_fkey"
             columns: ["project_id"]
