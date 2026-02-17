@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "next-themes";
 import App from "./App.tsx";
 import "./index.css";
+import "./i18n";
 
 // Hide loading screen after React mounts
 const hideLoader = () => {
