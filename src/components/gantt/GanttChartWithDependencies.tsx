@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { useTasks, useUpdateTask } from "@/hooks/useTasks";
+import { useTasks, useUpdateTask, useDeleteTask } from "@/hooks/useTasks";
 import { useDatePropagation } from "@/hooks/useDatePropagation";
 import {
   useProjectTaskDependencies,
@@ -72,6 +72,7 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
   const { data: tasks, isLoading: tasksLoading } = useTasks(projectId);
   const { data: allDependencies, isLoading: depsLoading } = useProjectTaskDependencies(projectId);
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
   const updateDependency = useUpdateTaskDependency();
   const deleteDependency = useDeleteTaskDependency();
   const propagateDates = useDatePropagation();
@@ -827,6 +828,11 @@ export function GanttChartWithDependencies({ projectId }: GanttChartWithDependen
         task={editingTask}
         columnId={editingColumnId}
         onSave={handleSaveTask}
+        onDelete={(taskId) => {
+          if (projectId) {
+            deleteTask.mutate({ taskId, projectId });
+          }
+        }}
         projectId={projectId}
         availableTasks={availableTasks}
       />
