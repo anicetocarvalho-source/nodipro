@@ -772,6 +772,125 @@ export type Database = {
         }
         Relationships: []
       }
+      logframe_indicators: {
+        Row: {
+          baseline_date: string | null
+          baseline_value: number | null
+          created_at: string
+          current_value: number | null
+          data_source: string | null
+          description: string | null
+          frequency: string | null
+          id: string
+          level_id: string
+          name: string
+          responsible: string | null
+          target_date: string | null
+          target_value: number | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          baseline_date?: string | null
+          baseline_value?: number | null
+          created_at?: string
+          current_value?: number | null
+          data_source?: string | null
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          level_id: string
+          name: string
+          responsible?: string | null
+          target_date?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          baseline_date?: string | null
+          baseline_value?: number | null
+          created_at?: string
+          current_value?: number | null
+          data_source?: string | null
+          description?: string | null
+          frequency?: string | null
+          id?: string
+          level_id?: string
+          name?: string
+          responsible?: string | null
+          target_date?: string | null
+          target_value?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logframe_indicators_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "logframe_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logframe_levels: {
+        Row: {
+          assumptions: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          level_type: string
+          means_of_verification: string | null
+          narrative: string
+          parent_id: string | null
+          position: number
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          assumptions?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_type: string
+          means_of_verification?: string | null
+          narrative: string
+          parent_id?: string | null
+          position?: number
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          assumptions?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level_type?: string
+          means_of_verification?: string | null
+          narrative?: string
+          parent_id?: string | null
+          position?: number
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logframe_levels_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "logframe_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logframe_levels_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string
