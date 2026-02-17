@@ -11,6 +11,7 @@ import {
   generateRiskReport,
   generateKPIReport,
   generatePerformanceReport,
+  generateDisbursementReport,
 } from "@/lib/reportGenerators";
 
 export type { ReportType, ReportData };
@@ -82,6 +83,9 @@ export function useReportGeneration() {
           break;
         case "performance":
           data = generatePerformanceReport(allProjects, allTasks, allBudget, organization.name);
+          break;
+        case "disbursement":
+          data = generateDisbursementReport(allProjects, allBudget, organization.name);
           break;
         default:
           throw new Error("Tipo de relatório desconhecido");

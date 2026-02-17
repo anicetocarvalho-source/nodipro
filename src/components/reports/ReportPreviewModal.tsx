@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Printer, FileSpreadsheet, AlertTriangle } from "lucide-react";
+import { Printer, FileSpreadsheet, AlertTriangle, Building2 } from "lucide-react";
 import { ReportData } from "@/hooks/useReportGeneration";
 import { exportToCSV, printReport } from "@/lib/exportUtils";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,6 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
   if (!reportData) return null;
 
   const handlePrint = () => printReport();
-
   const handleExportCSV = () => {
     exportToCSV(reportData, `relatorio-${reportData.type}-${Date.now()}`);
   };
@@ -33,9 +32,18 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
               overflow: visible !important;
               box-shadow: none !important;
               border: none !important;
+              padding: 0 !important;
             }
             .no-print { display: none !important; }
             .print-break { page-break-inside: avoid; }
+            .print-only { display: block !important; }
+            .report-header-print {
+              border-bottom: 3px solid #1a365d !important;
+              padding-bottom: 16px !important;
+              margin-bottom: 24px !important;
+            }
+            table { font-size: 11px !important; }
+            @page { margin: 20mm 15mm; size: A4; }
           }
         `}</style>
 
@@ -58,36 +66,54 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
         </div>
 
         <div id="report-content" className="space-y-6">
-          {/* Header */}
-          <div className="border-b pb-4">
-            <h1 className="text-xl font-bold hidden print:block">{reportData.title}</h1>
-            <p className="text-sm text-muted-foreground">{reportData.subtitle}</p>
-            <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-muted-foreground">
-              <span>Organização: <strong>{reportData.organizationName}</strong></span>
-              <span>Gerado em: <strong>{reportData.generatedAt}</strong></span>
+          {/* Institutional Header */}
+          <div className="report-header-print border-b-2 border-primary pb-4">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <span className="text-sm font-bold text-primary uppercase tracking-wide">
+                    {reportData.organizationName}
+                  </span>
+                </div>
+                <h1 className="text-xl font-bold text-foreground">{reportData.title}</h1>
+                <p className="text-sm text-muted-foreground">{reportData.subtitle}</p>
+              </div>
+              <div className="text-right text-xs text-muted-foreground space-y-0.5">
+                <p>Gerado em: <strong>{reportData.generatedAt}</strong></p>
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">
+                  Documento Confidencial
+                </p>
+                <p className="text-[10px]">Ref: {reportData.type.toUpperCase()}-{Date.now().toString(36).toUpperCase()}</p>
+              </div>
             </div>
           </div>
 
           {/* Metrics */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 print-break">
-            {reportData.metrics.map((metric, i) => (
-              <Card key={i} className="border">
-                <CardContent className="p-4">
-                  <p className="text-xs font-medium text-muted-foreground">{metric.label}</p>
-                  <p className={cn(
-                    "text-xl font-bold mt-1",
-                    metric.variant === "success" && "text-success",
-                    metric.variant === "warning" && "text-warning",
-                    metric.variant === "danger" && "text-destructive"
-                  )}>
-                    {metric.value}
-                  </p>
-                  {metric.subtext && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{metric.subtext}</p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+          <div className="print-break">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+              Indicadores Principais
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {reportData.metrics.map((metric, i) => (
+                <Card key={i} className="border">
+                  <CardContent className="p-4">
+                    <p className="text-xs font-medium text-muted-foreground">{metric.label}</p>
+                    <p className={cn(
+                      "text-xl font-bold mt-1",
+                      metric.variant === "success" && "text-success",
+                      metric.variant === "warning" && "text-warning",
+                      metric.variant === "danger" && "text-destructive"
+                    )}>
+                      {metric.value}
+                    </p>
+                    {metric.subtext && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{metric.subtext}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
 
           {/* Tables */}
@@ -100,7 +126,7 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
                     <thead>
                       <tr className="bg-muted/50">
                         {table.headers.map((h, j) => (
-                          <th key={j} className="text-left p-3 font-medium text-muted-foreground whitespace-nowrap">
+                          <th key={j} className="text-left p-3 font-medium text-muted-foreground whitespace-nowrap text-xs uppercase tracking-wider">
                             {h}
                           </th>
                         ))}
@@ -108,9 +134,9 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
                     </thead>
                     <tbody>
                       {table.rows.map((row, j) => (
-                        <tr key={j} className="border-t hover:bg-muted/30 transition-colors">
+                        <tr key={j} className={cn("border-t hover:bg-muted/30 transition-colors", j % 2 === 0 ? "" : "bg-muted/10")}>
                           {row.map((cell, k) => (
-                            <td key={k} className="p-3 whitespace-nowrap">{cell}</td>
+                            <td key={k} className="p-3 whitespace-nowrap text-xs">{cell}</td>
                           ))}
                         </tr>
                       ))}
@@ -144,8 +170,10 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
           )}
 
           {/* Footer */}
-          <div className="border-t pt-4 text-xs text-muted-foreground text-center">
-            <p>Relatório gerado automaticamente pelo sistema NódiPro • {reportData.generatedAt}</p>
+          <div className="border-t pt-4 text-xs text-muted-foreground text-center space-y-1">
+            <p className="font-medium">NódiPro — Sistema de Gestão de Projectos</p>
+            <p>Relatório gerado automaticamente • {reportData.generatedAt}</p>
+            <p className="text-[10px] text-muted-foreground/50">Este documento é confidencial e destinado exclusivamente ao uso interno da organização.</p>
           </div>
         </div>
       </DialogContent>

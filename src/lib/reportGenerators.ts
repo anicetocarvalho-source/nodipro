@@ -1,7 +1,7 @@
 import { format, differenceInDays, isPast } from "date-fns";
 import { pt } from "date-fns/locale";
 
-export type ReportType = "project" | "portfolio" | "team" | "financial" | "risk" | "kpi" | "performance";
+export type ReportType = "project" | "portfolio" | "team" | "financial" | "risk" | "kpi" | "performance" | "disbursement";
 
 export interface ReportMetric {
   label: string;
@@ -445,6 +445,108 @@ export function generatePerformanceReport(
       ...(overdueDetails.filter(t => t.priority === 'high').length > 0 ? [`${overdueDetails.filter(t => t.priority === 'high').length} tarefa(s) de alta prioridade em atraso devem ser repriorizadas urgentemente.`] : []),
       ...(analysis.filter(p => p.completionRate < 25 && p.totalTasks > 0).length > 0 ? [`${analysis.filter(p => p.completionRate < 25 && p.totalTasks > 0).length} projecto(s) com taxa <25% necessitam de intervenção.`] : []),
       avgDev < 0 ? `O desvio médio é de ${avgDev}%. Considere rever a alocação de recursos.` : 'O desempenho geral está dentro dos parâmetros esperados.',
+    ],
+  };
+}
+
+// ===== DISBURSEMENT =====
+export function generateDisbursementReport(
+  projects: any[], budget: any[], orgName: string
+): ReportData {
+  const totalPlanned = budget.reduce((s, b) => s + b.planned_amount, 0);
+  const totalActual = budget.reduce((s, b) => s + b.actual_amount, 0);
+  const approvedEntries = budget.filter(b => b.status === 'approved' || b.status === 'paid');
+  const pendingEntries = budget.filter(b => b.status === 'pending');
+  const paidEntries = budget.filter(b => b.status === 'paid');
+  const rejectedEntries = budget.filter(b => b.status === 'rejected');
+
+  const totalDisbursed = paidEntries.reduce((s, b) => s + b.actual_amount, 0);
+  const totalApproved = approvedEntries.reduce((s, b) => s + b.actual_amount, 0);
+  const totalPending = pendingEntries.reduce((s, b) => s + b.planned_amount, 0);
+  const disbursementRate = totalPlanned > 0 ? Math.round((totalDisbursed / totalPlanned) * 100) : 0;
+
+  // By project
+  const byProject = budget.reduce((acc, b) => {
+    const project = projects.find(p => p.id === b.project_id);
+    const name = project?.name || 'Desconhecido';
+    if (!acc[name]) acc[name] = { planned: 0, disbursed: 0, approved: 0, pending: 0, rejected: 0 };
+    acc[name].planned += b.planned_amount;
+    if (b.status === 'paid') acc[name].disbursed += b.actual_amount;
+    if (b.status === 'approved') acc[name].approved += b.actual_amount;
+    if (b.status === 'pending') acc[name].pending += b.planned_amount;
+    if (b.status === 'rejected') acc[name].rejected += b.actual_amount;
+    return acc;
+  }, {} as Record<string, { planned: number; disbursed: number; approved: number; pending: number; rejected: number }>);
+
+  // By month
+  const byMonth = budget.filter(b => b.status === 'paid').reduce((acc, b) => {
+    const month = format(new Date(b.entry_date), 'yyyy-MM');
+    const label = format(new Date(b.entry_date), "MMMM yyyy", { locale: pt });
+    if (!acc[month]) acc[month] = { label, amount: 0, count: 0 };
+    acc[month].amount += b.actual_amount;
+    acc[month].count++;
+    return acc;
+  }, {} as Record<string, { label: string; amount: number; count: number }>);
+
+  // By supplier
+  const bySupplier = budget.filter(b => b.supplier && b.status === 'paid').reduce((acc, b) => {
+    const name = b.supplier!;
+    if (!acc[name]) acc[name] = { amount: 0, count: 0 };
+    acc[name].amount += b.actual_amount;
+    acc[name].count++;
+    return acc;
+  }, {} as Record<string, { amount: number; count: number }>);
+
+  return {
+    title: "Relatório de Desembolsos",
+    subtitle: "Análise detalhada de pagamentos, aprovações e fluxo financeiro",
+    generatedAt: now(), organizationName: orgName, type: "disbursement",
+    metrics: [
+      { label: "Total Planeado", value: formatCurrency(totalPlanned) },
+      { label: "Total Desembolsado", value: formatCurrency(totalDisbursed), subtext: `${disbursementRate}% do planeado` },
+      { label: "Aprovado (Pendente Pgto)", value: formatCurrency(totalApproved), variant: "success" as const },
+      { label: "Pendente Aprovação", value: formatCurrency(totalPending), variant: totalPending > 0 ? "warning" as const : "success" as const },
+    ],
+    tables: [
+      {
+        title: "Desembolsos por Projecto",
+        headers: ["Projecto", "Planeado", "Desembolsado", "Aprovado", "Pendente", "Rejeitado", "% Desembolso"],
+        rows: Object.entries(byProject)
+          .sort((a, b) => (b[1] as any).planned - (a[1] as any).planned)
+          .map(([name, d]: [string, any]) => [
+            name, formatCurrency(d.planned), formatCurrency(d.disbursed), formatCurrency(d.approved),
+            formatCurrency(d.pending), formatCurrency(d.rejected),
+            d.planned > 0 ? `${Math.round((d.disbursed / d.planned) * 100)}%` : 'N/A',
+          ]),
+      },
+      {
+        title: "Desembolsos por Mês",
+        headers: ["Mês", "Valor Desembolsado", "Nº Pagamentos"],
+        rows: Object.entries(byMonth)
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([, d]: [string, any]) => [d.label, formatCurrency(d.amount), d.count]),
+      },
+      {
+        title: "Principais Fornecedores",
+        headers: ["Fornecedor", "Total Pago", "Nº Pagamentos"],
+        rows: Object.entries(bySupplier)
+          .sort((a, b) => (b[1] as any).amount - (a[1] as any).amount)
+          .map(([name, d]: [string, any]) => [name, formatCurrency(d.amount), d.count]),
+      },
+      {
+        title: "Entradas Pendentes de Aprovação",
+        headers: ["Descrição", "Projecto", "Valor", "Fornecedor", "Data"],
+        rows: pendingEntries.slice(0, 20).map(b => {
+          const proj = projects.find(p => p.id === b.project_id);
+          return [b.description, proj?.name || 'N/A', formatCurrency(b.planned_amount), b.supplier || 'N/A', formatDate(b.entry_date)];
+        }),
+      },
+    ],
+    recommendations: [
+      ...(rejectedEntries.length > 0 ? [`${rejectedEntries.length} entrada(s) rejeitada(s) — rever justificação.`] : []),
+      ...(pendingEntries.length > 5 ? [`${pendingEntries.length} entradas pendentes de aprovação — processar para evitar atrasos.`] : []),
+      ...(disbursementRate < 50 ? [`Taxa de desembolso de ${disbursementRate}% — considere acelerar processos de pagamento.`] : []),
+      ...(disbursementRate >= 90 ? [`Taxa de desembolso elevada (${disbursementRate}%) — monitorar para evitar excesso.`] : []),
     ],
   };
 }

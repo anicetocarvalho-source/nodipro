@@ -50,6 +50,8 @@ import {
   formatDate,
   formatCurrency,
 } from "@/lib/projectUtils";
+import { calculateRAG } from "@/lib/ragUtils";
+import { RAGIndicator } from "@/components/projects/RAGIndicator";
 
 export default function Projects() {
   const navigate = useNavigate();
@@ -153,10 +155,11 @@ export default function Projects() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="flex gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2">
             <Badge className={cn("text-xs", statusConfig[project.status].className)}>
               {statusConfig[project.status].label}
             </Badge>
+            <RAGIndicator assessment={calculateRAG(project)} showDetails />
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -208,6 +211,9 @@ export default function Projects() {
           <Badge className={cn("text-xs", statusConfig[project.status].className)}>
             {statusConfig[project.status].label}
           </Badge>
+        </td>
+        <td className="p-4">
+          <RAGIndicator assessment={calculateRAG(project)} showDetails />
         </td>
         <td className="p-4">
           <div className="flex items-center gap-3 min-w-[120px]">
@@ -283,6 +289,7 @@ export default function Projects() {
               <tr className="border-b">
                 <th className="text-left p-4 font-medium text-muted-foreground">Projecto</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Estado</th>
+                <th className="text-left p-4 font-medium text-muted-foreground">RAG</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Progresso</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Prazo</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Risco</th>

@@ -35,6 +35,7 @@ const reportTemplates = [
   { id: "5", name: "Relatório de Riscos Activos", type: "risk" as ReportType, format: "PDF", description: "Projectos atrasados, tarefas em atraso e orçamentos excedidos." },
   { id: "6", name: "Relatório de KPIs", type: "kpi" as ReportType, format: "Excel", description: "Indicadores-chave de desempenho da organização." },
   { id: "7", name: "Análise de Desempenho e Impacto de Atrasos", type: "performance" as ReportType, format: "PDF", description: "Desvio de cronograma, taxa de conclusão por projecto e impacto operacional." },
+  { id: "8", name: "Relatório de Desembolsos", type: "disbursement" as ReportType, format: "PDF", description: "Análise de pagamentos, aprovações pendentes e fluxo financeiro por projecto." },
 ];
 
 const typeConfig: Record<string, { label: string; className: string }> = {
@@ -45,6 +46,7 @@ const typeConfig: Record<string, { label: string; className: string }> = {
   risk: { label: "Riscos", className: "bg-destructive/10 text-destructive" },
   kpi: { label: "KPIs", className: "bg-chart-5/10 text-chart-5" },
   performance: { label: "Desempenho", className: "bg-chart-3/10 text-chart-3" },
+  disbursement: { label: "Desembolsos", className: "bg-chart-4/10 text-chart-4" },
 };
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
@@ -521,6 +523,7 @@ export default function Reports() {
                       <SelectItem value="risk">Riscos Activos</SelectItem>
                       <SelectItem value="kpi">KPIs</SelectItem>
                       <SelectItem value="performance">Desempenho e Impacto de Atrasos</SelectItem>
+                      <SelectItem value="disbursement">Desembolsos</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
