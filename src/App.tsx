@@ -34,6 +34,8 @@ import Sprints from "./pages/Sprints";
 import LogFrame from "./pages/LogFrame";
 import EVM from "./pages/EVM";
 import Procurement from "./pages/Procurement";
+import Stakeholders from "./pages/Stakeholders";
+import ChangeRequests from "./pages/ChangeRequests";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +84,8 @@ const App = () => (
               <Route path="/logframe" element={<ProtectedPageWrapper><LogFrame /></ProtectedPageWrapper>} />
               <Route path="/evm" element={<ManagerPageWrapper><EVM /></ManagerPageWrapper>} />
               <Route path="/procurement" element={<ManagerPageWrapper><Procurement /></ManagerPageWrapper>} />
+              <Route path="/stakeholders" element={<ProtectedPageWrapper><Stakeholders /></ProtectedPageWrapper>} />
+              <Route path="/change-requests" element={<ManagerPageWrapper><ChangeRequests /></ManagerPageWrapper>} />
               <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
               <Route path="/programs/:id" element={<ProtectedPageWrapper><ProgramDetail /></ProtectedPageWrapper>} />
               <Route path="/methodologies" element={<ProtectedPageWrapper><Methodologies /></ProtectedPageWrapper>} />

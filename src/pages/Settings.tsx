@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,10 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Bell, Globe, Palette, Shield, Save } from "lucide-react";
 import { toast } from "sonner";
+import { useUserSettings } from "@/hooks/useUserSettings";
 
 const Settings = () => {
   const { theme, setTheme } = useTheme();
   const { t, i18n } = useTranslation();
+  const { preferences, saveSettings, isLoading } = useUserSettings();
   
   const [settings, setSettings] = useState({
     emailNotifications: true,
@@ -25,8 +27,14 @@ const Settings = () => {
     sessionTimeout: "30",
   });
 
+  useEffect(() => {
+    if (preferences && Object.keys(preferences).length > 0) {
+      setSettings(prev => ({ ...prev, ...preferences }));
+    }
+  }, [preferences]);
+
   const handleSave = () => {
-    toast.success(t("common.saveChanges") + " ✓");
+    saveSettings.mutate(settings);
   };
 
   const updateSetting = (key: string, value: boolean | string) => {

@@ -87,7 +87,9 @@
     "operations": "Opérations",
     "management": "Gestion",
     "goToDashboard": "Aller au tableau de bord",
-    "logout": "Déconnexion"
+    "logout": "Déconnexion",
+    "stakeholders": "Parties prenantes",
+    "changeRequests": "Demandes de changement"
   },
   "auth": {
     "welcome": "Bienvenue",
@@ -537,7 +539,9 @@
     "profile": "Profil",
     "programs": "Programmes",
     "sprints": "Sprints",
-    "detail": "Détail"
+    "detail": "Détail",
+    "stakeholders": "Parties prenantes",
+    "change-requests": "Demandes de changement"
   },
   "procurement": {
     "title": "Gestion des approvisionnements",
@@ -547,5 +551,65 @@
   },
   "onboarding": {
     "welcome": "Bienvenue sur NODIPRO"
+  },
+  "stakeholders": {
+    "title": "Gestion des parties prenantes",
+    "subtitle": "Enregistrer et classer les parties prenantes avec analyse pouvoir/intérêt.",
+    "add": "Nouvelle partie prenante",
+    "list": "Liste",
+    "powerInterestMatrix": "Matrice pouvoir/intérêt",
+    "noStakeholders": "Aucune partie prenante enregistrée.",
+    "highInfluence": "Haute influence",
+    "highInterest": "Haut intérêt",
+    "engaged": "Engagés",
+    "influence": "Influence",
+    "interest": "Intérêt",
+    "categoryLabel": "Catégorie",
+    "catInternal": "Interne",
+    "catExternal": "Externe",
+    "catGovernment": "Gouvernement",
+    "catDonor": "Donateur",
+    "catCommunity": "Communauté",
+    "catPartner": "Partenaire",
+    "organizationName": "Organisation",
+    "engagementStrategy": "Stratégie d'engagement",
+    "manageClosely": "Gérer de près (Haute influence + Haut intérêt)",
+    "keepSatisfied": "Maintenir satisfait (Haute influence + Faible intérêt)",
+    "keepInformed": "Tenir informé (Faible influence + Haut intérêt)",
+    "monitor": "Surveiller (Faible influence + Faible intérêt)"
+  },
+  "changeRequests": {
+    "title": "Demandes de changement",
+    "subtitle": "Processus formel pour enregistrer, évaluer et approuver les changements.",
+    "new": "Nouvelle demande",
+    "pending": "En attente",
+    "approved": "Approuvées",
+    "rejected": "Rejetées",
+    "noRequests": "Aucune demande de changement enregistrée.",
+    "approve": "Approuver",
+    "reject": "Rejeter",
+    "justification": "Justification",
+    "impactDescription": "Description de l'impact",
+    "budgetImpact": "Impact budgétaire",
+    "status_submitted": "Soumis",
+    "status_under_review": "En examen",
+    "status_approved": "Approuvé",
+    "status_rejected": "Rejeté",
+    "status_deferred": "Reporté",
+    "status_implemented": "Implémenté",
+    "type_scope": "Portée",
+    "type_schedule": "Calendrier",
+    "type_budget": "Budget",
+    "type_resource": "Ressources",
+    "type_quality": "Qualité",
+    "type_other": "Autre"
+  },
+  "baselines": {
+    "title": "Gestion des lignes de base",
+    "subtitle": "Enregistrer des versions de référence du calendrier et du budget.",
+    "create": "Créer une ligne de base",
+    "noBaselines": "Aucune ligne de base enregistrée.",
+    "scheduleSnapshot": "Instantané du calendrier",
+    "budgetSnapshot": "Instantané du budget"
   }
 }
