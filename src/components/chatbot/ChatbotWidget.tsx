@@ -236,7 +236,10 @@ export function ChatbotWidget() {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 max-h-[420px]" ref={scrollRef}>
+            <div
+              ref={scrollRef}
+              className="flex-1 max-h-[420px] overflow-y-auto"
+            >
               <div className="p-4 space-y-3">
                 {messages.length === 0 && (
                   <div className="text-center space-y-4">
@@ -305,7 +308,7 @@ export function ChatbotWidget() {
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Input */}
             <div className="border-t border-border p-3">
