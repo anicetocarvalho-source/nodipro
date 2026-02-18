@@ -201,7 +201,7 @@ export function ChatbotWidget() {
               <div className="flex items-center gap-2">
                 <Bot className="h-5 w-5" />
                 <div>
-                  <p className="font-semibold text-sm">NódiBot</p>
+                  <p className="font-semibold text-sm">NODIBot</p>
                   <p className="text-xs opacity-80">Assistente da plataforma</p>
                 </div>
               </div>
@@ -238,7 +238,7 @@ export function ChatbotWidget() {
                     </div>
                     <div>
                       <p className="text-sm font-medium">
-                        Olá! Sou o NódiBot 👋
+                        Olá! Sou o NODIBot 👋
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Posso ajudá-lo com informações sobre projectos,
