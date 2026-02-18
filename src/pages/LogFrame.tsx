@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Plus, Grid3X3, TreePine, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +24,13 @@ import { TheoryOfChange } from "@/components/logframe/TheoryOfChange";
 export default function LogFrame() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+
+  // Auto-select first project
+  useEffect(() => {
+    if (!selectedProjectId && projects && projects.length > 0) {
+      setSelectedProjectId(projects[0].id);
+    }
+  }, [projects, selectedProjectId]);
   const { data: levels = [], isLoading: levelsLoading } = useLogFrameLevels(selectedProjectId || undefined);
   const { data: indicators = [], isLoading: indicatorsLoading } = useLogFrameIndicators(selectedProjectId || undefined);
 
