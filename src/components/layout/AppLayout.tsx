@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 import { Breadcrumbs } from "./Breadcrumbs";
+import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -38,6 +39,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           {children}
         </main>
       </div>
+
+      <ChatbotWidget />
     </div>
   );
 }
