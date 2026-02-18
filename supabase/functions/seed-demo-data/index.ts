@@ -566,6 +566,160 @@ Deno.serve(async (req) => {
 
     await supabase.from("documents").insert(documentsData);
 
+    // Create risks for projects
+    const risksData = projects.slice(0, 4).flatMap(project => [
+      {
+        project_id: project.id,
+        title: "Atraso na entrega de componentes",
+        description: "Fornecedores podem não cumprir prazos de entrega de hardware/software",
+        probability: "high",
+        impact: "high",
+        status: "active",
+        category: "schedule",
+        owner_name: "João Martins",
+        mitigation: "Identificar fornecedores alternativos e negociar contratos com cláusulas de penalização",
+        contingency: "Alocar equipa interna para desenvolvimento de soluções temporárias",
+        trigger_conditions: "Atraso superior a 5 dias úteis na entrega",
+      },
+      {
+        project_id: project.id,
+        title: "Mudança de requisitos pelo cliente",
+        description: "O cliente pode solicitar alterações significativas ao âmbito do projecto",
+        probability: "medium",
+        impact: "high",
+        status: "active",
+        category: "scope",
+        owner_name: "Maria Santos",
+        mitigation: "Realizar sessões frequentes de validação com stakeholders",
+        contingency: "Processo formal de gestão de mudanças com avaliação de impacto",
+        trigger_conditions: "Solicitação de mais de 3 alterações significativas num mês",
+      },
+      {
+        project_id: project.id,
+        title: "Rotatividade de pessoal técnico",
+        description: "Risco de perda de membros-chave da equipa técnica",
+        probability: "low",
+        impact: "high",
+        status: "monitoring",
+        category: "resource",
+        owner_name: "João Martins",
+        mitigation: "Documentação detalhada e partilha de conhecimento entre equipa",
+        contingency: "Base de dados de consultores externos pré-qualificados",
+        trigger_conditions: "Saída de mais de 1 membro sénior da equipa",
+      },
+      {
+        project_id: project.id,
+        title: "Ultrapassagem do orçamento",
+        description: "Custos reais podem exceder o orçamento planeado",
+        probability: "medium",
+        impact: "medium",
+        status: "active",
+        category: "cost",
+        owner_name: "Maria Santos",
+        mitigation: "Monitorização semanal de custos com alertas automáticos a 80%",
+        contingency: "Reserva de contingência de 10% do orçamento total",
+        trigger_conditions: "Desvio superior a 15% em qualquer categoria de custo",
+      },
+    ]);
+
+    await supabase.from("risks").insert(risksData);
+
+    // Create sprints for first 3 projects
+    const today = new Date();
+    const sprintsData = projects.slice(0, 3).flatMap(project => [
+      {
+        project_id: project.id,
+        name: "Sprint 1 - Fundação",
+        goal: "Configuração inicial do ambiente e implementação das funcionalidades base",
+        start_date: new Date(today.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        end_date: new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: "completed",
+        velocity: 34,
+      },
+      {
+        project_id: project.id,
+        name: "Sprint 2 - Funcionalidades Core",
+        goal: "Desenvolvimento das funcionalidades principais do sistema",
+        start_date: new Date(today.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        end_date: today.toISOString().split('T')[0],
+        status: "active",
+        velocity: 28,
+      },
+      {
+        project_id: project.id,
+        name: "Sprint 3 - Integrações",
+        goal: "Integração com sistemas externos e testes de aceitação",
+        start_date: today.toISOString().split('T')[0],
+        end_date: new Date(today.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        status: "planning",
+        velocity: 0,
+      },
+    ]);
+
+    await supabase.from("sprints").insert(sprintsData);
+
+    // Create stakeholders for projects
+    const stakeholdersData = projects.slice(0, 4).flatMap(project => [
+      {
+        project_id: project.id,
+        name: "Dr. António Fernandes",
+        organization_name: "Ministério das Finanças",
+        role: "Patrocinador Executivo",
+        email: "a.fernandes@exemplo.gov.ao",
+        phone: "+244 923 456 789",
+        influence: 5,
+        interest: 5,
+        category: "internal",
+        engagement_strategy: "Reuniões mensais de progresso e relatórios executivos",
+        communication_frequency: "monthly",
+        status: "active",
+      },
+      {
+        project_id: project.id,
+        name: "Eng. Carla Mendes",
+        organization_name: "Direcção Nacional de TI",
+        role: "Directora Técnica",
+        email: "c.mendes@exemplo.gov.ao",
+        phone: "+244 924 567 890",
+        influence: 4,
+        interest: 5,
+        category: "internal",
+        engagement_strategy: "Reuniões semanais técnicas e revisões de sprint",
+        communication_frequency: "weekly",
+        status: "active",
+      },
+      {
+        project_id: project.id,
+        name: "Prof. Manuel Silva",
+        organization_name: "Universidade Agostinho Neto",
+        role: "Consultor Académico",
+        email: "m.silva@uan.ao",
+        phone: "+244 925 678 901",
+        influence: 2,
+        interest: 3,
+        category: "external",
+        engagement_strategy: "Workshops trimestrais e revisão de documentação técnica",
+        communication_frequency: "quarterly",
+        status: "active",
+      },
+      {
+        project_id: project.id,
+        name: "Dra. Beatriz Neto",
+        organization_name: "Banco Nacional de Angola",
+        role: "Representante do Cliente",
+        email: "b.neto@bna.ao",
+        phone: "+244 926 789 012",
+        influence: 4,
+        interest: 4,
+        category: "external",
+        engagement_strategy: "Sessões de validação quinzenais e demos de funcionalidades",
+        communication_frequency: "biweekly",
+        status: "active",
+      },
+    ]);
+
+    await supabase.from("stakeholders").insert(stakeholdersData);
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -579,6 +733,9 @@ Deno.serve(async (req) => {
           teamMembers: teamMembersData.length,
           budgetEntries: budgetEntries.length,
           documents: documentsData.length,
+          risks: risksData.length,
+          sprints: sprintsData.length,
+          stakeholders: stakeholdersData.length,
         },
       }),
       {
