@@ -5,9 +5,11 @@ import { StepEntityType } from './steps/StepEntityType';
 import { StepSector } from './steps/StepSector';
 import { StepRegion } from './steps/StepRegion';
 import { StepOrganizationInfo } from './steps/StepOrganizationInfo';
+import { StepPlan } from './steps/StepPlan';
 import { OnboardingProgress } from './OnboardingProgress';
 import { EntityType, OrganizationSize } from '@/types/organization';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface OnboardingData {
   entity_type: EntityType | null;
@@ -23,6 +25,7 @@ const STEPS = [
   { id: 2, title: 'Sector', description: 'Em que área actua a sua organização?' },
   { id: 3, title: 'Localização', description: 'Onde está sediada a sua organização?' },
   { id: 4, title: 'Informações', description: 'Dados da sua organização' },
+  { id: 5, title: 'Plano', description: 'Escolha o plano ideal' },
 ];
 
 export function OnboardingWizard() {
@@ -30,6 +33,7 @@ export function OnboardingWizard() {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdOrgId, setCreatedOrgId] = useState<string | null>(null);
   const [data, setData] = useState<OnboardingData>({
     entity_type: null,
     sector_id: null,
@@ -55,7 +59,7 @@ export function OnboardingWizard() {
     }
   };
 
-  const handleComplete = async () => {
+  const handleCreateOrg = async () => {
     if (!data.entity_type || !data.name) {
       toast({
         title: 'Dados incompletos',
@@ -67,7 +71,7 @@ export function OnboardingWizard() {
 
     setIsSubmitting(true);
     try {
-      await createOrganization({
+      const org = await createOrganization({
         name: data.name,
         entity_type: data.entity_type,
         sector_id: data.sector_id,
@@ -76,14 +80,12 @@ export function OnboardingWizard() {
         description: data.description,
       });
 
-      toast({
-        title: 'Organização criada!',
-        description: `Bem-vindo ao NODIPRO, ${data.name}!`,
-      });
-
-      await refreshOrganization();
+      if (org) {
+        setCreatedOrgId(org.id);
+        nextStep(); // Move to plan selection
+      }
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.error('Error creating organization:', error);
       toast({
         title: 'Erro ao criar organização',
         description: 'Por favor tente novamente.',
@@ -94,18 +96,49 @@ export function OnboardingWizard() {
     }
   };
 
+  const handlePlanSelected = async (planId: string) => {
+    if (!createdOrgId) return;
+
+    setIsSubmitting(true);
+    try {
+      // Create subscription for the organization
+      const { error } = await supabase
+        .from('organization_subscriptions')
+        .insert({
+          organization_id: createdOrgId,
+          plan_id: planId,
+          status: 'trial',
+          trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Organização criada!',
+        description: `Bem-vindo ao NODIPRO, ${data.name}!`,
+      });
+
+      await refreshOrganization();
+    } catch (error) {
+      console.error('Error setting plan:', error);
+      toast({
+        title: 'Erro ao definir plano',
+        description: 'Por favor tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const canProceed = () => {
     switch (currentStep) {
-      case 1:
-        return data.entity_type !== null;
-      case 2:
-        return true; // Sector is optional for private entities
-      case 3:
-        return true; // Province is optional
-      case 4:
-        return data.name.trim().length >= 3;
-      default:
-        return false;
+      case 1: return data.entity_type !== null;
+      case 2: return true;
+      case 3: return true;
+      case 4: return data.name.trim().length >= 3;
+      case 5: return true;
+      default: return false;
     }
   };
 
@@ -120,32 +153,25 @@ export function OnboardingWizard() {
     };
 
     switch (currentStep) {
-      case 1:
-        return <StepEntityType {...props} />;
-      case 2:
-        return <StepSector {...props} />;
-      case 3:
-        return <StepRegion {...props} />;
-      case 4:
-        return <StepOrganizationInfo {...props} onComplete={handleComplete} />;
-      default:
-        return null;
+      case 1: return <StepEntityType {...props} />;
+      case 2: return <StepSector {...props} />;
+      case 3: return <StepRegion {...props} />;
+      case 4: return <StepOrganizationInfo {...props} onComplete={handleCreateOrg} />;
+      case 5: return <StepPlan onComplete={handlePlanSelected} onBack={prevStep} isSubmitting={isSubmitting} />;
+      default: return null;
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/5 flex flex-col">
-      {/* Header */}
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 h-16 flex items-center">
           <h1 className="text-2xl font-bold text-primary">NODIPRO</h1>
         </div>
       </header>
 
-      {/* Progress */}
       <OnboardingProgress steps={STEPS} currentStep={currentStep} />
 
-      {/* Content */}
       <main className="flex-1 container mx-auto px-4 py-8 flex flex-col items-center justify-center max-w-2xl">
         <AnimatePresence mode="wait">
           <motion.div

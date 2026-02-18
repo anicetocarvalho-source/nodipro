@@ -1301,6 +1301,63 @@ export type Database = {
           },
         ]
       }
+      organization_subscriptions: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          organization_id: string
+          plan_id: string
+          status: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          organization_id: string
+          plan_id: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          organization_id?: string
+          plan_id?: string
+          status?: Database["public"]["Enums"]["subscription_status"]
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_subscriptions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           country: string | null
@@ -2463,6 +2520,60 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          created_at: string
+          currency: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          max_members: number
+          max_portfolios: number
+          max_projects: number
+          max_storage_gb: number
+          name: string
+          price_monthly: number
+          price_yearly: number
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_members?: number
+          max_portfolios?: number
+          max_projects?: number
+          max_storage_gb?: number
+          name: string
+          price_monthly?: number
+          price_yearly?: number
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          max_members?: number
+          max_portfolios?: number
+          max_projects?: number
+          max_storage_gb?: number
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       subtasks: {
         Row: {
           completed: boolean
@@ -2983,6 +3094,10 @@ export type Database = {
         Args: { p_predecessor_id: string; p_task_id: string }
         Returns: boolean
       }
+      check_org_quota: {
+        Args: { _org_id: string; _resource_type: string }
+        Returns: Json
+      }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_permissions: {
         Args: { _user_id: string }
@@ -3040,6 +3155,12 @@ export type Database = {
       project_methodology: "waterfall" | "scrum" | "kanban" | "hybrid"
       project_status: "active" | "delayed" | "completed" | "on_hold"
       scrum_role: "product_owner" | "scrum_master" | "dev_team"
+      subscription_status:
+        | "trial"
+        | "active"
+        | "past_due"
+        | "cancelled"
+        | "expired"
       task_priority: "low" | "medium" | "high"
     }
     CompositeTypes: {
@@ -3183,6 +3304,13 @@ export const Constants = {
       project_methodology: ["waterfall", "scrum", "kanban", "hybrid"],
       project_status: ["active", "delayed", "completed", "on_hold"],
       scrum_role: ["product_owner", "scrum_master", "dev_team"],
+      subscription_status: [
+        "trial",
+        "active",
+        "past_due",
+        "cancelled",
+        "expired",
+      ],
       task_priority: ["low", "medium", "high"],
     },
   },

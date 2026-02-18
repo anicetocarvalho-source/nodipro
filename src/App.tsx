@@ -10,7 +10,8 @@ import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-// import Onboarding from "./pages/Onboarding"; // Temporarily disabled
+import Onboarding from "./pages/Onboarding";
+import Subscription from "./pages/Subscription";
 import Dashboard from "./pages/Dashboard";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
@@ -75,7 +76,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              {/* <Route path="/onboarding" element={<Onboarding />} /> */} {/* Temporarily disabled */}
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/subscription" element={<ProtectedPageWrapper><Subscription /></ProtectedPageWrapper>} />
               <Route path="/governance" element={<ManagerPageWrapper><Governance /></ManagerPageWrapper>} />
               <Route path="/dashboard" element={<ProtectedPageWrapper><Dashboard /></ProtectedPageWrapper>} />
               <Route path="/projects" element={<ProtectedPageWrapper><Projects /></ProtectedPageWrapper>} />
