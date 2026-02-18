@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ArrowRight, BarChart3, FolderKanban, Users, Shield, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.svg";
+import { PricingSection } from "@/components/subscription/PricingSection";
 
 const Index = () => {
   const { user, loading } = useAuthContext();
@@ -115,6 +116,9 @@ const Index = () => {
           ))}
         </div>
       </section>
+
+      {/* Pricing */}
+      <PricingSection />
 
       {/* CTA */}
       <section className="container mx-auto px-4 py-20">
