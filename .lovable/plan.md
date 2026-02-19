@@ -1,85 +1,72 @@
 
 
-## Backoffice SaaS — Painel de Gestao da Plataforma
+## Super Admin — Experiencia Dedicada ao Backoffice
 
-### Situacao actual
+### Problema actual
 
-O painel Admin (`/admin`) opera ao nivel da organizacao do admin autenticado. Gere utilizadores, permissoes e pagamentos apenas dessa organizacao. Nao existe um backoffice centralizado para a gestao global da plataforma SaaS.
+O Super Admin (`superadmin@nodipro.com`) foi criado com a role `admin` e associado a uma organizacao. Quando faz login, ve todo o menu da aplicacao (dashboard, projectos, portfolio, etc.) como qualquer outro utilizador. Deveria ver **apenas** o backoffice de gestao do SaaS.
 
-### O que sera implementado
+### O que sera alterado
 
-Criar um backoffice de plataforma acessivel apenas a "super admins" que permite gerir todas as organizacoes, subscricoes e pagamentos do SaaS.
-
----
-
-### 1. Nova pagina: SuperAdmin (`/superadmin`)
-
-Uma pagina dedicada, separada do Admin actual, com os seguintes separadores:
-
-**Separador "Organizacoes"**
-- Tabela com todas as organizacoes registadas
-- Colunas: nome, tipo de entidade, sector, plano actual, status da subscricao, numero de membros, numero de projectos, data de criacao
-- Filtros por plano, status e sector
-- Accao para ver detalhes de cada organizacao
-
-**Separador "Subscricoes"**
-- Lista de todas as subscricoes activas, em trial e expiradas
-- Possibilidade de alterar o plano de qualquer organizacao manualmente
-- Visualizacao de trials proximos de expirar
-
-**Separador "Pagamentos"**
-- Lista global de todos os pagamentos pendentes de todas as organizacoes (nao apenas a do admin)
-- Reutilizar o componente `AdminPaymentManager` existente mas alimentado com dados globais
-- Confirmar ou rejeitar qualquer pagamento
-
-**Separador "Metricas"**
-- Total de organizacoes
-- Distribuicao por plano (grafico)
-- MRR estimado (receita recorrente mensal)
-- Trials activos vs expirados
-- Pagamentos pendentes vs confirmados
+O Super Admin tera uma experiencia completamente isolada: ao fazer login, sera redireccionado para `/superadmin` e vera apenas o menu do backoffice.
 
 ---
 
-### 2. Conceito de Super Admin
+### 1. Redireccionamento automatico
 
-Adicionar uma flag `is_platform_admin` na tabela `profiles` ou criar uma tabela dedicada `platform_admins` para distinguir admins de organizacao de administradores da plataforma.
+**Ficheiro: `src/pages/Dashboard.tsx`** (ou o componente que controla o redireccionamento pos-login)
 
----
+- Ao detectar que o utilizador e um platform admin, redirecionar automaticamente para `/superadmin` em vez do dashboard normal.
 
-### 3. Proteccao de acesso
+**Ficheiro: `src/components/auth/ProtectedRoute.tsx`**
 
-- Nova rota `/superadmin` protegida por verificacao de `is_platform_admin`
-- Funcoes SQL com `SECURITY DEFINER` para aceder a dados cross-organization
-- Politicas RLS que permitam leitura global apenas para platform admins
+- Adicionar logica para que, apos autenticacao, se o utilizador for platform admin, seja enviado para `/superadmin`.
+
+### 2. Sidebar dedicada para Super Admin
+
+**Ficheiro: `src/components/layout/AppSidebar.tsx`**
+
+- Quando `isPlatformAdmin` for `true`, mostrar **apenas** os itens do backoffice:
+  - Metricas
+  - Organizacoes
+  - Subscricoes
+  - Pagamentos
+  - Logout
+- Esconder completamente os menus de planning, operations e management.
+
+### 3. Seed do Super Admin sem organizacao
+
+**Ficheiro: `supabase/functions/seed-test-users/index.ts`**
+
+- O Super Admin nao precisa de ser associado a nenhuma organizacao (nao precisa de onboarding).
+- Garantir que o utilizador nao e adicionado a `organization_members`.
+
+### 4. Bypass do onboarding
+
+**Ficheiro: `src/components/auth/ProtectedRoute.tsx`** ou equivalente
+
+- O Super Admin nao deve ser obrigado a passar pelo onboarding (seleccionar organizacao/sector), pois a sua funcao e apenas gerir a plataforma.
 
 ---
 
 ### Detalhes tecnicos
 
-**Nova migracao SQL:**
-- Criar tabela `platform_admins` com `user_id` referenciando `auth.users`
-- Criar funcao `is_platform_admin(_user_id uuid)` com `SECURITY DEFINER`
-- Criar funcoes para consultas cross-org:
-  - `get_all_organizations()` — lista todas as orgs com contagens
-  - `get_all_pending_payments()` — pagamentos pendentes globais
-  - `get_platform_metrics()` — metricas agregadas
-- Politicas RLS nas tabelas `organizations`, `organization_subscriptions` e `payment_references` que permitam SELECT a platform admins
+**Alteracoes em `src/components/layout/AppSidebar.tsx`:**
+- Condicao: se `isPlatformAdmin`, renderizar menu simplificado com apenas o link do Backoffice e opcoes de conta (perfil, logout).
 
-**Novos ficheiros:**
-- `src/pages/SuperAdmin.tsx` — pagina principal com tabs
-- `src/components/superadmin/OrganizationsTable.tsx` — tabela de organizacoes
-- `src/components/superadmin/SubscriptionsManager.tsx` — gestao de subscricoes
-- `src/components/superadmin/GlobalPaymentsManager.tsx` — pagamentos globais
-- `src/components/superadmin/PlatformMetrics.tsx` — dashboard de metricas
-- `src/hooks/usePlatformAdmin.ts` — hook para verificar acesso e carregar dados globais
+**Alteracoes em `src/components/auth/ProtectedRoute.tsx`:**
+- Adicionar verificacao de `is_platform_admin` para:
+  - Ignorar a verificacao de onboarding (o super admin nao precisa de organizacao)
+  - Redirecionar para `/superadmin` se a rota actual for `/dashboard`
 
-**Alteracoes em ficheiros existentes:**
-- `src/App.tsx` — adicionar rota `/superadmin` com proteccao especifica
-- `src/components/layout/AppSidebar.tsx` — adicionar link ao backoffice para platform admins
-- `src/hooks/usePayments.ts` — adicionar funcao `fetchAllPayments()` para consulta global
+**Alteracoes em `src/pages/Dashboard.tsx`:**
+- No inicio do componente, se `isPlatformAdmin`, redirecionar com `<Navigate to="/superadmin" />`.
 
-**Sem alteracoes:**
-- O painel Admin actual (`/admin`) mantem-se inalterado para gestao ao nivel da organizacao
-- Os componentes de pagamento existentes sao reutilizados
+**Alteracoes em `supabase/functions/seed-test-users/index.ts`:**
+- Separar o Super Admin dos utilizadores normais para que nao seja associado a organizacoes durante o seed ou onboarding.
+
+**Resultado esperado:**
+- O Super Admin faz login e ve imediatamente o backoffice com metricas, organizacoes, subscricoes e pagamentos.
+- Nao ve menus de projectos, portfolio, tarefas, etc.
+- Nao e obrigado a passar pelo fluxo de onboarding.
 
