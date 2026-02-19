@@ -182,7 +182,7 @@ export function AppSidebar() {
       </nav>
 
       <div className="border-t border-sidebar-border p-3 space-y-1">
-        {bottomMenuItems.map((item) => <MenuItemComponent key={item.path} item={item} />)}
+        {(isPlatformAdmin ? bottomMenuItems.filter(i => i.path === "/profile") : bottomMenuItems).map((item) => <MenuItemComponent key={item.path} item={item} />)}
         <button onClick={signOut} className={cn("flex items-center gap-3 px-3 py-2 rounded-lg w-full transition-all duration-200", "text-sidebar-foreground/80 hover:text-destructive hover:bg-destructive/10")}>
           <LogOut className="h-4.5 w-4.5 flex-shrink-0" />
           {!collapsed && <span className="text-sm font-medium">{t("nav.logout")}</span>}

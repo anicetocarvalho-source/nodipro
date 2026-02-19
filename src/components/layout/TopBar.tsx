@@ -4,6 +4,7 @@ import { useTheme } from "next-themes";
 import { useTranslation } from "react-i18next";
 import { Search, ChevronDown, Menu, LogOut, User, Settings, Sun, Moon, Monitor, Bell } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { GlobalSearchCommand } from "@/components/layout/GlobalSearchCommand";
@@ -59,6 +60,7 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const { profile, role, signOut } = useAuthContext();
   const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useIntegrityNotifications();
+  const { isPlatformAdmin } = usePlatformAdmin();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,17 +79,21 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30">
       <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMobileMenuToggle}><Menu className="h-5 w-5" /></Button>
 
-      <button onClick={() => setSearchOpen(true)} className="relative flex-1 max-w-md mx-4 flex items-center gap-2 h-10 rounded-md border border-transparent bg-secondary/50 px-3 text-sm text-muted-foreground hover:bg-secondary hover:border-border transition-colors cursor-pointer">
-        <Search className="h-4 w-4 shrink-0" />
-        <span className="flex-1 text-left truncate">{t("topbar.searchPlaceholder")}</span>
-        <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">⌘K</kbd>
-      </button>
-
-      <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+      {!isPlatformAdmin && (
+        <>
+          <button onClick={() => setSearchOpen(true)} className="relative flex-1 max-w-md mx-4 flex items-center gap-2 h-10 rounded-md border border-transparent bg-secondary/50 px-3 text-sm text-muted-foreground hover:bg-secondary hover:border-border transition-colors cursor-pointer">
+            <Search className="h-4 w-4 shrink-0" />
+            <span className="flex-1 text-left truncate">{t("topbar.searchPlaceholder")}</span>
+            <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">⌘K</kbd>
+          </button>
+          <GlobalSearchCommand open={searchOpen} onOpenChange={setSearchOpen} />
+        </>
+      )}
+      {isPlatformAdmin && <div className="flex-1" />}
 
       <div className="flex items-center gap-2 lg:gap-4">
         <ThemeToggle />
-        <NotificationBell notifications={notifications} unreadCount={unreadCount} onMarkAsRead={markAsRead} onMarkAllAsRead={markAllAsRead} onClearAll={clearAll} />
+        {!isPlatformAdmin && <NotificationBell notifications={notifications} unreadCount={unreadCount} onMarkAsRead={markAsRead} onMarkAllAsRead={markAllAsRead} onClearAll={clearAll} />}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -107,8 +113,12 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
             <DropdownMenuLabel>{t("auth.myAccount")}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/profile")}><User className="mr-2 h-4 w-4" />{t("nav.profile")}</DropdownMenuItem>
-            <DropdownMenuItem><Settings className="mr-2 h-4 w-4" />{t("auth.preferences")}</DropdownMenuItem>
-            <DropdownMenuItem><Bell className="mr-2 h-4 w-4" />{t("auth.notifications")}</DropdownMenuItem>
+            {!isPlatformAdmin && (
+              <>
+                <DropdownMenuItem><Settings className="mr-2 h-4 w-4" />{t("auth.preferences")}</DropdownMenuItem>
+                <DropdownMenuItem><Bell className="mr-2 h-4 w-4" />{t("auth.notifications")}</DropdownMenuItem>
+              </>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive" onClick={signOut}><LogOut className="mr-2 h-4 w-4" />{t("nav.logout")}</DropdownMenuItem>
           </DropdownMenuContent>
