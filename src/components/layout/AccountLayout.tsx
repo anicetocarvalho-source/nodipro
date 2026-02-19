@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { User, Settings, CreditCard, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { User, Settings, CreditCard, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TopBar } from "./TopBar";
 import { Breadcrumbs } from "./Breadcrumbs";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import logoLight from "@/assets/logo-light.svg";
 
 interface AccountLayoutProps {
@@ -22,8 +23,15 @@ export function AccountLayout({ children }: AccountLayoutProps) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const { isPlatformAdmin } = usePlatformAdmin();
 
   const isActive = (path: string) => location.pathname === path;
+
+  const backPath = isPlatformAdmin ? "/superadmin" : "/dashboard";
+  const backLabelKey = isPlatformAdmin ? "Backoffice SaaS" : "nav.backToDashboard";
+  const visibleMenuItems = isPlatformAdmin
+    ? accountMenuItems.filter(i => i.path === "/profile")
+    : accountMenuItems;
 
   const Sidebar = () => (
     <aside
@@ -61,12 +69,12 @@ export function AccountLayout({ children }: AccountLayoutProps) {
       {/* Back to Dashboard */}
       <div className="p-3">
         <NavLink
-          to="/dashboard"
+          to={backPath}
           className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all duration-200"
         >
-          <ArrowLeft className="h-4.5 w-4.5 flex-shrink-0" />
+          {isPlatformAdmin ? <ShieldCheck className="h-4.5 w-4.5 flex-shrink-0" /> : <ArrowLeft className="h-4.5 w-4.5 flex-shrink-0" />}
           {!collapsed && (
-            <span className="text-sm font-medium">{t("nav.backToDashboard")}</span>
+            <span className="text-sm font-medium">{isPlatformAdmin ? backLabelKey : t(backLabelKey)}</span>
           )}
         </NavLink>
       </div>
@@ -81,7 +89,7 @@ export function AccountLayout({ children }: AccountLayoutProps) {
             {t("nav.myAccount")}
           </span>
         )}
-        {accountMenuItems.map((item) => {
+        {visibleMenuItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
           const label = t(item.labelKey);
