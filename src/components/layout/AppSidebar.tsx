@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -34,7 +35,7 @@ export function AppSidebar() {
   const location = useLocation();
   const permissions = usePermissions();
   const { signOut } = useAuthContext();
-  const { isPlatformAdmin } = usePlatformAdmin();
+  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     planning: true, operations: true, management: true,
   });
@@ -147,7 +148,11 @@ export function AppSidebar() {
       </Button>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-        {isPlatformAdmin ? (
+        {platformLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-5 w-5 animate-spin text-sidebar-foreground/50" />
+          </div>
+        ) : isPlatformAdmin ? (
           <>
             <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "Backoffice SaaS", path: "/superadmin" }} />
           </>

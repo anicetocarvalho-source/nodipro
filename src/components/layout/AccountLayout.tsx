@@ -23,7 +23,7 @@ export function AccountLayout({ children }: AccountLayoutProps) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const { isPlatformAdmin } = usePlatformAdmin();
+  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
 
   const isActive = (path: string) => location.pathname === path;
 
