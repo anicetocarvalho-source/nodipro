@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { CreditCard, Crown } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
+import { usePayments } from '@/hooks/usePayments';
 import { PlanCard } from '@/components/subscription/PlanCard';
 import { PlanChangeConfirmDialog } from '@/components/subscription/PlanChangeConfirmDialog';
+import { PaymentReferenceModal } from '@/components/subscription/PaymentReferenceModal';
+import { PaymentHistoryCard } from '@/components/subscription/PaymentHistoryCard';
 import { UsageBar } from '@/components/subscription/UsageBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,18 +14,32 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { QuotaResult } from '@/types/subscription';
+import type { PaymentReference } from '@/types/payment';
 
 export default function Subscription() {
   const { subscription, currentPlan, plans, loading, selectPlan, isTrial, trialDaysLeft, checkQuota } = useSubscription();
+  const { payments, createReference } = usePayments();
   const [yearly, setYearly] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const { toast } = useToast();
   const [quotas, setQuotas] = useState<Record<string, QuotaResult>>({});
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const [generatedPayment, setGeneratedPayment] = useState<PaymentReference | null>(null);
 
-  // ... keep existing code (loadQuotas useEffect)
+  useEffect(() => {
+    if (!currentPlan) return;
+    const loadQuotas = async () => {
+      const [project, member, portfolio] = await Promise.all([
+        checkQuota('project'),
+        checkQuota('member'),
+        checkQuota('portfolio'),
+      ]);
+      setQuotas({ project, member, portfolio });
+    };
+    loadQuotas();
+  }, [currentPlan]);
 
-  // Refresh quotas when dialog opens to ensure fresh data
+  // Refresh quotas when dialog opens
   useEffect(() => {
     if (!pendingPlanId || !currentPlan) return;
     const refreshQuotas = async () => {
@@ -44,15 +61,33 @@ export default function Subscription() {
 
   const handleConfirmChange = async () => {
     if (!pendingPlanId) return;
+    const selectedPlan = plans.find(p => p.id === pendingPlanId);
+    if (!selectedPlan) return;
+
     setSelecting(true);
-    const result = await selectPlan(pendingPlanId);
-    if (result.success) {
-      toast({ title: 'Plano actualizado!', description: 'O seu plano foi alterado com sucesso.' });
-    } else if (result.conflicts?.length) {
-      toast({ title: 'Downgrade bloqueado', description: result.conflicts[0], variant: 'destructive' });
+
+    // For free plan, activate directly
+    if (selectedPlan.slug === 'free' || selectedPlan.price_monthly === 0) {
+      const result = await selectPlan(pendingPlanId);
+      if (result.success) {
+        toast({ title: 'Plano actualizado!', description: 'Plano gratuito activado com sucesso.' });
+      } else if (result.conflicts?.length) {
+        toast({ title: 'Downgrade bloqueado', description: result.conflicts[0], variant: 'destructive' });
+      } else {
+        toast({ title: 'Erro', description: 'Não foi possível alterar o plano.', variant: 'destructive' });
+      }
     } else {
-      toast({ title: 'Erro', description: 'Não foi possível alterar o plano.', variant: 'destructive' });
+      // Generate Multicaixa reference for paid plans
+      const price = yearly ? selectedPlan.price_yearly : selectedPlan.price_monthly;
+      const payment = await createReference(pendingPlanId, price, yearly ? 'yearly' : 'monthly');
+      if (payment) {
+        setGeneratedPayment(payment);
+        toast({ title: 'Referência gerada!', description: 'Use a referência Multicaixa para efectuar o pagamento.' });
+      } else {
+        toast({ title: 'Erro', description: 'Não foi possível gerar a referência de pagamento.', variant: 'destructive' });
+      }
     }
+
     setSelecting(false);
     setPendingPlanId(null);
   };
@@ -114,6 +149,9 @@ export default function Subscription() {
         </Card>
       </div>
 
+      {/* Payment history */}
+      <PaymentHistoryCard payments={payments} />
+
       {/* Plan comparison */}
       <div>
         <h2 className="text-xl font-semibold mb-4">Comparar Planos</h2>
@@ -147,6 +185,13 @@ export default function Subscription() {
         isLoading={selecting}
         onConfirm={handleConfirmChange}
         onCancel={() => setPendingPlanId(null)}
+      />
+
+      <PaymentReferenceModal
+        open={!!generatedPayment}
+        onClose={() => setGeneratedPayment(null)}
+        payment={generatedPayment}
+        planName={generatedPayment ? plans.find(p => p.id === generatedPayment.plan_id)?.name : undefined}
       />
     </div>
   );

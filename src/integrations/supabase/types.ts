@@ -1310,6 +1310,7 @@ export type Database = {
           current_period_start: string
           id: string
           organization_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           plan_id: string
           status: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at: string | null
@@ -1323,6 +1324,7 @@ export type Database = {
           current_period_start?: string
           id?: string
           organization_id: string
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           plan_id: string
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
@@ -1336,6 +1338,7 @@ export type Database = {
           current_period_start?: string
           id?: string
           organization_id?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           plan_id?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           trial_ends_at?: string | null
@@ -1429,6 +1432,85 @@ export type Database = {
             columns: ["sector_id"]
             isOneToOne: false
             referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_references: {
+        Row: {
+          amount: number
+          billing_period: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          currency: string
+          expires_at: string
+          id: string
+          notes: string | null
+          organization_id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          plan_id: string
+          reference_code: string
+          status: Database["public"]["Enums"]["payment_status"]
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          billing_period?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          organization_id: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          plan_id: string
+          reference_code: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billing_period?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          plan_id?: string
+          reference_code?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_references_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_references_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_references_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "organization_subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -2520,6 +2602,66 @@ export type Database = {
           },
         ]
       }
+      stripe_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          organization_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_payment_intent_id: string | null
+          stripe_subscription_id: string | null
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          organization_id: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          organization_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_payments_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stripe_payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "organization_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
@@ -3098,6 +3240,7 @@ export type Database = {
         Args: { _org_id: string; _resource_type: string }
         Returns: Json
       }
+      generate_multicaixa_reference: { Args: never; Returns: string }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_permissions: {
         Args: { _user_id: string }
@@ -3156,6 +3299,13 @@ export type Database = {
       entity_type: "public" | "private" | "ngo"
       org_member_role: "owner" | "admin" | "manager" | "member" | "viewer"
       organization_size: "small" | "medium" | "large" | "enterprise"
+      payment_method: "reference_multicaixa" | "stripe" | "manual"
+      payment_status:
+        | "pending"
+        | "confirmed"
+        | "expired"
+        | "cancelled"
+        | "refunded"
       project_methodology: "waterfall" | "scrum" | "kanban" | "hybrid"
       project_status: "active" | "delayed" | "completed" | "on_hold"
       scrum_role: "product_owner" | "scrum_master" | "dev_team"
@@ -3305,6 +3455,14 @@ export const Constants = {
       entity_type: ["public", "private", "ngo"],
       org_member_role: ["owner", "admin", "manager", "member", "viewer"],
       organization_size: ["small", "medium", "large", "enterprise"],
+      payment_method: ["reference_multicaixa", "stripe", "manual"],
+      payment_status: [
+        "pending",
+        "confirmed",
+        "expired",
+        "cancelled",
+        "refunded",
+      ],
       project_methodology: ["waterfall", "scrum", "kanban", "hybrid"],
       project_status: ["active", "delayed", "completed", "on_hold"],
       scrum_role: ["product_owner", "scrum_master", "dev_team"],
