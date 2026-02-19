@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, Crown } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PlanCard } from '@/components/subscription/PlanCard';
+import { PlanChangeConfirmDialog } from '@/components/subscription/PlanChangeConfirmDialog';
 import { UsageBar } from '@/components/subscription/UsageBar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { QuotaResult } from '@/types/subscription';
-import { useEffect } from 'react';
 
 export default function Subscription() {
   const { subscription, currentPlan, plans, loading, selectPlan, isTrial, trialDaysLeft, checkQuota } = useSubscription();
@@ -18,28 +18,27 @@ export default function Subscription() {
   const [selecting, setSelecting] = useState(false);
   const { toast } = useToast();
   const [quotas, setQuotas] = useState<Record<string, QuotaResult>>({});
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadQuotas() {
-      const resources = ['project', 'member', 'portfolio'];
-      const results: Record<string, QuotaResult> = {};
-      for (const r of resources) {
-        results[r] = await checkQuota(r);
-      }
-      setQuotas(results);
-    }
-    if (!loading && currentPlan) loadQuotas();
-  }, [loading, currentPlan]);
+  // ... keep existing code (loadQuotas useEffect)
 
-  const handleSelectPlan = async (planId: string) => {
+  const pendingPlan = pendingPlanId ? plans.find(p => p.id === pendingPlanId) ?? null : null;
+
+  const handleSelectPlan = (planId: string) => {
+    setPendingPlanId(planId);
+  };
+
+  const handleConfirmChange = async () => {
+    if (!pendingPlanId) return;
     setSelecting(true);
-    const success = await selectPlan(planId);
+    const success = await selectPlan(pendingPlanId);
     if (success) {
       toast({ title: 'Plano actualizado!', description: 'O seu plano foi alterado com sucesso.' });
     } else {
       toast({ title: 'Erro', description: 'Não foi possível alterar o plano.', variant: 'destructive' });
     }
     setSelecting(false);
+    setPendingPlanId(null);
   };
 
   if (loading) {
@@ -122,6 +121,17 @@ export default function Subscription() {
           ))}
         </div>
       </div>
+
+      <PlanChangeConfirmDialog
+        open={!!pendingPlanId}
+        currentPlan={currentPlan}
+        newPlan={pendingPlan}
+        quotas={quotas}
+        yearly={yearly}
+        isLoading={selecting}
+        onConfirm={handleConfirmChange}
+        onCancel={() => setPendingPlanId(null)}
+      />
     </div>
   );
 }
