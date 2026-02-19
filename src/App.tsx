@@ -38,6 +38,7 @@ import EVM from "./pages/EVM";
 import Procurement from "./pages/Procurement";
 import Stakeholders from "./pages/Stakeholders";
 import ChangeRequests from "./pages/ChangeRequests";
+import SuperAdmin from "./pages/SuperAdmin";
 
 const queryClient = new QueryClient();
 
@@ -108,6 +109,7 @@ const App = () => (
               <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
               <Route path="/profile" element={<AccountPageWrapper><Profile /></AccountPageWrapper>} />
               <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
+              <Route path="/superadmin" element={<ProtectedPageWrapper><SuperAdmin /></ProtectedPageWrapper>} />
               <Route path="/settings" element={<AccountPageWrapper><Settings /></AccountPageWrapper>} />
               <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
               <Route path="*" element={<NotFound />} />

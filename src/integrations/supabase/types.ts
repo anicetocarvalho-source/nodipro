@@ -1539,6 +1539,24 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       portfolios: {
         Row: {
           created_at: string
@@ -3241,6 +3259,41 @@ export type Database = {
         Returns: Json
       }
       generate_multicaixa_reference: { Args: never; Returns: string }
+      get_all_organizations: {
+        Args: never
+        Returns: {
+          created_at: string
+          entity_type: string
+          id: string
+          member_count: number
+          name: string
+          plan_name: string
+          plan_slug: string
+          project_count: number
+          sector_name: string
+          slug: string
+          subscription_status: string
+          trial_ends_at: string
+        }[]
+      }
+      get_all_pending_payments: {
+        Args: never
+        Returns: {
+          amount: number
+          billing_period: string
+          created_at: string
+          currency: string
+          expires_at: string
+          id: string
+          organization_id: string
+          organization_name: string
+          plan_id: string
+          plan_name: string
+          reference_code: string
+          status: string
+        }[]
+      }
+      get_platform_metrics: { Args: never; Returns: Json }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_permissions: {
         Args: { _user_id: string }
@@ -3279,6 +3332,19 @@ export type Database = {
       }
       is_org_member: {
         Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      platform_cancel_payment: {
+        Args: { _payment_id: string }
+        Returns: boolean
+      }
+      platform_change_subscription: {
+        Args: { _org_id: string; _plan_id: string }
+        Returns: boolean
+      }
+      platform_confirm_payment: {
+        Args: { _notes?: string; _payment_id: string }
         Returns: boolean
       }
       user_needs_onboarding: { Args: { _user_id: string }; Returns: boolean }
