@@ -88,6 +88,8 @@
     "operations": "Operations",
     "management": "Management",
     "goToDashboard": "Go to Dashboard",
+    "backToDashboard": "Back to Dashboard",
+    "myAccount": "My Account",
     "logout": "Logout",
     "stakeholders": "Stakeholders",
     "changeRequests": "Change Requests"

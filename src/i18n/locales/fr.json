@@ -88,6 +88,8 @@
     "operations": "Opérations",
     "management": "Gestion",
     "goToDashboard": "Aller au tableau de bord",
+    "backToDashboard": "Retour au tableau de bord",
+    "myAccount": "Mon Compte",
     "logout": "Déconnexion",
     "stakeholders": "Parties prenantes",
     "changeRequests": "Demandes de changement"

@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderKanban, Briefcase, BarChart3, AlertTriangle, Users, FileText,
   MessageSquare, Wallet, ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Settings,
   HelpCircle, LogOut, ShieldCheck, Layers, Building2, Grid3X3, Gauge, ShoppingBag,
-  Users2, FileEdit, CreditCard,
+  Users2, FileEdit, User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,7 +77,7 @@ export function AppSidebar() {
   ];
 
   const bottomMenuItems: MenuItem[] = [
-    { icon: CreditCard, labelKey: "nav.subscription", path: "/subscription" },
+    { icon: User, labelKey: "nav.myAccount", path: "/profile" },
     { icon: Settings, labelKey: "nav.settings", path: "/settings" },
     { icon: HelpCircle, labelKey: "nav.help", path: "/help" },
   ];

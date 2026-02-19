@@ -8,6 +8,7 @@ import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { AccountLayout } from "@/components/layout/AccountLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
@@ -65,6 +66,13 @@ const AdminPageWrapper = ({ children }: { children: React.ReactNode }) => (
   </ProtectedRoute>
 );
 
+// Wrapper for account pages (profile, settings, subscription)
+const AccountPageWrapper = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AccountLayout>{children}</AccountLayout>
+  </ProtectedRoute>
+);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -77,7 +85,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/subscription" element={<ProtectedPageWrapper><Subscription /></ProtectedPageWrapper>} />
+              <Route path="/subscription" element={<AccountPageWrapper><Subscription /></AccountPageWrapper>} />
               <Route path="/governance" element={<ManagerPageWrapper><Governance /></ManagerPageWrapper>} />
               <Route path="/dashboard" element={<ProtectedPageWrapper><Dashboard /></ProtectedPageWrapper>} />
               <Route path="/projects" element={<ProtectedPageWrapper><Projects /></ProtectedPageWrapper>} />
@@ -98,9 +106,9 @@ const App = () => (
               <Route path="/communication" element={<ProtectedPageWrapper><Communication /></ProtectedPageWrapper>} />
               <Route path="/budget" element={<ManagerPageWrapper><Budget /></ManagerPageWrapper>} />
               <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
-              <Route path="/profile" element={<ProtectedPageWrapper><Profile /></ProtectedPageWrapper>} />
+              <Route path="/profile" element={<AccountPageWrapper><Profile /></AccountPageWrapper>} />
               <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
-              <Route path="/settings" element={<ProtectedPageWrapper><Settings /></ProtectedPageWrapper>} />
+              <Route path="/settings" element={<AccountPageWrapper><Settings /></AccountPageWrapper>} />
               <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
