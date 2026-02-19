@@ -1,53 +1,85 @@
 
 
-## Validacao de downgrade no servidor (backend)
+## Backoffice SaaS — Painel de Gestao da Plataforma
 
-### Problema actual
-A validacao de downgrade existe apenas no frontend (no `PlanChangeConfirmDialog`). Isto significa que:
-1. Um utilizador poderia contornar a validacao usando a API directamente
-2. As quotas mostradas no dialogo podem estar desactualizadas (carregadas uma unica vez no mount da pagina)
+### Situacao actual
 
-### O que sera feito
+O painel Admin (`/admin`) opera ao nivel da organizacao do admin autenticado. Gere utilizadores, permissoes e pagamentos apenas dessa organizacao. Nao existe um backoffice centralizado para a gestao global da plataforma SaaS.
 
-#### 1. Criar funcao SQL `validate_plan_downgrade`
-Uma funcao na base de dados que recebe o `organization_id` e o `new_plan_id`, e verifica se a organizacao pode mudar para esse plano sem exceder os limites. Retorna um objecto JSON com `allowed: boolean` e uma lista de conflitos.
+### O que sera implementado
 
-```text
-validate_plan_downgrade(_org_id, _new_plan_id)
-  -> { allowed: true/false, conflicts: [...] }
-```
+Criar um backoffice de plataforma acessivel apenas a "super admins" que permite gerir todas as organizacoes, subscricoes e pagamentos do SaaS.
 
-Verifica:
-- Projectos actuais vs `max_projects` do novo plano
-- Membros actuais vs `max_members` do novo plano
-- Portfolios actuais vs `max_portfolios` do novo plano
-- Ignora limites ilimitados (`-1`)
+---
 
-#### 2. Actualizar `selectPlan` no hook `useSubscription`
-Antes de executar o UPDATE/INSERT, chamar `validate_plan_downgrade` via `supabase.rpc()`. Se `allowed` for `false`, retornar `false` com mensagem de erro — impedindo a mudanca mesmo que o frontend seja contornado.
+### 1. Nova pagina: SuperAdmin (`/superadmin`)
 
-#### 3. Refrescar quotas ao abrir o dialogo
-No `Subscription.tsx`, quando o `pendingPlanId` muda (dialogo abre), re-carregar as quotas para garantir que os dados apresentados sao actuais.
+Uma pagina dedicada, separada do Admin actual, com os seguintes separadores:
+
+**Separador "Organizacoes"**
+- Tabela com todas as organizacoes registadas
+- Colunas: nome, tipo de entidade, sector, plano actual, status da subscricao, numero de membros, numero de projectos, data de criacao
+- Filtros por plano, status e sector
+- Accao para ver detalhes de cada organizacao
+
+**Separador "Subscricoes"**
+- Lista de todas as subscricoes activas, em trial e expiradas
+- Possibilidade de alterar o plano de qualquer organizacao manualmente
+- Visualizacao de trials proximos de expirar
+
+**Separador "Pagamentos"**
+- Lista global de todos os pagamentos pendentes de todas as organizacoes (nao apenas a do admin)
+- Reutilizar o componente `AdminPaymentManager` existente mas alimentado com dados globais
+- Confirmar ou rejeitar qualquer pagamento
+
+**Separador "Metricas"**
+- Total de organizacoes
+- Distribuicao por plano (grafico)
+- MRR estimado (receita recorrente mensal)
+- Trials activos vs expirados
+- Pagamentos pendentes vs confirmados
+
+---
+
+### 2. Conceito de Super Admin
+
+Adicionar uma flag `is_platform_admin` na tabela `profiles` ou criar uma tabela dedicada `platform_admins` para distinguir admins de organizacao de administradores da plataforma.
+
+---
+
+### 3. Proteccao de acesso
+
+- Nova rota `/superadmin` protegida por verificacao de `is_platform_admin`
+- Funcoes SQL com `SECURITY DEFINER` para aceder a dados cross-organization
+- Politicas RLS que permitam leitura global apenas para platform admins
 
 ---
 
 ### Detalhes tecnicos
 
 **Nova migracao SQL:**
-- Criar funcao `validate_plan_downgrade(_org_id uuid, _new_plan_id uuid)` que:
-  - Busca o novo plano em `subscription_plans`
-  - Conta projectos, membros e portfolios da organizacao
-  - Compara com os limites do novo plano
-  - Retorna `jsonb` com `allowed` e array de `conflicts`
+- Criar tabela `platform_admins` com `user_id` referenciando `auth.users`
+- Criar funcao `is_platform_admin(_user_id uuid)` com `SECURITY DEFINER`
+- Criar funcoes para consultas cross-org:
+  - `get_all_organizations()` — lista todas as orgs com contagens
+  - `get_all_pending_payments()` — pagamentos pendentes globais
+  - `get_platform_metrics()` — metricas agregadas
+- Politicas RLS nas tabelas `organizations`, `organization_subscriptions` e `payment_references` que permitam SELECT a platform admins
 
-**Alteracoes em `src/hooks/useSubscription.ts`:**
-- Na funcao `selectPlan`, adicionar chamada a `validate_plan_downgrade` antes do UPDATE/INSERT
-- Se a validacao falhar, retornar `false` sem alterar a subscricao
-- Expor os conflitos do servidor para o componente poder mostra-los
+**Novos ficheiros:**
+- `src/pages/SuperAdmin.tsx` — pagina principal com tabs
+- `src/components/superadmin/OrganizationsTable.tsx` — tabela de organizacoes
+- `src/components/superadmin/SubscriptionsManager.tsx` — gestao de subscricoes
+- `src/components/superadmin/GlobalPaymentsManager.tsx` — pagamentos globais
+- `src/components/superadmin/PlatformMetrics.tsx` — dashboard de metricas
+- `src/hooks/usePlatformAdmin.ts` — hook para verificar acesso e carregar dados globais
 
-**Alteracoes em `src/pages/Subscription.tsx`:**
-- Adicionar `useEffect` que re-carrega quotas quando `pendingPlanId` muda (para o dialogo mostrar dados frescos)
+**Alteracoes em ficheiros existentes:**
+- `src/App.tsx` — adicionar rota `/superadmin` com proteccao especifica
+- `src/components/layout/AppSidebar.tsx` — adicionar link ao backoffice para platform admins
+- `src/hooks/usePayments.ts` — adicionar funcao `fetchAllPayments()` para consulta global
 
-**Sem alteracoes necessarias:**
-- `PlanChangeConfirmDialog.tsx` -- mantem-se igual, a validacao frontend continua como primeira camada
-- Tabelas existentes -- sem alteracoes de schema
+**Sem alteracoes:**
+- O painel Admin actual (`/admin`) mantem-se inalterado para gestao ao nivel da organizacao
+- Os componentes de pagamento existentes sao reutilizados
+
