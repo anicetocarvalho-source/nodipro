@@ -416,6 +416,7 @@ export default function Auth() {
                   </p>
                   <div className="space-y-2">
                     {[
+                      { email: "superadmin@nodipro.com", password: "SuperAdmin123!", role: "Super Admin", color: "bg-purple-500/10 text-purple-600 border-purple-200" },
                       { email: "admin@nodipro.com", password: "Admin123!", role: "Admin", color: "bg-red-500/10 text-red-600 border-red-200" },
                       { email: "manager@nodipro.com", password: "Manager123!", role: "Manager", color: "bg-blue-500/10 text-blue-600 border-blue-200" },
                       { email: "member@nodipro.com", password: "Member123!", role: "Member", color: "bg-green-500/10 text-green-600 border-green-200" },
