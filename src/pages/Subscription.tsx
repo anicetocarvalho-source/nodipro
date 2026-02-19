@@ -22,6 +22,20 @@ export default function Subscription() {
 
   // ... keep existing code (loadQuotas useEffect)
 
+  // Refresh quotas when dialog opens to ensure fresh data
+  useEffect(() => {
+    if (!pendingPlanId || !currentPlan) return;
+    const refreshQuotas = async () => {
+      const [project, member, portfolio] = await Promise.all([
+        checkQuota('project'),
+        checkQuota('member'),
+        checkQuota('portfolio'),
+      ]);
+      setQuotas({ project, member, portfolio });
+    };
+    refreshQuotas();
+  }, [pendingPlanId]);
+
   const pendingPlan = pendingPlanId ? plans.find(p => p.id === pendingPlanId) ?? null : null;
 
   const handleSelectPlan = (planId: string) => {
@@ -31,9 +45,11 @@ export default function Subscription() {
   const handleConfirmChange = async () => {
     if (!pendingPlanId) return;
     setSelecting(true);
-    const success = await selectPlan(pendingPlanId);
-    if (success) {
+    const result = await selectPlan(pendingPlanId);
+    if (result.success) {
       toast({ title: 'Plano actualizado!', description: 'O seu plano foi alterado com sucesso.' });
+    } else if (result.conflicts?.length) {
+      toast({ title: 'Downgrade bloqueado', description: result.conflicts[0], variant: 'destructive' });
     } else {
       toast({ title: 'Erro', description: 'Não foi possível alterar o plano.', variant: 'destructive' });
     }

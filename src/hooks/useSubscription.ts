@@ -73,8 +73,24 @@ export function useSubscription() {
     return data as unknown as QuotaResult;
   };
 
-  const selectPlan = async (planId: string): Promise<boolean> => {
-    if (!organization) return false;
+  const selectPlan = async (planId: string): Promise<{ success: boolean; conflicts?: string[] }> => {
+    if (!organization) return { success: false };
+
+    // Server-side downgrade validation
+    const { data: validation, error: valError } = await supabase.rpc('validate_plan_downgrade', {
+      _org_id: organization.id,
+      _new_plan_id: planId,
+    });
+
+    if (valError || !validation) {
+      console.error('Error validating downgrade:', valError);
+      return { success: false };
+    }
+
+    const result = validation as unknown as { allowed: boolean; conflicts: string[] };
+    if (!result.allowed) {
+      return { success: false, conflicts: result.conflicts };
+    }
 
     // Check if subscription already exists
     if (subscription) {
@@ -82,7 +98,7 @@ export function useSubscription() {
         .from('organization_subscriptions')
         .update({ plan_id: planId, updated_at: new Date().toISOString() })
         .eq('id', subscription.id);
-      if (error) { console.error('Error updating subscription:', error); return false; }
+      if (error) { console.error('Error updating subscription:', error); return { success: false }; }
     } else {
       const freePlan = plans.find(p => p.slug === 'free');
       const selectedPlan = plans.find(p => p.id === planId);
@@ -96,11 +112,11 @@ export function useSubscription() {
           status: isTrial ? 'trial' : 'active',
           trial_ends_at: isTrial ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() : null,
         });
-      if (error) { console.error('Error creating subscription:', error); return false; }
+      if (error) { console.error('Error creating subscription:', error); return { success: false }; }
     }
 
     await fetchSubscription();
-    return true;
+    return { success: true };
   };
 
   const isFreePlan = currentPlan?.slug === 'free';
