@@ -55,6 +55,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PermissionsManager } from "@/components/admin/PermissionsManager";
 import { EffectivePermissionsViewer } from "@/components/admin/EffectivePermissionsViewer";
+import { AdminPaymentManager } from "@/components/subscription/AdminPaymentManager";
+import { usePayments } from "@/hooks/usePayments";
+import { Banknote } from "lucide-react";
 
 interface UserWithRole {
   id: string;
@@ -138,6 +141,7 @@ export default function Admin() {
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const [sendingInvite, setSendingInvite] = useState(false);
+  const { payments: allPayments, confirmPayment, cancelPayment } = usePayments();
 
   // Helper function to get current user's name
   const getCurrentUserName = () => {
@@ -701,6 +705,15 @@ export default function Admin() {
             <Eye className="h-4 w-4" />
             Perm. Efectivas
           </TabsTrigger>
+          <TabsTrigger value="payments" className="gap-2">
+            <Banknote className="h-4 w-4" />
+            Pagamentos
+            {allPayments.filter(p => p.status === 'pending').length > 0 && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5">
+                {allPayments.filter(p => p.status === 'pending').length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="audit" className="gap-2">
             <History className="h-4 w-4" />
             Logs de Auditoria
@@ -1245,6 +1258,14 @@ export default function Admin() {
               })()}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="payments">
+          <AdminPaymentManager
+            payments={allPayments}
+            onConfirm={confirmPayment}
+            onCancel={cancelPayment}
+          />
         </TabsContent>
       </Tabs>
     </div>
