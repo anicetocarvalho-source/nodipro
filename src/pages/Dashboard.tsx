@@ -1,5 +1,7 @@
+import { Navigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { PublicEntityDashboard } from "@/components/dashboard/PublicEntityDashboard";
 import { PrivateEntityDashboard } from "@/components/dashboard/PrivateEntityDashboard";
 import { NGOEntityDashboard } from "@/components/dashboard/NGOEntityDashboard";
@@ -8,6 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Dashboard() {
   const { profile } = useAuthContext();
   const { entityType, loading } = useOrganization();
+  const { isPlatformAdmin } = usePlatformAdmin();
+
+  // Platform admins are redirected to backoffice
+  if (isPlatformAdmin) {
+    return <Navigate to="/superadmin" replace />;
+  }
   
   const firstName = profile?.full_name?.split(" ")[0] || "Utilizador";
 
