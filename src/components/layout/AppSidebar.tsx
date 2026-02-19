@@ -147,32 +147,37 @@ export function AppSidebar() {
       </Button>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-        {menuGroups.map((group) => {
-          const visibleItems = filterItems(group.items);
-          if (visibleItems.length === 0) return null;
-          const groupKey = group.labelKey.split(".")[1];
+        {isPlatformAdmin ? (
+          <>
+            <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "Backoffice SaaS", path: "/superadmin" }} />
+          </>
+        ) : (
+          <>
+            {menuGroups.map((group) => {
+              const visibleItems = filterItems(group.items);
+              if (visibleItems.length === 0) return null;
+              const groupKey = group.labelKey.split(".")[1];
 
-          if (collapsed) {
-            return visibleItems.map((item) => <MenuItemComponent key={item.path} item={item} />);
-          }
+              if (collapsed) {
+                return visibleItems.map((item) => <MenuItemComponent key={item.path} item={item} />);
+              }
 
-          return (
-            <Collapsible key={group.labelKey} open={openGroups[groupKey] !== false} onOpenChange={() => toggleGroup(groupKey)}>
-              <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground/70 transition-colors">
-                <span>{t(group.labelKey)}</span>
-                <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", openGroups[groupKey] !== false ? "rotate-0" : "-rotate-90")} />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-0.5 mt-0.5">
-                {visibleItems.map((item) => <MenuItemComponent key={item.path} item={item} />)}
-              </CollapsibleContent>
-            </Collapsible>
-          );
-        })}
-        {permissions.canAccessAdmin && (
-          <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "nav.admin", path: "/admin" }} />
-        )}
-        {isPlatformAdmin && (
-          <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "Backoffice", path: "/superadmin" }} />
+              return (
+                <Collapsible key={group.labelKey} open={openGroups[groupKey] !== false} onOpenChange={() => toggleGroup(groupKey)}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground/70 transition-colors">
+                    <span>{t(group.labelKey)}</span>
+                    <ChevronDown className={cn("h-3 w-3 transition-transform duration-200", openGroups[groupKey] !== false ? "rotate-0" : "-rotate-90")} />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-0.5 mt-0.5">
+                    {visibleItems.map((item) => <MenuItemComponent key={item.path} item={item} />)}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
+            {permissions.canAccessAdmin && (
+              <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "nav.admin", path: "/admin" }} />
+            )}
+          </>
         )}
       </nav>
 
