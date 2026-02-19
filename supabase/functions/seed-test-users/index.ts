@@ -14,6 +14,12 @@ interface TestUser {
 
 const testUsers: TestUser[] = [
   {
+    email: "superadmin@nodipro.com",
+    password: "SuperAdmin123!",
+    fullName: "Super Administrador",
+    role: "admin",
+  },
+  {
     email: "admin@nodipro.com",
     password: "Admin123!",
     fullName: "Administrador Sistema",
@@ -63,6 +69,13 @@ Deno.serve(async (req) => {
           .update({ role: user.role })
           .eq("user_id", existingUser.id);
 
+        // Ensure superadmin is in platform_admins
+        if (user.email === "superadmin@nodipro.com") {
+          await supabaseAdmin
+            .from("platform_admins")
+            .upsert({ user_id: existingUser.id }, { onConflict: "user_id" });
+        }
+
         results.push({
           email: user.email,
           status: "already_exists",
@@ -96,6 +109,13 @@ Deno.serve(async (req) => {
             .from("user_roles")
             .update({ role: user.role })
             .eq("user_id", newUser.user.id);
+        }
+
+        // Add superadmin to platform_admins table
+        if (user.email === "superadmin@nodipro.com") {
+          await supabaseAdmin
+            .from("platform_admins")
+            .upsert({ user_id: newUser.user.id }, { onConflict: "user_id" });
         }
 
         results.push({
