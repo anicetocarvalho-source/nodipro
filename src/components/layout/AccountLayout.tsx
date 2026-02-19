@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { User, Settings, CreditCard, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck } from "lucide-react";
+import { User, Settings, CreditCard, ArrowLeft, ChevronLeft, ChevronRight, ShieldCheck, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TopBar } from "./TopBar";
 import { Breadcrumbs } from "./Breadcrumbs";
@@ -66,66 +66,75 @@ export function AccountLayout({ children }: AccountLayoutProps) {
         )}
       </button>
 
-      {/* Back to Dashboard */}
-      <div className="p-3">
-        <NavLink
-          to={backPath}
-          className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all duration-200"
-        >
-          {isPlatformAdmin ? <ShieldCheck className="h-4.5 w-4.5 flex-shrink-0" /> : <ArrowLeft className="h-4.5 w-4.5 flex-shrink-0" />}
-          {!collapsed && (
-            <span className="text-sm font-medium">{isPlatformAdmin ? backLabelKey : t(backLabelKey)}</span>
-          )}
-        </NavLink>
-      </div>
-
-      {/* Separator */}
-      <div className="mx-3 border-t border-sidebar-border" />
-
-      {/* Account menu */}
-      <nav className="flex-1 p-3 space-y-0.5">
-        {!collapsed && (
-          <span className="block px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-            {t("nav.myAccount")}
-          </span>
-        )}
-        {visibleMenuItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.path);
-          const label = t(item.labelKey);
-
-          return (
+      {/* Back + Menu */}
+      {platformLoading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-sidebar-foreground/50" />
+        </div>
+      ) : (
+        <>
+          {/* Back to Dashboard */}
+          <div className="p-3">
             <NavLink
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
-                "hover:bg-sidebar-accent group",
-                active
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "text-sidebar-foreground/80 hover:text-sidebar-foreground"
-              )}
+              to={backPath}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/80 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all duration-200"
             >
-              <Icon
-                className={cn(
-                  "h-4.5 w-4.5 flex-shrink-0",
-                  active && "text-sidebar-primary-foreground"
-                )}
-              />
+              {isPlatformAdmin ? <ShieldCheck className="h-4.5 w-4.5 flex-shrink-0" /> : <ArrowLeft className="h-4.5 w-4.5 flex-shrink-0" />}
               {!collapsed && (
-                <span
-                  className={cn(
-                    "text-sm font-medium truncate",
-                    active && "text-sidebar-primary-foreground"
-                  )}
-                >
-                  {label}
-                </span>
+                <span className="text-sm font-medium">{isPlatformAdmin ? backLabelKey : t(backLabelKey)}</span>
               )}
             </NavLink>
-          );
-        })}
-      </nav>
+          </div>
+
+          {/* Separator */}
+          <div className="mx-3 border-t border-sidebar-border" />
+
+          {/* Account menu */}
+          <nav className="flex-1 p-3 space-y-0.5">
+            {!collapsed && (
+              <span className="block px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">
+                {t("nav.myAccount")}
+              </span>
+            )}
+            {visibleMenuItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
+              const label = t(item.labelKey);
+
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200",
+                    "hover:bg-sidebar-accent group",
+                    active
+                      ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                      : "text-sidebar-foreground/80 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "h-4.5 w-4.5 flex-shrink-0",
+                      active && "text-sidebar-primary-foreground"
+                    )}
+                  />
+                  {!collapsed && (
+                    <span
+                      className={cn(
+                        "text-sm font-medium truncate",
+                        active && "text-sidebar-primary-foreground"
+                      )}
+                    >
+                      {label}
+                    </span>
+                  )}
+                </NavLink>
+              );
+            })}
+          </nav>
+        </>
+      )}
     </aside>
   );
 
