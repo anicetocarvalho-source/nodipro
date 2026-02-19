@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import logoLight from "@/assets/logo-light.svg";
 
 interface MenuItem {
@@ -33,6 +34,7 @@ export function AppSidebar() {
   const location = useLocation();
   const permissions = usePermissions();
   const { signOut } = useAuthContext();
+  const { isPlatformAdmin } = usePlatformAdmin();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     planning: true, operations: true, management: true,
   });
@@ -168,6 +170,9 @@ export function AppSidebar() {
         })}
         {permissions.canAccessAdmin && (
           <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "nav.admin", path: "/admin" }} />
+        )}
+        {isPlatformAdmin && (
+          <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "Backoffice", path: "/superadmin" }} />
         )}
       </nav>
 
