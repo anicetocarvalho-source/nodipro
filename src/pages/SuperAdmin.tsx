@@ -9,11 +9,14 @@ import { OrganizationsTable } from '@/components/superadmin/OrganizationsTable';
 import { SubscriptionsManager } from '@/components/superadmin/SubscriptionsManager';
 import { GlobalPaymentsManager } from '@/components/superadmin/GlobalPaymentsManager';
 import { PlatformMetricsView } from '@/components/superadmin/PlatformMetrics';
+import { PlansManager } from '@/components/superadmin/PlansManager';
+import { PlatformAuditLogs } from '@/components/superadmin/PlatformAuditLogs';
 
 export default function SuperAdmin() {
   const {
-    isPlatformAdmin, loading, organizations, payments, metrics,
+    isPlatformAdmin, loading, organizations, payments, metrics, plans,
     dataLoading, fetchAll, confirmPayment, cancelPayment, changeSubscription,
+    getOrgDetail, createPlan, updatePlan, togglePlanActive, fetchAuditLogs,
   } = usePlatformAdmin();
 
   useEffect(() => {
@@ -55,6 +58,8 @@ export default function SuperAdmin() {
             Pagamentos
             {pendingCount > 0 && <Badge variant="destructive" className="h-5 min-w-5 text-xs">{pendingCount}</Badge>}
           </TabsTrigger>
+          <TabsTrigger value="plans">Planos</TabsTrigger>
+          <TabsTrigger value="audit">Auditoria</TabsTrigger>
         </TabsList>
 
         <TabsContent value="metrics" className="mt-6">
@@ -62,7 +67,7 @@ export default function SuperAdmin() {
         </TabsContent>
 
         <TabsContent value="organizations" className="mt-6">
-          <OrganizationsTable organizations={organizations} loading={dataLoading} />
+          <OrganizationsTable organizations={organizations} loading={dataLoading} getOrgDetail={getOrgDetail} />
         </TabsContent>
 
         <TabsContent value="subscriptions" className="mt-6">
@@ -71,6 +76,14 @@ export default function SuperAdmin() {
 
         <TabsContent value="payments" className="mt-6">
           <GlobalPaymentsManager payments={payments} loading={dataLoading} onConfirm={confirmPayment} onCancel={cancelPayment} />
+        </TabsContent>
+
+        <TabsContent value="plans" className="mt-6">
+          <PlansManager plans={plans} loading={dataLoading} onCreatePlan={createPlan} onUpdatePlan={updatePlan} onTogglePlan={togglePlanActive} />
+        </TabsContent>
+
+        <TabsContent value="audit" className="mt-6">
+          <PlatformAuditLogs fetchAuditLogs={fetchAuditLogs} />
         </TabsContent>
       </Tabs>
     </div>

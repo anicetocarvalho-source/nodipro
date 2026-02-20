@@ -3293,6 +3293,19 @@ export type Database = {
           status: string
         }[]
       }
+      get_org_detail_for_admin: { Args: { _org_id: string }; Returns: Json }
+      get_platform_audit_logs: {
+        Args: {
+          _action_filter?: string
+          _date_from?: string
+          _date_to?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _target_filter?: string
+        }
+        Returns: Json
+      }
       get_platform_metrics: { Args: never; Returns: Json }
       get_user_org_ids: { Args: { _user_id: string }; Returns: string[] }
       get_user_permissions: {
@@ -3345,6 +3358,42 @@ export type Database = {
       }
       platform_confirm_payment: {
         Args: { _notes?: string; _payment_id: string }
+        Returns: boolean
+      }
+      platform_create_plan: {
+        Args: {
+          _currency: string
+          _description: string
+          _features: Json
+          _max_members: number
+          _max_portfolios: number
+          _max_projects: number
+          _max_storage_gb: number
+          _name: string
+          _price_monthly: number
+          _price_yearly: number
+          _slug: string
+          _sort_order: number
+        }
+        Returns: string
+      }
+      platform_toggle_plan: { Args: { _plan_id: string }; Returns: boolean }
+      platform_update_plan: {
+        Args: {
+          _currency: string
+          _description: string
+          _features: Json
+          _max_members: number
+          _max_portfolios: number
+          _max_projects: number
+          _max_storage_gb: number
+          _name: string
+          _plan_id: string
+          _price_monthly: number
+          _price_yearly: number
+          _slug: string
+          _sort_order: number
+        }
         Returns: boolean
       }
       user_needs_onboarding: { Args: { _user_id: string }; Returns: boolean }
