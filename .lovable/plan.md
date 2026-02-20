@@ -1,33 +1,63 @@
 
-## Correcao: Super Admin redirecionado para /projects em vez de /superadmin
 
-### Problema
+## Registo de Organizacoes pelo Super Admin
 
-A pagina de login (`Auth.tsx`) redireciona **todos** os utilizadores para `/projects` apos o login (linhas 126 e 143). O `ProtectedRoute` so redireciona platform admins para `/superadmin` quando estao em `/dashboard` ou `/` — nao cobre `/projects`.
+Adicionar a capacidade de o Super Admin criar novas organizacoes directamente no backoffice, associando-as a um plano de subscricao e definindo um utilizador owner.
 
-### Solucao
+---
 
-Duas alteracoes simples:
+### Funcionalidade
 
-**1. `src/pages/Auth.tsx`** — Redirecionar para `/dashboard` em vez de `/projects`
+No tab "Organizacoes", adicionar um botao "Nova Organizacao" que abre um modal com:
 
-Alterar as duas ocorrencias de `navigate("/projects", ...)` para `navigate("/dashboard", ...)`. Isto garante que todos os utilizadores passam pelo `/dashboard`, onde:
-- Platform admins sao redirecionados para `/superadmin` (via `ProtectedRoute` e `Dashboard.tsx`)
-- Utilizadores normais veem o dashboard da sua organizacao
+- **Nome** da organizacao (obrigatorio)
+- **Tipo de entidade**: public, private, ngo (obrigatorio)
+- **Sector**: dropdown com sectores existentes (opcional)
+- **Provincia**: dropdown com provincias existentes (opcional)
+- **Dimensao**: small, medium, large, enterprise
+- **Email do owner**: email do utilizador que sera o dono da organizacao (obrigatorio). Se o utilizador ja existir no sistema, e associado. Se nao existir, e enviado um convite.
+- **Plano**: dropdown com planos activos (obrigatorio)
+- **Descricao** (opcional)
 
-**2. `src/components/auth/ProtectedRoute.tsx`** — Adicionar `/projects` a lista de rotas que redirecionam platform admins
+Ao submeter, o sistema:
+1. Cria a organizacao
+2. Associa o utilizador como membro com role `owner`
+3. Cria a subscricao com o plano seleccionado (status `trial` com 14 dias)
+4. Marca o onboarding como completo
+5. Regista a accao no log de auditoria
 
-Expandir a condicao de redirect para incluir tambem `/projects`, caso o admin chegue la por outra via:
+---
 
-```
-if (location.pathname === "/dashboard" || location.pathname === "/" || location.pathname === "/projects")
-```
+### Detalhes tecnicos
 
-### Detalhe tecnico
+**Migracao SQL:**
+- Nova funcao RPC `platform_create_organization(...)` com SECURITY DEFINER, restrita a platform admins
+- Parametros: `_name`, `_entity_type`, `_sector_id`, `_province_id`, `_size`, `_description`, `_owner_email`, `_plan_id`
+- Logica interna:
+  - Cria a organizacao na tabela `organizations` com `onboarding_completed = true`
+  - Procura o utilizador por email em `auth.users`
+  - Se encontrado, insere na `organization_members` com role `owner` e `is_primary = true`
+  - Se nao encontrado, regista o email para convite posterior (retorna flag `owner_not_found`)
+  - Cria registo em `organization_subscriptions` com o plano indicado
+  - Insere log de auditoria
+
+**Ficheiros novos:**
+- `src/components/superadmin/OrganizationFormModal.tsx` — Modal com formulario de criacao
+
+**Ficheiros alterados:**
 
 | Ficheiro | Alteracao |
 |----------|-----------|
-| `src/pages/Auth.tsx` | Linhas 127 e 143: `/projects` passa a `/dashboard` |
-| `src/components/auth/ProtectedRoute.tsx` | Linha 37: adicionar `location.pathname === "/projects"` a condicao de redirect do platform admin |
+| `src/components/superadmin/OrganizationsTable.tsx` | Adicionar botao "Nova Organizacao" no header e integrar o modal |
+| `src/hooks/usePlatformAdmin.ts` | Adicionar funcao `createOrganization` que chama a RPC |
 
-Esta abordagem garante que o fluxo pos-login passa sempre pelo ponto de decisao correcto, sem afectar utilizadores regulares.
+**Dados de referencia:**
+- O modal carrega sectores de `sectors` e provincias de `provinces` via queries directas (ja acessiveis por utilizadores autenticados)
+- Planos carregados da lista `plans` ja disponivel no hook
+
+### Ordem de implementacao
+
+1. Migracao SQL (RPC `platform_create_organization`)
+2. Componente `OrganizationFormModal.tsx`
+3. Integracao no `OrganizationsTable.tsx` e `usePlatformAdmin.ts`
+
