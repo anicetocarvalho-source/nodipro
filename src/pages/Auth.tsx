@@ -123,7 +123,7 @@ export default function Auth() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate("/projects", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [user, navigate]);
 
@@ -140,7 +140,7 @@ export default function Auth() {
     const { error } = await signIn(values.email, values.password);
     setIsLoading(false);
     if (!error) {
-      navigate("/projects", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   };
 

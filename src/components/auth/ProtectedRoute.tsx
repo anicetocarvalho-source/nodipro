@@ -31,7 +31,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Platform admins skip onboarding and go directly to backoffice
   if (isPlatformAdmin) {
-    if (location.pathname === "/dashboard" || location.pathname === "/") {
+    if (location.pathname === "/dashboard" || location.pathname === "/" || location.pathname === "/projects") {
       return <Navigate to="/superadmin" replace />;
     }
     // Allow platform admin to access /superadmin and account pages
