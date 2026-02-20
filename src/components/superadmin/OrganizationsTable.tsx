@@ -1,17 +1,24 @@
 import { useState } from 'react';
-import { Building2, Users, FolderKanban, Search } from 'lucide-react';
+import { Building2, Users, FolderKanban, Search, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { OrganizationDetailSheet } from './OrganizationDetailSheet';
-import type { PlatformOrganization, OrgDetail } from '@/hooks/usePlatformAdmin';
+import { OrganizationFormModal } from './OrganizationFormModal';
+import type { PlatformOrganization, PlatformPlan, OrgDetail } from '@/hooks/usePlatformAdmin';
 
 interface Props {
   organizations: PlatformOrganization[];
+  plans: PlatformPlan[];
   loading: boolean;
   getOrgDetail: (orgId: string) => Promise<OrgDetail | null>;
+  createOrganization: (data: {
+    name: string; entity_type: string; sector_id: string | null; province_id: string | null;
+    size: string; description: string | null; owner_email: string; plan_id: string;
+  }) => Promise<{ org_id: string; slug: string; owner_found: boolean; owner_email: string } | null>;
 }
 
 const statusColors: Record<string, string> = {
@@ -21,12 +28,13 @@ const statusColors: Record<string, string> = {
   cancelled: 'bg-muted text-muted-foreground',
 };
 
-export function OrganizationsTable({ organizations, loading, getOrgDetail }: Props) {
+export function OrganizationsTable({ organizations, plans, loading, getOrgDetail, createOrganization }: Props) {
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   const filtered = organizations.filter(o => {
     if (search && !o.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -35,7 +43,7 @@ export function OrganizationsTable({ organizations, loading, getOrgDetail }: Pro
     return true;
   });
 
-  const plans = [...new Set(organizations.map(o => o.plan_slug).filter(Boolean))];
+  const planSlugs = [...new Set(organizations.map(o => o.plan_slug).filter(Boolean))];
 
   const handleRowClick = (orgId: string) => {
     setSelectedOrgId(orgId);
@@ -45,11 +53,14 @@ export function OrganizationsTable({ organizations, loading, getOrgDetail }: Pro
   return (
     <>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
             Organizações ({filtered.length})
           </CardTitle>
+          <Button onClick={() => setFormOpen(true)} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Nova Organização
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex gap-3 flex-wrap">
@@ -61,7 +72,7 @@ export function OrganizationsTable({ organizations, loading, getOrgDetail }: Pro
               <SelectTrigger className="w-[160px]"><SelectValue placeholder="Plano" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos os planos</SelectItem>
-                {plans.map(p => <SelectItem key={p} value={p!}>{p}</SelectItem>)}
+                {planSlugs.map(p => <SelectItem key={p} value={p!}>{p}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -123,6 +134,13 @@ export function OrganizationsTable({ organizations, loading, getOrgDetail }: Pro
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         getOrgDetail={getOrgDetail}
+      />
+
+      <OrganizationFormModal
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        plans={plans}
+        onSubmit={createOrganization}
       />
     </>
   );

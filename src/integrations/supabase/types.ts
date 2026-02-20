@@ -3360,6 +3360,19 @@ export type Database = {
         Args: { _notes?: string; _payment_id: string }
         Returns: boolean
       }
+      platform_create_organization: {
+        Args: {
+          _description?: string
+          _entity_type: string
+          _name: string
+          _owner_email?: string
+          _plan_id?: string
+          _province_id?: string
+          _sector_id?: string
+          _size?: string
+        }
+        Returns: Json
+      }
       platform_create_plan: {
         Args: {
           _currency: string
