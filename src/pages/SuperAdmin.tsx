@@ -16,7 +16,7 @@ export default function SuperAdmin() {
   const {
     isPlatformAdmin, loading, organizations, payments, metrics, plans,
     dataLoading, fetchAll, confirmPayment, cancelPayment, changeSubscription,
-    getOrgDetail, createPlan, updatePlan, togglePlanActive, fetchAuditLogs,
+    getOrgDetail, createPlan, updatePlan, togglePlanActive, fetchAuditLogs, createOrganization,
   } = usePlatformAdmin();
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function SuperAdmin() {
         </TabsContent>
 
         <TabsContent value="organizations" className="mt-6">
-          <OrganizationsTable organizations={organizations} loading={dataLoading} getOrgDetail={getOrgDetail} />
+          <OrganizationsTable organizations={organizations} plans={plans} loading={dataLoading} getOrgDetail={getOrgDetail} createOrganization={createOrganization} />
         </TabsContent>
 
         <TabsContent value="subscriptions" className="mt-6">

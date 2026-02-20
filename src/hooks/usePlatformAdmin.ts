@@ -226,9 +226,29 @@ export function usePlatformAdmin() {
     return data as unknown as AuditLogsResult;
   }, []);
 
+  const createOrganization = useCallback(async (params: {
+    name: string; entity_type: string; sector_id: string | null; province_id: string | null;
+    size: string; description: string | null; owner_email: string; plan_id: string;
+  }) => {
+    const { data, error } = await supabase.rpc('platform_create_organization', {
+      _name: params.name,
+      _entity_type: params.entity_type,
+      _sector_id: params.sector_id,
+      _province_id: params.province_id,
+      _size: params.size,
+      _description: params.description,
+      _owner_email: params.owner_email,
+      _plan_id: params.plan_id,
+    } as any);
+    if (error) { console.error('Error creating organization:', error); return null; }
+    await fetchAll();
+    return data as unknown as { org_id: string; slug: string; owner_found: boolean; owner_email: string };
+  }, [fetchAll]);
+
   return {
     isPlatformAdmin, loading, organizations, payments, metrics, plans, dataLoading,
     fetchAll, confirmPayment, cancelPayment, changeSubscription,
     getOrgDetail, createPlan, updatePlan, togglePlanActive, fetchAuditLogs,
+    createOrganization,
   };
 }
