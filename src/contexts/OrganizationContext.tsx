@@ -108,7 +108,6 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         console.log('No organization memberships found, user needs onboarding');
         setNeedsOnboarding(true);
         setOrganizations([]);
-        setOrganizations([]);
         setOrganization(null);
         setMembership(null);
         setLoading(false);
