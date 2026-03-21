@@ -119,6 +119,9 @@ const scaleIn = {
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
   const { user, signIn } = useAuthContext();
   const navigate = useNavigate();
 
@@ -143,6 +146,25 @@ export default function Auth() {
     setIsLoading(false);
     if (!error) {
       navigate("/dashboard", { replace: true });
+    }
+  };
+
+  const onForgotPassword = async () => {
+    if (!forgotEmail.trim()) {
+      toast.error("Introduza o seu email");
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) {
+      toast.error("Erro ao enviar email: " + error.message);
+    } else {
+      toast.success("Email de recuperação enviado! Verifique a sua caixa de entrada.");
+      setShowForgotPassword(false);
+      setForgotEmail("");
     }
   };
 
