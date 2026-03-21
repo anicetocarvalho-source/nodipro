@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,43 +10,55 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AccountLayout } from "@/components/layout/AccountLayout";
+import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Onboarding from "./pages/Onboarding";
-import Subscription from "./pages/Subscription";
-import Dashboard from "./pages/Dashboard";
-import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
-import Portfolio from "./pages/Portfolio";
-import ProgramDetail from "./pages/ProgramDetail";
-import Methodologies from "./pages/Methodologies";
-import KPI from "./pages/KPI";
-import Risks from "./pages/Risks";
-import Team from "./pages/Team";
-import Documents from "./pages/Documents";
-import Communication from "./pages/Communication";
-import Budget from "./pages/BudgetNew";
-import Reports from "./pages/Reports";
-import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
-import Settings from "./pages/Settings";
-import Help from "./pages/Help";
-import NotFound from "./pages/NotFound";
-import Governance from "./pages/Governance";
-import Sprints from "./pages/Sprints";
-import LogFrame from "./pages/LogFrame";
-import EVM from "./pages/EVM";
-import Procurement from "./pages/Procurement";
-import Stakeholders from "./pages/Stakeholders";
-import ChangeRequests from "./pages/ChangeRequests";
-import SuperAdmin from "./pages/SuperAdmin";
+
+// Lazy-loaded pages
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetail = lazy(() => import("./pages/ProjectDetail"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const ProgramDetail = lazy(() => import("./pages/ProgramDetail"));
+const Methodologies = lazy(() => import("./pages/Methodologies"));
+const KPI = lazy(() => import("./pages/KPI"));
+const Risks = lazy(() => import("./pages/Risks"));
+const Team = lazy(() => import("./pages/Team"));
+const Documents = lazy(() => import("./pages/Documents"));
+const Communication = lazy(() => import("./pages/Communication"));
+const Budget = lazy(() => import("./pages/BudgetNew"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Admin = lazy(() => import("./pages/Admin"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Help = lazy(() => import("./pages/Help"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Governance = lazy(() => import("./pages/Governance"));
+const Sprints = lazy(() => import("./pages/Sprints"));
+const LogFrame = lazy(() => import("./pages/LogFrame"));
+const EVM = lazy(() => import("./pages/EVM"));
+const Procurement = lazy(() => import("./pages/Procurement"));
+const Stakeholders = lazy(() => import("./pages/Stakeholders"));
+const ChangeRequests = lazy(() => import("./pages/ChangeRequests"));
+const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 const queryClient = new QueryClient();
+
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
 
 // Wrapper component for protected pages with AppLayout
 const ProtectedPageWrapper = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
-    <AppLayout>{children}</AppLayout>
+    <AppLayout>
+      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+    </AppLayout>
   </ProtectedRoute>
 );
 
@@ -53,7 +66,9 @@ const ProtectedPageWrapper = ({ children }: { children: React.ReactNode }) => (
 const ManagerPageWrapper = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
     <AppLayout>
-      <RoleProtectedRoute requiredRole="manager">{children}</RoleProtectedRoute>
+      <RoleProtectedRoute requiredRole="manager">
+        <Suspense fallback={<PageLoader />}>{children}</Suspense>
+      </RoleProtectedRoute>
     </AppLayout>
   </ProtectedRoute>
 );
@@ -62,7 +77,9 @@ const ManagerPageWrapper = ({ children }: { children: React.ReactNode }) => (
 const AdminPageWrapper = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
     <AppLayout>
-      <RoleProtectedRoute requiredRole="admin">{children}</RoleProtectedRoute>
+      <RoleProtectedRoute requiredRole="admin">
+        <Suspense fallback={<PageLoader />}>{children}</Suspense>
+      </RoleProtectedRoute>
     </AppLayout>
   </ProtectedRoute>
 );
@@ -70,7 +87,9 @@ const AdminPageWrapper = ({ children }: { children: React.ReactNode }) => (
 // Wrapper for account pages (profile, settings, subscription)
 const AccountPageWrapper = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
-    <AccountLayout>{children}</AccountLayout>
+    <AccountLayout>
+      <Suspense fallback={<PageLoader />}>{children}</Suspense>
+    </AccountLayout>
   </ProtectedRoute>
 );
 
@@ -85,7 +104,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/reset-password" element={<Suspense fallback={<PageLoader />}><ResetPassword /></Suspense>} />
+              <Route path="/onboarding" element={<Suspense fallback={<PageLoader />}><Onboarding /></Suspense>} />
               <Route path="/subscription" element={<AccountPageWrapper><Subscription /></AccountPageWrapper>} />
               <Route path="/governance" element={<ManagerPageWrapper><Governance /></ManagerPageWrapper>} />
               <Route path="/dashboard" element={<ProtectedPageWrapper><Dashboard /></ProtectedPageWrapper>} />
@@ -112,7 +132,7 @@ const App = () => (
               <Route path="/superadmin" element={<ProtectedPageWrapper><SuperAdmin /></ProtectedPageWrapper>} />
               <Route path="/settings" element={<AccountPageWrapper><Settings /></AccountPageWrapper>} />
               <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
             </Routes>
           </OrganizationProvider>
         </AuthProvider>

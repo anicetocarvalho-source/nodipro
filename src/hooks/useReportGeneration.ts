@@ -36,27 +36,38 @@ export function useReportGeneration() {
       const orgId = organization.id;
 
       // Fetch all data in parallel
-      const [projectsRes, tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes] = await Promise.all([
-        supabase
-          .from("projects")
-          .select("*, provinces:province_id(id, name), sectors:sector_id(id, name, color), funders:funder_id(id, name, acronym)")
-          .eq("organization_id", orgId),
-        supabase.from("tasks").select("*"),
-        supabase.from("team_members").select("*"),
-        supabase.from("budget_entries").select("*, cost_categories:category_id(id, name, code)"),
-        supabase.from("portfolios").select("*").eq("organization_id", orgId),
-        supabase.from("programs").select("*"),
-        supabase.from("documents").select("id, title, status, project_id, phase_name, document_type, created_at"),
-      ]);
+      // First fetch org projects to get their IDs for filtering related data
+      const projectsRes = await supabase
+        .from("projects")
+        .select("*, provinces:province_id(id, name), sectors:sector_id(id, name, color), funders:funder_id(id, name, acronym)")
+        .eq("organization_id", orgId);
 
       const allProjects = projectsRes.data || [];
       const projectIds = allProjects.map(p => p.id);
 
-      // Filter to org projects
-      const allTasks = (tasksRes.data || []).filter(t => projectIds.includes(t.project_id));
-      const allTeam = (teamRes.data || []).filter(t => projectIds.includes(t.project_id));
-      const allBudget = (budgetRes.data || []).filter(b => projectIds.includes(b.project_id));
-      const allDocs = (docsRes.data || []).filter(d => d.project_id && projectIds.includes(d.project_id));
+      // Now fetch related data filtered by project IDs
+      const [tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes] = await Promise.all([
+        projectIds.length > 0
+          ? supabase.from("tasks").select("*").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0
+          ? supabase.from("team_members").select("*").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0
+          ? supabase.from("budget_entries").select("*, cost_categories:category_id(id, name, code)").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase.from("portfolios").select("*").eq("organization_id", orgId),
+        supabase.from("programs").select("*"),
+        projectIds.length > 0
+          ? supabase.from("documents").select("id, title, status, project_id, phase_name, document_type, created_at").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+      ]);
+
+      // Data is already filtered by project IDs
+      const allTasks = tasksRes.data || [];
+      const allTeam = teamRes.data || [];
+      const allBudget = budgetRes.data || [];
+      const allDocs = docsRes.data || [];
       const portfolios = portfoliosRes.data || [];
       const programs = programsRes.data || [];
 

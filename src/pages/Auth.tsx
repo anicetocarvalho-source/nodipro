@@ -4,7 +4,9 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, ArrowRight, FolderKanban, BarChart3, Users, Shield } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowRight, FolderKanban, BarChart3, Users, Shield, KeyRound } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,6 +119,9 @@ const scaleIn = {
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
   const { user, signIn } = useAuthContext();
   const navigate = useNavigate();
 
@@ -141,6 +146,25 @@ export default function Auth() {
     setIsLoading(false);
     if (!error) {
       navigate("/dashboard", { replace: true });
+    }
+  };
+
+  const onForgotPassword = async () => {
+    if (!forgotEmail.trim()) {
+      toast.error("Introduza o seu email");
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) {
+      toast.error("Erro ao enviar email: " + error.message);
+    } else {
+      toast.success("Email de recuperação enviado! Verifique a sua caixa de entrada.");
+      setShowForgotPassword(false);
+      setForgotEmail("");
     }
   };
 
@@ -404,54 +428,60 @@ export default function Auth() {
                   </motion.form>
                 </Form>
 
-                {/* Test Users Section */}
-                <motion.div 
-                  className="mt-6 p-4 bg-muted/50 rounded-lg border border-border/50"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6, duration: 0.5 }}
-                >
-                  <p className="text-xs font-medium text-muted-foreground mb-3 text-center uppercase tracking-wide">
-                    Utilizadores de Teste
-                  </p>
-                  <div className="space-y-2">
-                    {[
-                      { email: "superadmin@nodipro.com", password: "SuperAdmin123!", role: "Super Admin", color: "bg-purple-500/10 text-purple-600 border-purple-200" },
-                      { email: "admin@nodipro.com", password: "Admin123!", role: "Admin", color: "bg-red-500/10 text-red-600 border-red-200" },
-                      { email: "manager@nodipro.com", password: "Manager123!", role: "Manager", color: "bg-blue-500/10 text-blue-600 border-blue-200" },
-                      { email: "member@nodipro.com", password: "Member123!", role: "Member", color: "bg-green-500/10 text-green-600 border-green-200" },
-                    ].map((testUser) => (
-                      <motion.button
-                        key={testUser.email}
-                        type="button"
-                        onClick={() => {
-                          loginForm.setValue("email", testUser.email);
-                          loginForm.setValue("password", testUser.password);
-                        }}
-                        className="w-full flex items-center justify-between p-2.5 rounded-md border border-border/50 bg-background hover:bg-muted/80 transition-colors text-left group"
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
-                      >
-                        <div className="flex flex-col">
-                          <span className="text-xs font-medium text-foreground">{testUser.email}</span>
-                          <span className="text-[10px] text-muted-foreground">{testUser.password}</span>
-                        </div>
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${testUser.color}`}>
-                          {testUser.role}
-                        </span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </motion.div>
-
-                <motion.p 
-                  className="mt-4 text-center text-xs text-muted-foreground"
+                {/* Forgot Password Section */}
+                <motion.div
+                  className="mt-4"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8, duration: 0.5 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
                 >
-                  Clique num utilizador para preencher automaticamente
-                </motion.p>
+                  {!showForgotPassword ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="w-full text-center text-sm text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Esqueceu a palavra-passe?
+                    </button>
+                  ) : (
+                    <div className="p-4 bg-muted/50 rounded-lg border border-border/50 space-y-3">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <KeyRound className="h-4 w-4" />
+                        Recuperar palavra-passe
+                      </p>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          className="pl-11 h-10 bg-background"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => { setShowForgotPassword(false); setForgotEmail(""); }}
+                          className="flex-1"
+                        >
+                          Cancelar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={onForgotPassword}
+                          disabled={forgotLoading}
+                          className="flex-1"
+                        >
+                          {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
               </CardContent>
             </Card>
           </motion.div>
