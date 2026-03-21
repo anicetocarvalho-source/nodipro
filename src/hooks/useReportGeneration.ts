@@ -63,14 +63,11 @@ export function useReportGeneration() {
           : Promise.resolve({ data: [], error: null }),
       ]);
 
-      const allProjects = projectsRes.data || [];
-      const projectIds = allProjects.map(p => p.id);
-
-      // Filter to org projects
-      const allTasks = (tasksRes.data || []).filter(t => projectIds.includes(t.project_id));
-      const allTeam = (teamRes.data || []).filter(t => projectIds.includes(t.project_id));
-      const allBudget = (budgetRes.data || []).filter(b => projectIds.includes(b.project_id));
-      const allDocs = (docsRes.data || []).filter(d => d.project_id && projectIds.includes(d.project_id));
+      // Data is already filtered by project IDs
+      const allTasks = tasksRes.data || [];
+      const allTeam = teamRes.data || [];
+      const allBudget = budgetRes.data || [];
+      const allDocs = docsRes.data || [];
       const portfolios = portfoliosRes.data || [];
       const programs = programsRes.data || [];
 
