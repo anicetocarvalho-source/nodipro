@@ -3409,6 +3409,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      project_in_user_orgs: { Args: { _project_id: string }; Returns: boolean }
       user_needs_onboarding: { Args: { _user_id: string }; Returns: boolean }
       validate_plan_downgrade: {
         Args: { _new_plan_id: string; _org_id: string }
