@@ -90,7 +90,7 @@ export default function ResetPassword() {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6 text-center space-y-4">
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto" />
+            <CheckCircle className="h-12 w-12 text-primary mx-auto" />
             <p className="text-foreground font-medium">Palavra-passe redefinida com sucesso!</p>
             <p className="text-sm text-muted-foreground">A redirecionar para o login...</p>
           </CardContent>
