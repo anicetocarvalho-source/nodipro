@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,7 +13,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import logoLight from "@/assets/logo-light.svg";
 
 interface MenuItem {
