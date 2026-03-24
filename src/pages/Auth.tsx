@@ -439,17 +439,17 @@ export default function Auth() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Acesso Rápido (Demo)</p>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
-                        { email: "superadmin@nodipro.com", label: "Super Admin", color: "text-destructive" },
-                        { email: "admin@nodipro.com", label: "Admin", color: "text-primary" },
-                        { email: "manager@nodipro.com", label: "Gestor", color: "text-warning" },
-                        { email: "member@nodipro.com", label: "Membro", color: "text-muted-foreground" },
+                        { email: "superadmin@nodipro.com", password: "SuperAdmin123!", label: "Super Admin", color: "text-destructive" },
+                        { email: "admin@nodipro.com", password: "Admin123!", label: "Admin", color: "text-primary" },
+                        { email: "manager@nodipro.com", password: "Manager123!", label: "Gestor", color: "text-warning" },
+                        { email: "member@nodipro.com", password: "Member123!", label: "Membro", color: "text-muted-foreground" },
                       ].map((user) => (
                         <button
                           key={user.email}
                           type="button"
                           onClick={() => {
                             loginForm.setValue("email", user.email);
-                            loginForm.setValue("password", "password123");
+                            loginForm.setValue("password", user.password);
                           }}
                           className="text-left p-2 rounded-md hover:bg-muted/80 transition-colors border border-transparent hover:border-border/50"
                         >
