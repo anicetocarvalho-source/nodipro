@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 
@@ -105,23 +105,13 @@ export interface OrgDetail {
 }
 
 export function usePlatformAdmin() {
-  const { user } = useAuthContext();
-  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const { isPlatformAdmin } = useAuthContext();
   const [organizations, setOrganizations] = useState<PlatformOrganization[]>([]);
   const [payments, setPayments] = useState<PlatformPayment[]>([]);
   const [metrics, setMetrics] = useState<PlatformMetrics | null>(null);
   const [plans, setPlans] = useState<PlatformPlan[]>([]);
   const [dataLoading, setDataLoading] = useState(false);
-
-  useEffect(() => {
-    if (!user) { setLoading(false); return; }
-    supabase.rpc('is_platform_admin', { _user_id: user.id })
-      .then(({ data }) => {
-        setIsPlatformAdmin(!!data);
-        setLoading(false);
-      });
-  }, [user]);
+  const loading = false;
 
   const fetchOrganizations = useCallback(async () => {
     const { data, error } = await supabase.rpc('get_all_organizations');

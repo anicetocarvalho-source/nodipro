@@ -42,6 +42,7 @@ export interface AuthState {
   permissions: UserPermissions;
   permissionsLoading: boolean;
   loading: boolean;
+  isPlatformAdmin: boolean;
 }
 
 export interface UseAuthReturn extends AuthState {

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,7 +13,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import logoLight from "@/assets/logo-light.svg";
 
 interface MenuItem {
@@ -34,8 +32,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const permissions = usePermissions();
-  const { signOut } = useAuthContext();
-  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
+  const { signOut, isPlatformAdmin } = useAuthContext();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     planning: true, operations: true, management: true,
   });
@@ -148,11 +145,7 @@ export function AppSidebar() {
       </Button>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-        {platformLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-sidebar-foreground/50" />
-          </div>
-        ) : isPlatformAdmin ? (
+        {isPlatformAdmin ? (
           <>
             <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "Backoffice SaaS", path: "/superadmin" }} />
           </>

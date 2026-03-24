@@ -13,6 +13,7 @@ export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
 
   const {
     profile,
@@ -26,6 +27,7 @@ export function useAuth(): UseAuthReturn {
   const handleSignOut = useCallback(() => {
     setUser(null);
     setSession(null);
+    setIsPlatformAdmin(false);
     resetUserData();
   }, [resetUserData]);
 
@@ -38,6 +40,7 @@ export function useAuth(): UseAuthReturn {
         setUser(session?.user ?? null);
 
         if (event === "SIGNED_OUT") {
+          setIsPlatformAdmin(false);
           resetUserData();
           return;
         }
@@ -45,8 +48,11 @@ export function useAuth(): UseAuthReturn {
         if (session?.user) {
           setTimeout(() => {
             fetchUserData(session.user.id);
+            supabase.rpc('is_platform_admin', { _user_id: session.user.id })
+              .then(({ data }) => setIsPlatformAdmin(!!data));
           }, 0);
         } else {
+          setIsPlatformAdmin(false);
           resetUserData();
         }
       }
@@ -58,6 +64,8 @@ export function useAuth(): UseAuthReturn {
 
       if (session?.user) {
         fetchUserData(session.user.id);
+        supabase.rpc('is_platform_admin', { _user_id: session.user.id })
+          .then(({ data }) => setIsPlatformAdmin(!!data));
       }
 
       setLoading(false);
@@ -74,6 +82,7 @@ export function useAuth(): UseAuthReturn {
     permissions,
     permissionsLoading,
     loading,
+    isPlatformAdmin,
     signIn,
     signUp,
     signOut,

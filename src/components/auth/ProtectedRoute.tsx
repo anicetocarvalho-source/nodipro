@@ -1,7 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -9,12 +8,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading: authLoading } = useAuthContext();
+  const { user, loading: authLoading, isPlatformAdmin } = useAuthContext();
   const { needsOnboarding, loading: orgLoading } = useOrganization();
-  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
   const location = useLocation();
 
-  if (authLoading || orgLoading || platformLoading) {
+  if (authLoading || orgLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
