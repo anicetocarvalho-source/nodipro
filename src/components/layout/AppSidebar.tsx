@@ -145,11 +145,7 @@ export function AppSidebar() {
       </Button>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-1">
-        {platformLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-5 w-5 animate-spin text-sidebar-foreground/50" />
-          </div>
-        ) : isPlatformAdmin ? (
+        {isPlatformAdmin ? (
           <>
             <MenuItemComponent item={{ icon: ShieldCheck, labelKey: "Backoffice SaaS", path: "/superadmin" }} />
           </>
