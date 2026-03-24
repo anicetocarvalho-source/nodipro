@@ -32,8 +32,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const permissions = usePermissions();
-  const { signOut } = useAuthContext();
-  const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
+  const { signOut, isPlatformAdmin } = useAuthContext();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     planning: true, operations: true, management: true,
   });
