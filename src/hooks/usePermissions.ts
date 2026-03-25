@@ -65,6 +65,7 @@ interface Permissions {
   
   // Risk permissions
   canManageRisks: boolean;
+  canAccessMethodologies: boolean;
   
   // Report permissions
   canViewReports: boolean;
