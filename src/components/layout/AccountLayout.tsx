@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { TopBar } from "./TopBar";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { usePermissions } from "@/hooks/usePermissions";
 import logoLight from "@/assets/logo-light.svg";
 
 interface AccountLayoutProps {
