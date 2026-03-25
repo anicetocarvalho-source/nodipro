@@ -56,6 +56,10 @@ export default function Subscription() {
     refreshQuotas();
   }, [pendingPlanId]);
 
+  if (!isAdmin) {
+    return <Navigate to="/profile" replace />;
+  }
+
   const pendingPlan = pendingPlanId ? plans.find(p => p.id === pendingPlanId) ?? null : null;
 
   const handleSelectPlan = (planId: string) => {
