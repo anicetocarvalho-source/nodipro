@@ -1,66 +1,48 @@
 
 
-## Correcao: Carregamento estranho ao navegar entre paginas de Gestao
+## Configuracao de Privilegios — Todos na Mesma Organizacao
 
-### Problema
+### Estado Actual
 
-Quando o utilizador clica em menus como Documentos, Comunicacao, Orcamento ou Relatorios, aparece um loader de ecra inteiro ("A carregar...") antes de mostrar a pagina. Isto acontece porque:
+Cada utilizador e "owner" da sua propria organizacao isolada. Nenhum partilha dados.
 
-1. **`usePlatformAdmin()` e chamado em cada navegacao**: O `ProtectedRoute` e o `AppSidebar` instanciam `usePlatformAdmin()` independentemente, e cada instancia faz uma RPC `is_platform_admin` ao montar. Enquanto espera a resposta, `loading = true`, o que faz o `ProtectedRoute` mostrar o loader de ecra inteiro.
+| Email | user_role | org_role | Organizacao |
+|-------|-----------|----------|-------------|
+| superadmin@nodipro.com | admin + platform_admin | owner | Tech |
+| admin@nodipro.com | admin | owner | Ministerio das Infraestruturas |
+| manager@nodipro.com | manager | owner | TechCorp Angola |
+| member@nodipro.com | member | owner | Mwango Brain |
 
-2. **`ProtectedRoute` bloqueia o render**: A condicao `if (authLoading || orgLoading || platformLoading)` mostra um spinner full-screen. Como `platformLoading` reinicia a `true` em cada mount do hook, isto causa o "flash" de carregamento em cada navegacao.
+### Configuracao Alvo
 
-### Solucao
+Organizacao principal: **Ministerio das Infraestruturas de Angola** (entidade publica, ja tem dados demo).
 
-Mover o estado `isPlatformAdmin` para o `AuthContext`, que e montado uma unica vez. Isto elimina a RPC duplicada e o loading repetido.
+| Email | user_role (RBAC) | org_role (na org) | Descricao |
+|-------|------------------|-------------------|-----------|
+| superadmin@nodipro.com | admin + platform_admin | admin | Acesso total + backoffice da plataforma |
+| admin@nodipro.com | admin | owner | Administrador da organizacao (tudo) |
+| manager@nodipro.com | manager | manager | Gestao completa de projectos, portfolios, orcamento, relatorios |
+| member@nodipro.com | member | member | Ver projectos, criar/editar tarefas, ver documentos |
 
----
+### Alteracoes a Executar
 
-### 1. Adicionar `isPlatformAdmin` ao AuthContext
+**1. Dados (via insert tool — 3 operacoes SQL)**
 
-**Ficheiro: `src/contexts/AuthContext.tsx`**
+- Adicionar `superadmin@nodipro.com` como membro da org "Ministerio" com `role = 'admin'`, `is_primary = false`
+- Adicionar `manager@nodipro.com` como membro da org "Ministerio" com `role = 'manager'`, `is_primary = false`
+- Adicionar `member@nodipro.com` como membro da org "Ministerio" com `role = 'member'`, `is_primary = false`
 
-- Apos obter o utilizador e a role, fazer a RPC `is_platform_admin` uma unica vez
-- Guardar `isPlatformAdmin` e `platformLoading` no contexto
-- Expor ambos via `useAuthContext()`
+As organizacoes originais de cada utilizador permanecem (cada um continua owner da sua). A org "Ministerio" torna-se a org partilhada onde todos colaboram.
 
-### 2. Simplificar `usePlatformAdmin`
+**2. Codigo — `src/pages/Auth.tsx`**
 
-**Ficheiro: `src/hooks/usePlatformAdmin.ts`**
+Actualizar as descricoes dos botoes de acesso rapido para reflectir os privilegios reais:
+- Super Admin: "Plataforma + Admin da Org"
+- Admin: "Administrador (owner da org)"
+- Manager: "Gestao completa (projectos, orcamento, relatorios)"
+- Member: "Operacional (tarefas, documentos)"
 
-- Em vez de fazer a RPC `is_platform_admin` internamente, ler `isPlatformAdmin` do `useAuthContext()`
-- Remover o `useState(loading)` e o `useEffect` que fazia a RPC
-- O hook passa a ter `loading: false` por defeito (o loading ja foi tratado no contexto)
+### Resultado
 
-### 3. Simplificar `ProtectedRoute`
-
-**Ficheiro: `src/components/auth/ProtectedRoute.tsx`**
-
-- Remover a instancia de `usePlatformAdmin()` — usar `useAuthContext()` que ja tem `isPlatformAdmin` e `platformLoading`
-- A condicao de loading fica: `if (authLoading || orgLoading)` (o platform loading ja e coberto pelo auth)
-
-### 4. Simplificar `AppSidebar`
-
-**Ficheiro: `src/components/layout/AppSidebar.tsx`**
-
-- Ler `isPlatformAdmin` do `useAuthContext()` em vez de instanciar `usePlatformAdmin()`
-- Remover o estado de loading separado para o menu
-
----
-
-### Resultado esperado
-
-- A RPC `is_platform_admin` e feita **uma unica vez** no login (via AuthContext)
-- Navegar entre paginas nao mostra mais o loader de ecra inteiro
-- A sidebar nao "pisca" entre menus
-- Performance melhorada (menos chamadas RPC por navegacao)
-
-### Ficheiros alterados
-
-| Ficheiro | Alteracao |
-|----------|-----------|
-| `src/contexts/AuthContext.tsx` | Adicionar `isPlatformAdmin` e carregar uma vez |
-| `src/hooks/usePlatformAdmin.ts` | Ler do contexto em vez de fazer RPC |
-| `src/components/auth/ProtectedRoute.tsx` | Usar contexto, remover `usePlatformAdmin()` |
-| `src/components/layout/AppSidebar.tsx` | Usar contexto para `isPlatformAdmin` |
+Ao fazer login com qualquer conta, o utilizador pode seleccionar a org "Ministerio das Infraestruturas" e ver os mesmos projectos/dados — cada um com o nivel de acesso correspondente ao seu role.
 
