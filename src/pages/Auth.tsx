@@ -439,10 +439,10 @@ export default function Auth() {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Acesso Rápido (Demo)</p>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
-                        { email: "superadmin@nodipro.com", password: "SuperAdmin123!", label: "Super Admin", color: "text-destructive" },
-                        { email: "admin@nodipro.com", password: "Admin123!", label: "Admin", color: "text-primary" },
-                        { email: "manager@nodipro.com", password: "Manager123!", label: "Gestor", color: "text-warning" },
-                        { email: "member@nodipro.com", password: "Member123!", label: "Membro", color: "text-muted-foreground" },
+                        { email: "superadmin@nodipro.com", password: "SuperAdmin123!", label: "Super Admin", desc: "Plataforma + Admin", color: "text-destructive" },
+                        { email: "admin@nodipro.com", password: "Admin123!", label: "Admin", desc: "Owner da Org", color: "text-primary" },
+                        { email: "manager@nodipro.com", password: "Manager123!", label: "Gestor", desc: "Projectos, Orçamento", color: "text-warning" },
+                        { email: "member@nodipro.com", password: "Member123!", label: "Membro", desc: "Tarefas, Documentos", color: "text-muted-foreground" },
                       ].map((user) => (
                         <button
                           key={user.email}
@@ -454,7 +454,7 @@ export default function Auth() {
                           className="text-left p-2 rounded-md hover:bg-muted/80 transition-colors border border-transparent hover:border-border/50"
                         >
                           <span className={`text-xs font-semibold ${user.color}`}>{user.label}</span>
-                          <span className="block text-[10px] text-muted-foreground truncate">{user.email}</span>
+                          <span className="block text-[10px] text-muted-foreground truncate">{user.desc}</span>
                         </button>
                       ))}
                     </div>
