@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { CreditCard, Crown } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { usePayments } from '@/hooks/usePayments';
