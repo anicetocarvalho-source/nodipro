@@ -151,8 +151,8 @@ export function usePermissions(): Permissions {
     canDeleteDocuments: isManagerLevel || hasPermission("document.delete"),
     canApproveDocuments: isPortfolioLevel || hasPermission("document.approve"),
     
-    // Risk permissions
-    canManageRisks: isManagerLevel || hasPermission("task.edit"),
+  // Risk permissions
+  canManageRisks: isManagerLevel,
     
     // Report permissions
     canViewReports: isPortfolioLevel || hasPermission("report.view"),
