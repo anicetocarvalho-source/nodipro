@@ -1,48 +1,72 @@
 
 
-## Configuracao de Privilegios — Todos na Mesma Organizacao
+## Correcção: Restringir menus por role (Manager e Member)
 
-### Estado Actual
+### Problema
 
-Cada utilizador e "owner" da sua propria organizacao isolada. Nenhum partilha dados.
+1. **BD**: O role `member` tem `budget.view` e `report.view` na tabela `role_permissions`, dando acesso a menus que não deveria ver.
+2. **Sidebar**: Vários menus não têm `requiresPermission` — aparecem para todos os roles.
 
-| Email | user_role | org_role | Organizacao |
-|-------|-----------|----------|-------------|
-| superadmin@nodipro.com | admin + platform_admin | owner | Tech |
-| admin@nodipro.com | admin | owner | Ministerio das Infraestruturas |
-| manager@nodipro.com | manager | owner | TechCorp Angola |
-| member@nodipro.com | member | owner | Mwango Brain |
+### Matriz de acesso esperada
 
-### Configuracao Alvo
+| Menu | Admin | Manager | Member | Observer |
+|------|-------|---------|--------|----------|
+| Dashboard | ✓ | ✓ | ✓ | ✓ |
+| Governance | ✓ | ✓ | ✗ | ✗ |
+| Projects | ✓ | ✓ | ✓ | ✓ |
+| Portfolio | ✓ | ✓ | ✗ | ✗ |
+| Methodologies | ✓ | ✓ | ✗ | ✗ |
+| LogFrame | ✓ | ✓ | ✓ | ✓ |
+| KPI | ✓ | ✓ | ✓ | ✓ |
+| EVM | ✓ | ✓ | ✗ | ✗ |
+| Procurement | ✓ | ✓ | ✗ | ✗ |
+| Risks | ✓ | ✓ | ✗ | ✗ |
+| Stakeholders | ✓ | ✓ | ✓ | ✓ |
+| Change Requests | ✓ | ✓ | ✗ | ✗ |
+| Team | ✓ | ✓ | ✓ | ✓ |
+| Documents | ✓ | ✓ | ✓ | ✓ |
+| Communication | ✓ | ✓ | ✓ | ✓ |
+| Budget | ✓ | ✓ | ✗ | ✗ |
+| Reports | ✓ | ✓ | ✗ | ✗ |
+| Admin | ✓ | ✗ | ✗ | ✗ |
 
-Organizacao principal: **Ministerio das Infraestruturas de Angola** (entidade publica, ja tem dados demo).
+### Alterações
 
-| Email | user_role (RBAC) | org_role (na org) | Descricao |
-|-------|------------------|-------------------|-----------|
-| superadmin@nodipro.com | admin + platform_admin | admin | Acesso total + backoffice da plataforma |
-| admin@nodipro.com | admin | owner | Administrador da organizacao (tudo) |
-| manager@nodipro.com | manager | manager | Gestao completa de projectos, portfolios, orcamento, relatorios |
-| member@nodipro.com | member | member | Ver projectos, criar/editar tarefas, ver documentos |
+**1. Base de dados — remover permissões do `member`**
 
-### Alteracoes a Executar
+Migration SQL para remover `budget.view` e `report.view` do role `member` na tabela `role_permissions`.
 
-**1. Dados (via insert tool — 3 operacoes SQL)**
+**2. `src/hooks/usePermissions.ts` — adicionar novas flags**
 
-- Adicionar `superadmin@nodipro.com` como membro da org "Ministerio" com `role = 'admin'`, `is_primary = false`
-- Adicionar `manager@nodipro.com` como membro da org "Ministerio" com `role = 'manager'`, `is_primary = false`
-- Adicionar `member@nodipro.com` como membro da org "Ministerio" com `role = 'member'`, `is_primary = false`
+Adicionar permissões de navegação em falta:
+- `canAccessPortfolio`: já existe, mas verificar que usa `portfolio.view`
+- `canAccessMethodologies`: nova flag — `isManagerLevel || hasPermission("project.create")`
+- `canManageRisks`: restringir — remover fallback `hasPermission("task.edit")`, usar apenas `isManagerLevel`
 
-As organizacoes originais de cada utilizador permanecem (cada um continua owner da sua). A org "Ministerio" torna-se a org partilhada onde todos colaboram.
+**3. `src/components/layout/AppSidebar.tsx` — adicionar `requiresPermission`**
 
-**2. Codigo — `src/pages/Auth.tsx`**
+Adicionar verificação aos menus que faltam:
 
-Actualizar as descricoes dos botoes de acesso rapido para reflectir os privilegios reais:
-- Super Admin: "Plataforma + Admin da Org"
-- Admin: "Administrador (owner da org)"
-- Manager: "Gestao completa (projectos, orcamento, relatorios)"
-- Member: "Operacional (tarefas, documentos)"
+| Menu | requiresPermission |
+|------|--------------------|
+| Portfolio | `canAccessPortfolio` |
+| Methodologies | `canAccessMethodologies` (nova) |
+| Risks | `canManageRisks` |
+| EVM | `canViewBudget` (já tem) |
+| Procurement | `canViewBudget` (já tem) |
+| Change Requests | `canViewBudget` (já tem) |
+
+### Ficheiros alterados
+
+| Ficheiro | Alteração |
+|----------|-----------|
+| Migration SQL | Remover `budget.view` e `report.view` do member |
+| `src/hooks/usePermissions.ts` | Adicionar `canAccessMethodologies`, corrigir `canManageRisks` |
+| `src/components/layout/AppSidebar.tsx` | Adicionar `requiresPermission` aos menus Portfolio, Methodologies, Risks |
 
 ### Resultado
 
-Ao fazer login com qualquer conta, o utilizador pode seleccionar a org "Ministerio das Infraestruturas" e ver os mesmos projectos/dados — cada um com o nivel de acesso correspondente ao seu role.
+- **Manager**: vê todos os menus (tem todas as permissões de gestão na BD)
+- **Member**: vê apenas Dashboard, Projects, LogFrame, KPI, Stakeholders, Team, Documents, Communication
+- **Observer**: mesma restrição que member (sem permissões de gestão)
 
