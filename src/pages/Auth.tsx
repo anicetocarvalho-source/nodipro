@@ -454,7 +454,7 @@ export default function Auth() {
                           className="text-left p-2 rounded-md hover:bg-muted/80 transition-colors border border-transparent hover:border-border/50"
                         >
                           <span className={`text-xs font-semibold ${user.color}`}>{user.label}</span>
-                          <span className="block text-[10px] text-muted-foreground truncate">{user.email}</span>
+                          <span className="block text-[10px] text-muted-foreground truncate">{user.desc}</span>
                         </button>
                       ))}
                     </div>
