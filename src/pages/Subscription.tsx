@@ -16,8 +16,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { QuotaResult } from '@/types/subscription';
 import type { PaymentReference } from '@/types/payment';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Subscription() {
+  const { isAdmin } = usePermissions();
+
+  if (!isAdmin) {
+    return <Navigate to="/profile" replace />;
+  }
   const { subscription, currentPlan, plans, loading, selectPlan, isTrial, trialDaysLeft, checkQuota } = useSubscription();
   const { payments, createReference } = usePayments();
   const [yearly, setYearly] = useState(false);

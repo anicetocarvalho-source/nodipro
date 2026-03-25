@@ -25,6 +25,7 @@ export function AccountLayout({ children }: AccountLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { isPlatformAdmin, loading: platformLoading } = usePlatformAdmin();
+  const { isAdmin } = usePermissions();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -32,7 +33,7 @@ export function AccountLayout({ children }: AccountLayoutProps) {
   const backLabelKey = isPlatformAdmin ? "Backoffice SaaS" : "nav.backToDashboard";
   const visibleMenuItems = isPlatformAdmin
     ? accountMenuItems.filter(i => i.path === "/profile")
-    : accountMenuItems;
+    : accountMenuItems.filter(i => i.path !== "/subscription" || isAdmin);
 
   const Sidebar = () => (
     <aside
