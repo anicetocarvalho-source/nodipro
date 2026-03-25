@@ -54,7 +54,7 @@ export function AppSidebar() {
     {
       labelKey: "nav.operations",
       items: [
-        { icon: Layers, labelKey: "nav.methodologies", path: "/methodologies" },
+        { icon: Layers, labelKey: "nav.methodologies", path: "/methodologies", requiresPermission: "canAccessMethodologies" },
         { icon: Grid3X3, labelKey: "nav.logframe", path: "/logframe" },
         { icon: BarChart3, labelKey: "nav.kpi", path: "/kpi" },
         { icon: Gauge, labelKey: "nav.evm", path: "/evm", requiresPermission: "canViewBudget" },
