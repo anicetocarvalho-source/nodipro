@@ -1,72 +1,40 @@
 
 
-## Correcção: Restringir menus por role (Manager e Member)
+## Restringir acesso: Membro só vê Perfil + Definições
 
-### Problema
+### Situação actual
 
-1. **BD**: O role `member` tem `budget.view` e `report.view` na tabela `role_permissions`, dando acesso a menus que não deveria ver.
-2. **Sidebar**: Vários menus não têm `requiresPermission` — aparecem para todos os roles.
-
-### Matriz de acesso esperada
-
-| Menu | Admin | Manager | Member | Observer |
-|------|-------|---------|--------|----------|
-| Dashboard | ✓ | ✓ | ✓ | ✓ |
-| Governance | ✓ | ✓ | ✗ | ✗ |
-| Projects | ✓ | ✓ | ✓ | ✓ |
-| Portfolio | ✓ | ✓ | ✗ | ✗ |
-| Methodologies | ✓ | ✓ | ✗ | ✗ |
-| LogFrame | ✓ | ✓ | ✓ | ✓ |
-| KPI | ✓ | ✓ | ✓ | ✓ |
-| EVM | ✓ | ✓ | ✗ | ✗ |
-| Procurement | ✓ | ✓ | ✗ | ✗ |
-| Risks | ✓ | ✓ | ✗ | ✗ |
-| Stakeholders | ✓ | ✓ | ✓ | ✓ |
-| Change Requests | ✓ | ✓ | ✗ | ✗ |
-| Team | ✓ | ✓ | ✓ | ✓ |
-| Documents | ✓ | ✓ | ✓ | ✓ |
-| Communication | ✓ | ✓ | ✓ | ✓ |
-| Budget | ✓ | ✓ | ✗ | ✗ |
-| Reports | ✓ | ✓ | ✗ | ✗ |
-| Admin | ✓ | ✗ | ✗ | ✗ |
+O `AccountLayout` mostra Perfil, Definições e Subscrição a todos os utilizadores (excepto platform_admin que só vê Perfil). O membro não deve ver Subscrição.
 
 ### Alterações
 
-**1. Base de dados — remover permissões do `member`**
+**1. `src/components/layout/AccountLayout.tsx`**
 
-Migration SQL para remover `budget.view` e `report.view` do role `member` na tabela `role_permissions`.
+Filtrar o menu `accountMenuItems` com base no role:
+- Importar `usePermissions` 
+- Se o utilizador **não for** admin (`!isAdmin`), esconder o item `/subscription`
+- Platform admin continua a ver apenas Perfil (lógica existente)
 
-**2. `src/hooks/usePermissions.ts` — adicionar novas flags**
+**2. `src/pages/Subscription.tsx`** (protecção de rota directa)
 
-Adicionar permissões de navegação em falta:
-- `canAccessPortfolio`: já existe, mas verificar que usa `portfolio.view`
-- `canAccessMethodologies`: nova flag — `isManagerLevel || hasPermission("project.create")`
-- `canManageRisks`: restringir — remover fallback `hasPermission("task.edit")`, usar apenas `isManagerLevel`
+Adicionar verificação no topo do componente:
+- Se `!isAdmin`, redirigir para `/profile` ou mostrar mensagem de acesso negado
+- Isto previne acesso directo por URL
 
-**3. `src/components/layout/AppSidebar.tsx` — adicionar `requiresPermission`**
+### Resultado
 
-Adicionar verificação aos menus que faltam:
+| Página | Admin | Manager | Member |
+|--------|-------|---------|--------|
+| Perfil | ✓ | ✓ | ✓ |
+| Definições | ✓ | ✓ | ✓ |
+| Subscrição | ✓ | ✗ | ✗ |
 
-| Menu | requiresPermission |
-|------|--------------------|
-| Portfolio | `canAccessPortfolio` |
-| Methodologies | `canAccessMethodologies` (nova) |
-| Risks | `canManageRisks` |
-| EVM | `canViewBudget` (já tem) |
-| Procurement | `canViewBudget` (já tem) |
-| Change Requests | `canViewBudget` (já tem) |
+A Subscrição fica exclusiva para o Admin (owner da organização). Manager e Member acedem a Perfil e Definições.
 
 ### Ficheiros alterados
 
 | Ficheiro | Alteração |
 |----------|-----------|
-| Migration SQL | Remover `budget.view` e `report.view` do member |
-| `src/hooks/usePermissions.ts` | Adicionar `canAccessMethodologies`, corrigir `canManageRisks` |
-| `src/components/layout/AppSidebar.tsx` | Adicionar `requiresPermission` aos menus Portfolio, Methodologies, Risks |
-
-### Resultado
-
-- **Manager**: vê todos os menus (tem todas as permissões de gestão na BD)
-- **Member**: vê apenas Dashboard, Projects, LogFrame, KPI, Stakeholders, Team, Documents, Communication
-- **Observer**: mesma restrição que member (sem permissões de gestão)
+| `src/components/layout/AccountLayout.tsx` | Filtrar menu por role |
+| `src/pages/Subscription.tsx` | Guardar rota com redirect |
 
