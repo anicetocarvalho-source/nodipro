@@ -159,6 +159,9 @@ export function usePermissions(): Permissions {
     canCreateReports: isPortfolioLevel || hasPermission("report.create"),
     canExportReports: isPortfolioLevel || hasPermission("report.export"),
     
+    // Methodologies access
+    canAccessMethodologies: isManagerLevel || hasPermission("project.create"),
+    
     // Role info
     isAdmin,
     isPortfolioManager,

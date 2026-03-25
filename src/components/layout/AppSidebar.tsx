@@ -59,7 +59,7 @@ export function AppSidebar() {
         { icon: BarChart3, labelKey: "nav.kpi", path: "/kpi" },
         { icon: Gauge, labelKey: "nav.evm", path: "/evm", requiresPermission: "canViewBudget" },
         { icon: ShoppingBag, labelKey: "nav.procurement", path: "/procurement", requiresPermission: "canViewBudget" },
-        { icon: AlertTriangle, labelKey: "nav.risks", path: "/risks", requiresPermission: "canManageRisks" },
+        { icon: AlertTriangle, labelKey: "nav.risks", path: "/risks", requiresPermission: "canManageRisks" as any },
         { icon: Users2, labelKey: "nav.stakeholders", path: "/stakeholders" },
         { icon: FileEdit, labelKey: "nav.changeRequests", path: "/change-requests", requiresPermission: "canViewBudget" },
         { icon: Users, labelKey: "nav.team", path: "/team" },
