@@ -65,6 +65,7 @@ interface Permissions {
   
   // Risk permissions
   canManageRisks: boolean;
+  canAccessMethodologies: boolean;
   
   // Report permissions
   canViewReports: boolean;
@@ -151,13 +152,16 @@ export function usePermissions(): Permissions {
     canDeleteDocuments: isManagerLevel || hasPermission("document.delete"),
     canApproveDocuments: isPortfolioLevel || hasPermission("document.approve"),
     
-    // Risk permissions
-    canManageRisks: isManagerLevel || hasPermission("task.edit"),
+  // Risk permissions
+  canManageRisks: isManagerLevel,
     
     // Report permissions
     canViewReports: isPortfolioLevel || hasPermission("report.view"),
     canCreateReports: isPortfolioLevel || hasPermission("report.create"),
     canExportReports: isPortfolioLevel || hasPermission("report.export"),
+    
+    // Methodologies access
+    canAccessMethodologies: isManagerLevel || hasPermission("project.create"),
     
     // Role info
     isAdmin,

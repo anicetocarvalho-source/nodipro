@@ -48,13 +48,13 @@ export function AppSidebar() {
         { icon: LayoutDashboard, labelKey: "nav.dashboard", path: "/dashboard" },
         { icon: Building2, labelKey: "nav.governance", path: "/governance", requiresPermission: "canViewBudget" },
         { icon: FolderKanban, labelKey: "nav.projects", path: "/projects" },
-        { icon: Briefcase, labelKey: "nav.portfolio", path: "/portfolio" },
+        { icon: Briefcase, labelKey: "nav.portfolio", path: "/portfolio", requiresPermission: "canAccessPortfolio" },
       ],
     },
     {
       labelKey: "nav.operations",
       items: [
-        { icon: Layers, labelKey: "nav.methodologies", path: "/methodologies" },
+        { icon: Layers, labelKey: "nav.methodologies", path: "/methodologies", requiresPermission: "canAccessMethodologies" },
         { icon: Grid3X3, labelKey: "nav.logframe", path: "/logframe" },
         { icon: BarChart3, labelKey: "nav.kpi", path: "/kpi" },
         { icon: Gauge, labelKey: "nav.evm", path: "/evm", requiresPermission: "canViewBudget" },
