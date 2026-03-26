@@ -59,6 +59,8 @@ function getKPIStatus(kpi: any) {
 
 export default function KPI() {
   const { kpis, loadingKPIs, createKPI, updateKPI, deleteKPI, addMeasurement } = useKPIs();
+  const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
+  const canManageKPIs = isAdmin || isPortfolioManager || isProjectManager || isManager;
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [showMeasurement, setShowMeasurement] = useState<any>(null);
