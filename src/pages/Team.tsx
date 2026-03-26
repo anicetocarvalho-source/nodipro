@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useProjects } from "@/hooks/useProjects";
+import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
