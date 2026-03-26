@@ -33,6 +33,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
     funderData,
     isLoading,
   } = useDashboardData();
+  const { canViewBudget } = usePermissions();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
