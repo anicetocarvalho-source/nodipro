@@ -96,7 +96,7 @@ export default function Team() {
           <h1 className="text-2xl font-bold text-foreground">Gestão de Equipa</h1>
           <p className="text-muted-foreground">Gerir membros da equipa, disponibilidade e carga de trabalho.</p>
         </div>
-        <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>
+        {canManageTeam && <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>}
       </div>
 
       {/* Stats */}
