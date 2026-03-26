@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useStakeholders } from "@/hooks/useStakeholders";
 import { useProjects } from "@/hooks/useProjects";
 import { useTranslation } from "react-i18next";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const categoryColors: Record<string, string> = {
   internal: "bg-primary/10 text-primary",
