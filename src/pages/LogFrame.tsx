@@ -25,6 +25,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 export default function LogFrame() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
+  const canEditLogFrame = isAdmin || isPortfolioManager || isProjectManager || isManager;
 
   // Auto-select first project
   useEffect(() => {
