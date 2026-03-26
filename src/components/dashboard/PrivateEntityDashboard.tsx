@@ -31,6 +31,7 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
     upcomingDeadlines: realDeadlines,
     isLoading,
   } = useDashboardData();
+  const { canViewBudget } = usePermissions();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
