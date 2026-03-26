@@ -16,6 +16,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
 import { useKPIs } from "@/hooks/useKPIs";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const DIRECTIONS = [
   { value: "higher_is_better", label: "Maior é melhor" },
