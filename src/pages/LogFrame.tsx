@@ -20,6 +20,7 @@ import { LogFrameLevelFormModal } from "@/components/logframe/LogFrameLevelFormM
 import { LogFrameIndicatorFormModal } from "@/components/logframe/LogFrameIndicatorFormModal";
 import { cn } from "@/lib/utils";
 import { TheoryOfChange } from "@/components/logframe/TheoryOfChange";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function LogFrame() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
