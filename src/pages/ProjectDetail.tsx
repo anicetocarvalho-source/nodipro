@@ -72,7 +72,7 @@ export default function ProjectDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const deleteProject = useDeleteProject();
-  const { isAdmin, isPortfolioManager, isProjectManager } = usePermissions();
+  const { isAdmin, isPortfolioManager, isProjectManager, canEditProject, canDeleteProject, canCreateReports } = usePermissions();
 
   const kanbanRef = useRef<KanbanBoardRef>(null);
 
