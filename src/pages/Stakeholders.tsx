@@ -50,7 +50,7 @@ export default function Stakeholders() {
           <h1 className="text-2xl font-bold text-foreground">{t("stakeholders.title")}</h1>
           <p className="text-muted-foreground">{t("stakeholders.subtitle")}</p>
         </div>
-        <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />{t("stakeholders.add")}</Button>
+        {canManageStakeholders && <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />{t("stakeholders.add")}</Button>}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
