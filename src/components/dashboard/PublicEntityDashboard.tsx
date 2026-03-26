@@ -32,6 +32,7 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
     upcomingDeadlines,
     isLoading,
   } = useDashboardData();
+  const { canViewBudget } = usePermissions();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
