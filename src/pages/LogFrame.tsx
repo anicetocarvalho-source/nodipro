@@ -174,9 +174,11 @@ export default function LogFrame() {
               <TabsTrigger value="toc" className="gap-2"><GitBranch className="h-4 w-4" /> Teoria da Mudança</TabsTrigger>
               <TabsTrigger value="matrix" className="gap-2"><Grid3X3 className="h-4 w-4" /> Matriz</TabsTrigger>
             </TabsList>
-            <Button onClick={() => handleAddRoot("goal")} className="gap-2">
-              <Plus className="h-4 w-4" /> Objectivo Geral
-            </Button>
+            {canEditLogFrame && (
+              <Button onClick={() => handleAddRoot("goal")} className="gap-2">
+                <Plus className="h-4 w-4" /> Objectivo Geral
+              </Button>
+            )}
           </div>
 
           <TabsContent value="tree">

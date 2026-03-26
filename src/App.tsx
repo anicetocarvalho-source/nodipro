@@ -129,7 +129,7 @@ const App = () => (
               <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
               <Route path="/profile" element={<AccountPageWrapper><Profile /></AccountPageWrapper>} />
               <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
-              <Route path="/superadmin" element={<ProtectedPageWrapper><SuperAdmin /></ProtectedPageWrapper>} />
+              <Route path="/superadmin" element={<AdminPageWrapper><SuperAdmin /></AdminPageWrapper>} />
               <Route path="/settings" element={<AccountPageWrapper><Settings /></AccountPageWrapper>} />
               <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
               <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />

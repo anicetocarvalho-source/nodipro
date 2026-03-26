@@ -111,14 +111,14 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       icon: Globe,
       href: "/governance",
     },
-    {
+    ...(canViewBudget ? [{
       title: "Fundos Captados",
       value: formatCompactNumber(stats.totalBudget),
       change: `${stats.executionRate}% executado`,
       changeType: "positive" as const,
       icon: DollarSign,
       href: "/budget",
-    },
+    }] : []),
   ];
 
   return (

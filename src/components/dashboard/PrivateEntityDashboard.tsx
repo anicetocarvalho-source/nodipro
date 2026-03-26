@@ -114,14 +114,14 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
       icon: Clock,
       href: "/projects",
     },
-    {
+    ...(canViewBudget ? [{
       title: "Orçamento Total",
       value: formatCompactNumber(stats.totalBudget),
       change: `${stats.executionRate}% executado`,
       changeType: "positive" as const,
       icon: DollarSign,
       href: "/budget",
-    },
+    }] : []),
   ];
 
   return (

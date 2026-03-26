@@ -151,12 +151,14 @@ export default function KPI() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowMeasurement(kpi)} title="Registar medição"><BarChart3 className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(kpi); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
-                            <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Eliminar KPI?</AlertDialogTitle><AlertDialogDescription>Todas as medições serão eliminadas.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteKPI.mutate(kpi.id)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                          </AlertDialog>
+                          {canManageKPIs && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowMeasurement(kpi)} title="Registar medição"><BarChart3 className="h-3.5 w-3.5" /></Button>}
+                          {canManageKPIs && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(kpi); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+                          {canManageKPIs && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Eliminar KPI?</AlertDialogTitle><AlertDialogDescription>Todas as medições serão eliminadas.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteKPI.mutate(kpi.id)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

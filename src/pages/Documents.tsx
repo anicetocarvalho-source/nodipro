@@ -163,10 +163,12 @@ export default function Documents() {
             Gerir documentos, versões, workflows e aprovações.
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Documento
-        </Button>
+        {canUploadDocuments && (
+          <Button onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Documento
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

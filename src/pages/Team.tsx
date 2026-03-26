@@ -142,12 +142,14 @@ export default function Team() {
                         <h3 className="font-semibold truncate">{member.name}</h3>
                         <p className="text-sm text-muted-foreground">{member.role || "Sem cargo"}</p>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="text-destructive" onClick={() => deleteMember.mutate(member.id)}>Remover</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {canManageTeam && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-destructive" onClick={() => deleteMember.mutate(member.id)}>Remover</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                     {member.department && <Badge variant="secondary" className="mt-2 text-xs">{member.department}</Badge>}
                   </div>

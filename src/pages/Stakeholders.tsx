@@ -90,13 +90,15 @@ export default function Stakeholders() {
                     </div>
                     {s.engagement_strategy && <p className="mt-2 text-sm text-muted-foreground">{s.engagement_strategy}</p>}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(s); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
-                      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t("common.delete")}?</AlertDialogTitle><AlertDialogDescription>{t("risks.deleteRiskDesc")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={() => deleteStakeholder.mutate(s.id)}>{t("common.delete")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                  {canManageStakeholders && (
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(s); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t("common.delete")}?</AlertDialogTitle><AlertDialogDescription>{t("risks.deleteRiskDesc")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={() => deleteStakeholder.mutate(s.id)}>{t("common.delete")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
