@@ -117,9 +117,9 @@ const App = () => (
               <Route path="/procurement" element={<ManagerPageWrapper><Procurement /></ManagerPageWrapper>} />
               <Route path="/stakeholders" element={<ProtectedPageWrapper><Stakeholders /></ProtectedPageWrapper>} />
               <Route path="/change-requests" element={<ManagerPageWrapper><ChangeRequests /></ManagerPageWrapper>} />
-              <Route path="/portfolio" element={<ProtectedPageWrapper><Portfolio /></ProtectedPageWrapper>} />
-              <Route path="/programs/:id" element={<ProtectedPageWrapper><ProgramDetail /></ProtectedPageWrapper>} />
-              <Route path="/methodologies" element={<ProtectedPageWrapper><Methodologies /></ProtectedPageWrapper>} />
+              <Route path="/portfolio" element={<ManagerPageWrapper><Portfolio /></ManagerPageWrapper>} />
+              <Route path="/programs/:id" element={<ManagerPageWrapper><ProgramDetail /></ManagerPageWrapper>} />
+              <Route path="/methodologies" element={<ManagerPageWrapper><Methodologies /></ManagerPageWrapper>} />
               <Route path="/kpi" element={<ProtectedPageWrapper><KPI /></ProtectedPageWrapper>} />
               <Route path="/risks" element={<ManagerPageWrapper><Risks /></ManagerPageWrapper>} />
               <Route path="/team" element={<ProtectedPageWrapper><Team /></ProtectedPageWrapper>} />
