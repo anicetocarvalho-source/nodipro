@@ -99,14 +99,14 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       icon: FolderKanban,
       href: "/projects",
     },
-    {
+    ...(canViewBudget ? [{
       title: "Taxa de Execução",
       value: `${stats.executionRate}%`,
       change: `${formatCompactNumber(stats.totalSpent)} de ${formatCompactNumber(stats.totalBudget)}`,
       changeType: stats.executionRate >= 50 ? "positive" as const : "neutral" as const,
       icon: CheckCircle,
       href: "/budget",
-    },
+    }] : []),
     {
       title: "Tarefas Concluídas",
       value: `${stats.completedTasks}/${stats.totalTasks}`,
