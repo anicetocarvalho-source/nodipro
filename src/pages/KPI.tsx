@@ -87,7 +87,7 @@ export default function KPI() {
           <h1 className="text-2xl font-bold text-foreground">Centro de Indicadores</h1>
           <p className="text-muted-foreground">Defina KPIs, registe medições e acompanhe o desempenho.</p>
         </div>
-        <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />Novo KPI</Button>
+        {canManageKPIs && <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />Novo KPI</Button>}
       </div>
 
       {/* Stats */}
