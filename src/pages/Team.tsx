@@ -33,6 +33,7 @@ export default function Team() {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const { data: projects } = useProjects();
+  const { canManageTeam } = usePermissions();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["team_members_all", orgId],
