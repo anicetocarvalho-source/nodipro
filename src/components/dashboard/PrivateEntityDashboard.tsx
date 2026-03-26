@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface PrivateEntityDashboardProps {
   userName: string;
