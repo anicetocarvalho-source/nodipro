@@ -49,6 +49,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function Documents() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
@@ -72,6 +73,7 @@ export default function Documents() {
   const deleteDocument = useDeleteDocument();
   const downloadFile = useDownloadFile();
   const uploadVersion = useUploadVersion();
+  const { canUploadDocuments, canDeleteDocuments, canApproveDocuments } = usePermissions();
 
   // Handle file drop for quick version upload
   const handleFileDrop = useCallback((doc: Document, file: File) => {
@@ -161,10 +163,12 @@ export default function Documents() {
             Gerir documentos, versões, workflows e aprovações.
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Documento
-        </Button>
+        {canUploadDocuments && (
+          <Button onClick={() => setShowCreateModal(true)} className="bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Documento
+          </Button>
+        )}
       </div>
 
       {/* Stats */}

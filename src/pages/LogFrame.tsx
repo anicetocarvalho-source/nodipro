@@ -20,10 +20,13 @@ import { LogFrameLevelFormModal } from "@/components/logframe/LogFrameLevelFormM
 import { LogFrameIndicatorFormModal } from "@/components/logframe/LogFrameIndicatorFormModal";
 import { cn } from "@/lib/utils";
 import { TheoryOfChange } from "@/components/logframe/TheoryOfChange";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function LogFrame() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
+  const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
+  const canEditLogFrame = isAdmin || isPortfolioManager || isProjectManager || isManager;
 
   // Auto-select first project
   useEffect(() => {
@@ -171,9 +174,11 @@ export default function LogFrame() {
               <TabsTrigger value="toc" className="gap-2"><GitBranch className="h-4 w-4" /> Teoria da Mudança</TabsTrigger>
               <TabsTrigger value="matrix" className="gap-2"><Grid3X3 className="h-4 w-4" /> Matriz</TabsTrigger>
             </TabsList>
-            <Button onClick={() => handleAddRoot("goal")} className="gap-2">
-              <Plus className="h-4 w-4" /> Objectivo Geral
-            </Button>
+            {canEditLogFrame && (
+              <Button onClick={() => handleAddRoot("goal")} className="gap-2">
+                <Plus className="h-4 w-4" /> Objectivo Geral
+              </Button>
+            )}
           </div>
 
           <TabsContent value="tree">

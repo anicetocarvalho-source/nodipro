@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface PublicEntityDashboardProps {
   userName: string;
@@ -31,6 +32,7 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
     upcomingDeadlines,
     isLoading,
   } = useDashboardData();
+  const { canViewBudget } = usePermissions();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -97,14 +99,14 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       icon: FolderKanban,
       href: "/projects",
     },
-    {
+    ...(canViewBudget ? [{
       title: "Taxa de Execução",
       value: `${stats.executionRate}%`,
       change: `${formatCompactNumber(stats.totalSpent)} de ${formatCompactNumber(stats.totalBudget)}`,
       changeType: stats.executionRate >= 50 ? "positive" as const : "neutral" as const,
       icon: CheckCircle,
       href: "/budget",
-    },
+    }] : []),
     {
       title: "Tarefas Concluídas",
       value: `${stats.completedTasks}/${stats.totalTasks}`,
@@ -197,45 +199,47 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
             </CardContent>
           </Card>
 
-          {/* Budget by Province */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Execução Orçamental por Província</CardTitle>
-              <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/budget")}>
-                Ver orçamento
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {budgetByProvince.length > 0 ? (
-                <div className="space-y-4">
-                  {budgetByProvince.map((item) => {
-                    const percentage = item.allocated > 0 
-                      ? Math.round((item.executed / item.allocated) * 100) 
-                      : 0;
-                    return (
-                      <div key={item.province} className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{item.province}</span>
-                          <span className="text-muted-foreground">
-                            {formatCurrency(item.executed)} / {formatCurrency(item.allocated)}
-                          </span>
+          {/* Budget by Province - only for users with budget access */}
+          {canViewBudget && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Execução Orçamental por Província</CardTitle>
+                <Button variant="ghost" size="sm" className="text-xs text-primary" onClick={() => navigate("/budget")}>
+                  Ver orçamento
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {budgetByProvince.length > 0 ? (
+                  <div className="space-y-4">
+                    {budgetByProvince.map((item) => {
+                      const percentage = item.allocated > 0 
+                        ? Math.round((item.executed / item.allocated) * 100) 
+                        : 0;
+                      return (
+                        <div key={item.province} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium">{item.province}</span>
+                            <span className="text-muted-foreground">
+                              {formatCurrency(item.executed)} / {formatCurrency(item.allocated)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Progress value={percentage} className="h-2 flex-1" />
+                            <span className="text-sm font-medium w-12">{percentage}%</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Progress value={percentage} className="h-2 flex-1" />
-                          <span className="text-sm font-medium w-12">{percentage}%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-4">
-                  Nenhum orçamento por província disponível.
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-4">
+                    Nenhum orçamento por província disponível.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Right Column - Deadlines & Alerts */}

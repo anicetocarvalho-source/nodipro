@@ -16,6 +16,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
 import { useKPIs } from "@/hooks/useKPIs";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const DIRECTIONS = [
   { value: "higher_is_better", label: "Maior é melhor" },
@@ -58,6 +59,8 @@ function getKPIStatus(kpi: any) {
 
 export default function KPI() {
   const { kpis, loadingKPIs, createKPI, updateKPI, deleteKPI, addMeasurement } = useKPIs();
+  const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
+  const canManageKPIs = isAdmin || isPortfolioManager || isProjectManager || isManager;
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [showMeasurement, setShowMeasurement] = useState<any>(null);
@@ -84,7 +87,7 @@ export default function KPI() {
           <h1 className="text-2xl font-bold text-foreground">Centro de Indicadores</h1>
           <p className="text-muted-foreground">Defina KPIs, registe medições e acompanhe o desempenho.</p>
         </div>
-        <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />Novo KPI</Button>
+        {canManageKPIs && <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />Novo KPI</Button>}
       </div>
 
       {/* Stats */}
@@ -148,12 +151,14 @@ export default function KPI() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowMeasurement(kpi)} title="Registar medição"><BarChart3 className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(kpi); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
-                            <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Eliminar KPI?</AlertDialogTitle><AlertDialogDescription>Todas as medições serão eliminadas.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteKPI.mutate(kpi.id)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                          </AlertDialog>
+                          {canManageKPIs && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowMeasurement(kpi)} title="Registar medição"><BarChart3 className="h-3.5 w-3.5" /></Button>}
+                          {canManageKPIs && <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(kpi); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+                          {canManageKPIs && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Eliminar KPI?</AlertDialogTitle><AlertDialogDescription>Todas as medições serão eliminadas.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => deleteKPI.mutate(kpi.id)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface PrivateEntityDashboardProps {
   userName: string;
@@ -30,6 +31,7 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
     upcomingDeadlines: realDeadlines,
     isLoading,
   } = useDashboardData();
+  const { canViewBudget } = usePermissions();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -96,14 +98,14 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
       icon: FolderKanban,
       href: "/projects",
     },
-    {
+    ...(canViewBudget ? [{
       title: "Taxa de Execução",
       value: `${stats.executionRate}%`,
       change: `${formatCompactNumber(stats.totalSpent)} de ${formatCompactNumber(stats.totalBudget)}`,
       changeType: stats.executionRate >= 50 ? "positive" as const : "neutral" as const,
       icon: TrendingUp,
       href: "/budget",
-    },
+    }] : []),
     {
       title: "Tarefas Concluídas",
       value: `${stats.completedTasks}/${stats.totalTasks}`,
@@ -112,14 +114,14 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
       icon: Clock,
       href: "/projects",
     },
-    {
+    ...(canViewBudget ? [{
       title: "Orçamento Total",
       value: formatCompactNumber(stats.totalBudget),
       change: `${stats.executionRate}% executado`,
       changeType: "positive" as const,
       icon: DollarSign,
       href: "/budget",
-    },
+    }] : []),
   ];
 
   return (

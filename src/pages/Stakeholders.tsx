@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useStakeholders } from "@/hooks/useStakeholders";
 import { useProjects } from "@/hooks/useProjects";
 import { useTranslation } from "react-i18next";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const categoryColors: Record<string, string> = {
   internal: "bg-primary/10 text-primary",
@@ -29,6 +30,8 @@ export default function Stakeholders() {
   const { t } = useTranslation();
   const { data: projects } = useProjects();
   const { stakeholders, isLoading, createStakeholder, updateStakeholder, deleteStakeholder } = useStakeholders();
+  const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
+  const canManageStakeholders = isAdmin || isPortfolioManager || isProjectManager || isManager;
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
@@ -47,7 +50,7 @@ export default function Stakeholders() {
           <h1 className="text-2xl font-bold text-foreground">{t("stakeholders.title")}</h1>
           <p className="text-muted-foreground">{t("stakeholders.subtitle")}</p>
         </div>
-        <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />{t("stakeholders.add")}</Button>
+        {canManageStakeholders && <Button onClick={() => { setEditItem(null); setShowForm(true); }}><Plus className="h-4 w-4 mr-2" />{t("stakeholders.add")}</Button>}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -87,13 +90,15 @@ export default function Stakeholders() {
                     </div>
                     {s.engagement_strategy && <p className="mt-2 text-sm text-muted-foreground">{s.engagement_strategy}</p>}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(s); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
-                      <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t("common.delete")}?</AlertDialogTitle><AlertDialogDescription>{t("risks.deleteRiskDesc")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={() => deleteStakeholder.mutate(s.id)}>{t("common.delete")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                  {canManageStakeholders && (
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditItem(s); setShowForm(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive"><Trash2 className="h-3.5 w-3.5" /></Button></AlertDialogTrigger>
+                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>{t("common.delete")}?</AlertDialogTitle><AlertDialogDescription>{t("risks.deleteRiskDesc")}</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={() => deleteStakeholder.mutate(s.id)}>{t("common.delete")}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

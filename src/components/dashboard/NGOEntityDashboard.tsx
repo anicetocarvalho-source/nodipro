@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface NGOEntityDashboardProps {
   userName: string;
@@ -32,6 +33,7 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
     funderData,
     isLoading,
   } = useDashboardData();
+  const { canViewBudget } = usePermissions();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -109,14 +111,14 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       icon: Globe,
       href: "/governance",
     },
-    {
+    ...(canViewBudget ? [{
       title: "Fundos Captados",
       value: formatCompactNumber(stats.totalBudget),
       change: `${stats.executionRate}% executado`,
       changeType: "positive" as const,
       icon: DollarSign,
       href: "/budget",
-    },
+    }] : []),
   ];
 
   return (

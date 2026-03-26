@@ -72,7 +72,7 @@ export default function ProjectDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
   const deleteProject = useDeleteProject();
-  const { isAdmin, isPortfolioManager, isProjectManager } = usePermissions();
+  const { isAdmin, isPortfolioManager, isProjectManager, canEditProject, canDeleteProject, canCreateReports } = usePermissions();
 
   const kanbanRef = useRef<KanbanBoardRef>(null);
 
@@ -162,10 +162,12 @@ export default function ProjectDetail() {
             <Plus className="h-4 w-4 mr-2" />
             Nova Tarefa
           </Button>
-          <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
-            <Pencil className="h-4 w-4 mr-2" />
-            Editar
-          </Button>
+          {canEditProject && (
+            <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
@@ -173,28 +175,36 @@ export default function ProjectDetail() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <FileText className="h-4 w-4 mr-2" />
-                Gerar Relatório
-              </DropdownMenuItem>
+              {canCreateReports && (
+                <DropdownMenuItem>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Gerar Relatório
+                </DropdownMenuItem>
+              )}
               {canManagePermissions && (
                 <DropdownMenuItem onClick={() => setIsPermissionsOpen(true)}>
                   <Shield className="h-4 w-4 mr-2" />
                   Permissões
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem>
-                <Settings className="h-4 w-4 mr-2" />
-                Configurações
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => setIsDeleteDialogOpen(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar Projecto
-              </DropdownMenuItem>
+              {canEditProject && (
+                <DropdownMenuItem>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurações
+                </DropdownMenuItem>
+              )}
+              {canDeleteProject && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar Projecto
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

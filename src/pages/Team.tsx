@@ -18,6 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { useProjects } from "@/hooks/useProjects";
+import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
@@ -32,6 +33,7 @@ export default function Team() {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const { data: projects } = useProjects();
+  const { canManageTeam } = usePermissions();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["team_members_all", orgId],
@@ -94,7 +96,7 @@ export default function Team() {
           <h1 className="text-2xl font-bold text-foreground">Gestão de Equipa</h1>
           <p className="text-muted-foreground">Gerir membros da equipa, disponibilidade e carga de trabalho.</p>
         </div>
-        <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>
+        {canManageTeam && <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>}
       </div>
 
       {/* Stats */}
@@ -140,12 +142,14 @@ export default function Team() {
                         <h3 className="font-semibold truncate">{member.name}</h3>
                         <p className="text-sm text-muted-foreground">{member.role || "Sem cargo"}</p>
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem className="text-destructive" onClick={() => deleteMember.mutate(member.id)}>Remover</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {canManageTeam && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem className="text-destructive" onClick={() => deleteMember.mutate(member.id)}>Remover</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                     {member.department && <Badge variant="secondary" className="mt-2 text-xs">{member.department}</Badge>}
                   </div>
