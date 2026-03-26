@@ -30,6 +30,8 @@ export default function Stakeholders() {
   const { t } = useTranslation();
   const { data: projects } = useProjects();
   const { stakeholders, isLoading, createStakeholder, updateStakeholder, deleteStakeholder } = useStakeholders();
+  const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
+  const canManageStakeholders = isAdmin || isPortfolioManager || isProjectManager || isManager;
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
