@@ -73,6 +73,7 @@ export default function Documents() {
   const deleteDocument = useDeleteDocument();
   const downloadFile = useDownloadFile();
   const uploadVersion = useUploadVersion();
+  const { canUploadDocuments, canDeleteDocuments, canApproveDocuments } = usePermissions();
 
   // Handle file drop for quick version upload
   const handleFileDrop = useCallback((doc: Document, file: File) => {
