@@ -3258,6 +3258,7 @@ export type Database = {
         Args: { _org_id: string; _resource_type: string }
         Returns: Json
       }
+      expire_trials: { Args: never; Returns: number }
       generate_multicaixa_reference: { Args: never; Returns: string }
       get_all_organizations: {
         Args: never
