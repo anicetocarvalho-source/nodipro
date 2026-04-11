@@ -144,7 +144,7 @@ function PlanActivities({ plan }: { plan: AWP }) {
 
 export default function AnnualWorkPlan() {
   const { plans, loading, createPlan, updatePlan, deletePlan } = useAnnualWorkPlans();
-  const { projects } = useProjects();
+  const { data: projects = [] } = useProjects();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ title: "", year: new Date().getFullYear().toString(), project_id: "", total_budget: "0", notes: "" });

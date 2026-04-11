@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrganizationContext } from "@/contexts/OrganizationContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 
 export interface LessonLearned {
@@ -18,7 +18,7 @@ export interface LessonLearned {
 }
 
 export function useLessonsLearned() {
-  const { currentOrganization } = useOrganizationContext();
+  const { currentOrganization } = useOrganization();
   const queryClient = useQueryClient();
   const orgId = currentOrganization?.id;
 

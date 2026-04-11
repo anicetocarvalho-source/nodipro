@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useOrganizationContext } from "@/contexts/OrganizationContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 
 export interface OrgAuditLog {
   id: string;
@@ -19,7 +19,7 @@ export interface OrgAuditResult {
 }
 
 export function useOrgAuditLogs() {
-  const { currentOrganization } = useOrganizationContext();
+  const { currentOrganization } = useOrganization();
   const [loading, setLoading] = useState(false);
 
   const fetchLogs = useCallback(async (params: {

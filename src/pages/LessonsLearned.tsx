@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLessonsLearned, LessonLearned } from "@/hooks/useLessonsLearned";
 import { useProjects } from "@/hooks/useProjects";
+import type { DbProject } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const typeLabels: Record<string, string> = {
@@ -28,7 +29,7 @@ const typeColors: Record<string, string> = {
 
 export default function LessonsLearned() {
   const { lessons, loading, createLesson, updateLesson, deleteLesson } = useLessonsLearned();
-  const { projects } = useProjects();
+  const { data: projects = [] } = useProjects();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [modalOpen, setModalOpen] = useState(false);
