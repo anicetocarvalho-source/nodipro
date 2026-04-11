@@ -46,7 +46,7 @@ export function useReportGeneration() {
       const projectIds = allProjects.map(p => p.id);
 
       // Now fetch related data filtered by project IDs
-      const [tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes] = await Promise.all([
+      const [tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes, tranchesRes] = await Promise.all([
         projectIds.length > 0
           ? supabase.from("tasks").select("*").in("project_id", projectIds)
           : Promise.resolve({ data: [], error: null }),
@@ -60,6 +60,9 @@ export function useReportGeneration() {
         supabase.from("programs").select("*"),
         projectIds.length > 0
           ? supabase.from("documents").select("id, title, status, project_id, phase_name, document_type, created_at").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0
+          ? supabase.from("disbursement_tranches").select("*").in("project_id", projectIds)
           : Promise.resolve({ data: [], error: null }),
       ]);
 
