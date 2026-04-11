@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderKanban, Briefcase, BarChart3, AlertTriangle, Users, FileText,
   MessageSquare, Wallet, ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Settings,
   HelpCircle, LogOut, ShieldCheck, Layers, Building2, Grid3X3, Gauge, ShoppingBag,
-  Users2, FileEdit, User, Heart, Banknote, BookOpen, CalendarRange, ScrollText,
+  Users2, FileEdit, User, Heart, Banknote, BookOpen, CalendarRange, ScrollText, Handshake,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,7 @@ export function AppSidebar() {
         { icon: BookOpen, labelKey: "nav.lessonsLearned", path: "/lessons-learned" },
         { icon: CalendarRange, labelKey: "nav.annualWorkPlan", path: "/annual-work-plan", requiresPermission: "canViewBudget" },
         { icon: ScrollText, labelKey: "nav.auditLogs", path: "/audit-logs", requiresPermission: "canManageTeam" },
+        { icon: Handshake, labelKey: "nav.fundingAgreements", path: "/funding-agreements", requiresPermission: "canViewBudget" },
       ],
     },
   ];
