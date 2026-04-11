@@ -92,6 +92,7 @@
     "myAccount": "Mon Compte",
     "logout": "Déconnexion",
     "stakeholders": "Parties prenantes",
+    "beneficiaries": "Bénéficiaires",
     "changeRequests": "Demandes de changement"
   },
   "auth": {

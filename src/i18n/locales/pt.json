@@ -92,6 +92,7 @@
     "myAccount": "Minha Conta",
     "logout": "Sair",
     "stakeholders": "Stakeholders",
+    "beneficiaries": "Beneficiários",
     "changeRequests": "Pedidos de Mudança"
   },
   "auth": {
