@@ -1,10 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Printer, FileSpreadsheet, AlertTriangle, Building2 } from "lucide-react";
+import { Printer, FileSpreadsheet, AlertTriangle, Building2, Download } from "lucide-react";
 import { ReportData } from "@/hooks/useReportGeneration";
 import { exportToCSV, printReport } from "@/lib/exportUtils";
+import { exportToExcel, exportDonorReport } from "@/lib/excelExport";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ReportPreviewModalProps {
   reportData: ReportData | null;
@@ -17,6 +19,12 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
   const handlePrint = () => printReport();
   const handleExportCSV = () => {
     exportToCSV(reportData, `relatorio-${reportData.type}-${Date.now()}`);
+  };
+  const handleExportExcel = () => {
+    exportToExcel(reportData, `relatorio-${reportData.type}-${Date.now()}`);
+  };
+  const handleDonorExport = (format: "worldbank" | "undp" | "generic") => {
+    exportDonorReport(reportData, `relatorio-doador-${format}-${Date.now()}`, format);
   };
 
   return (
