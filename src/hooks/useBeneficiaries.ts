@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 
 export interface Beneficiary {
@@ -42,18 +43,29 @@ export type BeneficiaryInsert = {
 
 export function useBeneficiaries(projectId?: string) {
   const { user } = useAuthContext();
+  const { organization } = useOrganization();
   const queryClient = useQueryClient();
+  const orgId = organization?.id;
 
   const { data: beneficiaries = [], isLoading } = useQuery({
-    queryKey: ["beneficiaries", projectId],
+    queryKey: ["beneficiaries", orgId, projectId],
     queryFn: async () => {
-      let query = supabase.from("beneficiaries").select("*").order("created_at", { ascending: false });
+      if (!orgId) return [];
+      // First get org project ids to scope query
+      const { data: orgProjects } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("organization_id", orgId);
+      const orgProjectIds = orgProjects?.map(p => p.id) || [];
+      if (orgProjectIds.length === 0) return [];
+
+      let query = supabase.from("beneficiaries").select("*").in("project_id", orgProjectIds).order("created_at", { ascending: false });
       if (projectId) query = query.eq("project_id", projectId);
       const { data, error } = await query.limit(500);
       if (error) throw error;
       return data as Beneficiary[];
     },
-    enabled: true,
+    enabled: !!orgId,
   });
 
   const createBeneficiary = useMutation({
