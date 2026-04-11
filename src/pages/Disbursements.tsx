@@ -29,7 +29,7 @@ export default function Disbursements() {
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<DisbursementTranche | null>(null);
-  const { projects } = useProjects();
+  const { data: projects = [] } = useProjects();
 
   const projectFilter = selectedProject === "all" ? undefined : selectedProject;
   const { tranches, isLoading, createTranche, updateTranche, deleteTranche, totalPlanned, totalDisbursed, disbursementRate } = useDisbursements(projectFilter);
@@ -85,7 +85,7 @@ export default function Disbursements() {
   const projectName = (pid: string) => projects.find(p => p.id === pid)?.name ?? "—";
 
   return (
-    <FeatureGate feature="disbursements">
+    <FeatureGate feature="disbursements" featureLabel="Gestão de Desembolsos">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
