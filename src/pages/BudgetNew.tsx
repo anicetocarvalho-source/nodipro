@@ -86,6 +86,7 @@ import {
 } from "@/hooks/useBudget";
 import { BudgetEntry, BudgetAlert } from "@/types/budget";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useBudgetApprovals } from "@/hooks/useBudgetApprovals";
 import BudgetEntryModal from "@/components/budget/BudgetEntryModal";
 import BudgetReportModal from "@/components/budget/BudgetReportModal";
 
