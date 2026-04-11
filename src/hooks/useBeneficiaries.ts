@@ -58,8 +58,20 @@ export function useBeneficiaries(projectId?: string) {
 
   const createBeneficiary = useMutation({
     mutationFn: async (data: BeneficiaryInsert) => {
-      const insertData = { ...data, created_by: user?.id || null };
-      const { error } = await supabase.from("beneficiaries").insert(insertData);
+      const { error } = await supabase.from("beneficiaries").insert([{
+        project_id: data.project_id,
+        name: data.name,
+        beneficiary_type: data.beneficiary_type || "direct",
+        gender: data.gender || null,
+        age_group: data.age_group || null,
+        province_id: data.province_id || null,
+        sector: data.sector || null,
+        quantity: data.quantity || 1,
+        description: data.description || null,
+        contact_info: data.contact_info || null,
+        status: data.status || "active",
+        created_by: user?.id || null,
+      }]);
       if (error) throw error;
     },
     onSuccess: () => {
