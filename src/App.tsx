@@ -154,6 +154,7 @@ const App = () => (
               <Route path="/lessons-learned" element={<ProtectedPageWrapper><LessonsLearnedPage /></ProtectedPageWrapper>} />
               <Route path="/annual-work-plan" element={<ManagerPageWrapper><AnnualWorkPlanPage /></ManagerPageWrapper>} />
               <Route path="/audit-logs" element={<AdminPageWrapper><AuditLogsPage /></AdminPageWrapper>} />
+              <Route path="/funding-agreements" element={<ManagerPageWrapper><FundingAgreementsPage /></ManagerPageWrapper>} />
               <Route path="/profile" element={<AccountPageWrapper><Profile /></AccountPageWrapper>} />
               <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
               <Route path="/superadmin" element={<PlatformAdminPageWrapper><SuperAdmin /></PlatformAdminPageWrapper>} />
