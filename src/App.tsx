@@ -51,6 +51,7 @@ const Disbursements = lazy(() => import("./pages/Disbursements"));
 const LessonsLearnedPage = lazy(() => import("./pages/LessonsLearned"));
 const AnnualWorkPlanPage = lazy(() => import("./pages/AnnualWorkPlan"));
 const AuditLogsPage = lazy(() => import("./pages/AuditLogs"));
+const FundingAgreementsPage = lazy(() => import("./pages/FundingAgreements"));
 
 const queryClient = new QueryClient();
 
