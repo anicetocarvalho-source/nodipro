@@ -29,6 +29,10 @@ const FEATURE_LABELS: Record<keyof PlanFeatures, string> = {
   stakeholders: 'Stakeholders',
   briefings: 'Briefings',
   disbursements: 'Desembolsos',
+  funding_agreements: 'Acordos de Financiamento',
+  lessons_learned: 'Lições Aprendidas',
+  annual_work_plan: 'Plano de Trabalho Anual',
+  audit_logs: 'Auditoria',
 };
 
 export function PlanCard({ plan, isCurrentPlan, onSelect, isLoading, yearly }: PlanCardProps) {
