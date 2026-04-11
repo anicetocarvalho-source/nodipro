@@ -71,6 +71,7 @@ export function useReportGeneration() {
       const allTeam = teamRes.data || [];
       const allBudget = budgetRes.data || [];
       const allDocs = docsRes.data || [];
+      const allTranches = tranchesRes.data || [];
       const portfolios = portfoliosRes.data || [];
       const programs = programsRes.data || [];
 
@@ -99,7 +100,7 @@ export function useReportGeneration() {
           data = generatePerformanceReport(allProjects, allTasks, allBudget, organization.name);
           break;
         case "disbursement":
-          data = generateDisbursementReport(allProjects, allBudget, organization.name);
+          data = generateDisbursementReport(allProjects, allTranches, organization.name);
           break;
         default:
           throw new Error("Tipo de relatório desconhecido");
