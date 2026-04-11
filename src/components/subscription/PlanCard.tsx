@@ -33,6 +33,7 @@ const FEATURE_LABELS: Record<keyof PlanFeatures, string> = {
   lessons_learned: 'Lições Aprendidas',
   annual_work_plan: 'Plano de Trabalho Anual',
   audit_logs: 'Auditoria',
+  beneficiaries: 'Beneficiários',
 };
 
 export function PlanCard({ plan, isCurrentPlan, onSelect, isLoading, yearly }: PlanCardProps) {
