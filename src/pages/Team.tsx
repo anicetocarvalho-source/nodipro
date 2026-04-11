@@ -20,6 +20,7 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { useProjects } from "@/hooks/useProjects";
 import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   available: { label: "Disponível", className: "bg-success" },
