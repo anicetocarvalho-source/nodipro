@@ -13,6 +13,7 @@ import {
   Send,
   GitBranch,
   User,
+  Shield,
 } from 'lucide-react';
 import {
   Dialog,
@@ -39,6 +40,7 @@ import {
 } from '@/hooks/useDocuments';
 import { VersionUploadModal } from './VersionUploadModal';
 import { WorkflowModal } from './WorkflowModal';
+import { DigitalApprovalPanel } from '@/components/approvals/DigitalApprovalPanel';
 import {
   DOCUMENT_STATUS_LABELS,
   WORKFLOW_STATUS_LABELS,
@@ -164,7 +166,7 @@ export function DocumentDetailModal({
           </div>
 
           <Tabs defaultValue="versions" className="flex-1 overflow-hidden flex flex-col">
-            <TabsList>
+            <TabsList className="flex-wrap">
               <TabsTrigger value="versions" className="gap-2">
                 <FileText className="h-4 w-4" />
                 Versões ({versions.length})
@@ -172,6 +174,10 @@ export function DocumentDetailModal({
               <TabsTrigger value="workflows" className="gap-2">
                 <GitBranch className="h-4 w-4" />
                 Workflows ({workflows.length})
+              </TabsTrigger>
+              <TabsTrigger value="approvals" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Aprovações
               </TabsTrigger>
               <TabsTrigger value="comments" className="gap-2">
                 <MessageSquare className="h-4 w-4" />
@@ -226,6 +232,14 @@ export function DocumentDetailModal({
                     </p>
                   )}
                 </div>
+              </TabsContent>
+
+              <TabsContent value="approvals" className="m-0">
+                <DigitalApprovalPanel
+                  entityType="document"
+                  entityId={documentId}
+                  entityLabel={document.title}
+                />
               </TabsContent>
 
               <TabsContent value="workflows" className="m-0">

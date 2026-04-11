@@ -556,6 +556,15 @@ export default function Budget() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Digital Approvals Panel */}
+      {selectedProjectId && (
+        <DigitalApprovalPanel
+          entityType="budget"
+          entityId={selectedProjectId}
+          entityLabel="Orçamento do Projecto"
+        />
+      )}
       
       {/* Modals */}
       <BudgetEntryModal
@@ -572,6 +581,65 @@ export default function Budget() {
         projects={projects}
         defaultProjectId={selectedProjectId}
       />
+
+      {/* Submit for Approval Dialog */}
+      <Dialog open={!!submitApprovalEntry} onOpenChange={() => setSubmitApprovalEntry(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submeter para Aprovação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Entrada: <strong>{submitApprovalEntry?.description}</strong>
+            </p>
+            <div>
+              <label className="text-sm font-medium">Nível de Aprovação</label>
+              <Select value={approvalLevel} onValueChange={(v) => setApprovalLevel(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prepared">Preparado</SelectItem>
+                  <SelectItem value="verified">Verificado</SelectItem>
+                  <SelectItem value="approved">Aprovado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Aprovador</label>
+              <Select value={selectedApproverId} onValueChange={setSelectedApproverId}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar aprovador" /></SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.user_id || m.id}>
+                      {m.name} ({m.role || 'Membro'})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSubmitApprovalEntry(null)}>Cancelar</Button>
+            <Button 
+              disabled={!selectedApproverId || submitForApproval.isPending}
+              onClick={() => {
+                if (!submitApprovalEntry) return;
+                const member = teamMembers.find(m => (m.user_id || m.id) === selectedApproverId);
+                submitForApproval.mutate({
+                  budgetEntryId: submitApprovalEntry.id,
+                  level: approvalLevel,
+                  approverId: selectedApproverId,
+                  approverName: member?.name || 'Aprovador',
+                });
+                setSubmitApprovalEntry(null);
+                setSelectedApproverId("");
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Submeter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
