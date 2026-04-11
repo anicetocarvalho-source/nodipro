@@ -28,6 +28,7 @@ const FEATURE_LABELS: Record<keyof PlanFeatures, string> = {
   api_access: 'Acesso API',
   stakeholders: 'Stakeholders',
   briefings: 'Briefings',
+  disbursements: 'Desembolsos',
 };
 
 export function PlanCard({ plan, isCurrentPlan, onSelect, isLoading, yearly }: PlanCardProps) {
