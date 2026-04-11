@@ -165,6 +165,7 @@ export default function AnnualWorkPlan() {
   };
 
   return (
+    <FeatureGate feature="annual_work_plan" featureLabel="Plano de Trabalho Anual">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -259,5 +260,6 @@ export default function AnnualWorkPlan() {
         </DialogContent>
       </Dialog>
     </div>
+    </FeatureGate>
   );
 }

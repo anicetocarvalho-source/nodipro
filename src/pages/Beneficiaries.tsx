@@ -56,6 +56,7 @@ export default function Beneficiaries() {
   };
 
   return (
+    <FeatureGate feature="beneficiaries" featureLabel="Beneficiários">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -206,5 +207,6 @@ export default function Beneficiaries() {
         </DialogContent>
       </Dialog>
     </div>
+    </FeatureGate>
   );
 }

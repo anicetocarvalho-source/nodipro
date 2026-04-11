@@ -100,6 +100,7 @@ export default function FundingAgreements() {
   };
 
   return (
+    <FeatureGate feature="funding_agreements" featureLabel="Acordos de Financiamento">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -270,5 +271,6 @@ export default function FundingAgreements() {
         </DialogContent>
       </Dialog>
     </div>
+    </FeatureGate>
   );
 }
