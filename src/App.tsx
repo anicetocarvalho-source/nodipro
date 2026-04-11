@@ -46,6 +46,7 @@ const Stakeholders = lazy(() => import("./pages/Stakeholders"));
 const ChangeRequests = lazy(() => import("./pages/ChangeRequests"));
 const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Beneficiaries = lazy(() => import("./pages/Beneficiaries"));
 
 const queryClient = new QueryClient();
 
@@ -132,6 +133,7 @@ const App = () => (
               <Route path="/evm" element={<ManagerPageWrapper><EVM /></ManagerPageWrapper>} />
               <Route path="/procurement" element={<ManagerPageWrapper><Procurement /></ManagerPageWrapper>} />
               <Route path="/stakeholders" element={<ProtectedPageWrapper><Stakeholders /></ProtectedPageWrapper>} />
+              <Route path="/beneficiaries" element={<ProtectedPageWrapper><Beneficiaries /></ProtectedPageWrapper>} />
               <Route path="/change-requests" element={<ManagerPageWrapper><ChangeRequests /></ManagerPageWrapper>} />
               <Route path="/portfolio" element={<ManagerPageWrapper><Portfolio /></ManagerPageWrapper>} />
               <Route path="/programs/:id" element={<ManagerPageWrapper><ProgramDetail /></ManagerPageWrapper>} />
