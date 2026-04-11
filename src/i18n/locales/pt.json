@@ -97,7 +97,8 @@
     "disbursements": "Desembolsos",
     "lessonsLearned": "Lições Aprendidas",
     "annualWorkPlan": "Plano de Trabalho Anual",
-    "auditLogs": "Auditoria"
+    "auditLogs": "Auditoria",
+    "fundingAgreements": "Acordos de Financiamento"
   },
   "auth": {
     "welcome": "Bem-vindo de volta",

@@ -97,7 +97,8 @@
     "disbursements": "Décaissements",
     "lessonsLearned": "Leçons Apprises",
     "annualWorkPlan": "Plan de Travail Annuel",
-    "auditLogs": "Journaux d'Audit"
+    "auditLogs": "Journaux d'Audit",
+    "fundingAgreements": "Accords de Financement"
   },
   "auth": {
     "welcome": "Bienvenue",
