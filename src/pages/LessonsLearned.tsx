@@ -12,6 +12,7 @@ import { useLessonsLearned, LessonLearned } from "@/hooks/useLessonsLearned";
 import { useProjects } from "@/hooks/useProjects";
 import type { DbProject } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const typeLabels: Record<string, string> = {
   success: "Boas Práticas",
@@ -83,6 +84,7 @@ export default function LessonsLearned() {
   };
 
   return (
+    <FeatureGate feature="lessons_learned" featureLabel="Lições Aprendidas">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -201,5 +203,6 @@ export default function LessonsLearned() {
         </DialogContent>
       </Dialog>
     </div>
+    </FeatureGate>
   );
 }

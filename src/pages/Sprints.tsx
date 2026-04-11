@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
 
-// Sprints page now lives inside Projects - redirect for backward compatibility
+// Sprints functionality is accessed via project detail - redirect to projects
 export default function Sprints() {
-  return <Navigate to="/projects?tab=sprints" replace />;
+  return <Navigate to="/projects" replace />;
 }

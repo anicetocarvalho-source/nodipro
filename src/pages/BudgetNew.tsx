@@ -86,6 +86,7 @@ import {
 } from "@/hooks/useBudget";
 import { BudgetEntry, BudgetAlert } from "@/types/budget";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useBudgetApprovals } from "@/hooks/useBudgetApprovals";
 import BudgetEntryModal from "@/components/budget/BudgetEntryModal";
 import BudgetReportModal from "@/components/budget/BudgetReportModal";
 
@@ -157,6 +158,7 @@ export default function Budget() {
   const { data: monthlyData = {} } = useBudgetEntriesByMonth(selectedProjectId);
   const { data: phaseData = [] } = useBudgetEntriesByPhase(selectedProjectId);
   const { data: alerts = [] } = useBudgetAlerts(selectedProjectId);
+  const { pendingApprovals, myPendingApprovals, submitForApproval, processApproval } = useBudgetApprovals(selectedProjectId);
   
   const deleteEntry = useDeleteBudgetEntry();
   const updateStatus = useUpdateBudgetEntryStatus();
@@ -474,6 +476,11 @@ export default function Budget() {
               <TabsTrigger value="paid">
                 Pagas ({entries.filter(e => e.status === 'paid').length})
               </TabsTrigger>
+              {myPendingApprovals.length > 0 && (
+                <TabsTrigger value="approvals">
+                  Aprovações ({myPendingApprovals.length})
+                </TabsTrigger>
+              )}
             </TabsList>
             
             <TabsContent value="all" className="mt-4">
@@ -508,6 +515,34 @@ export default function Budget() {
                 onStatusChange={handleStatusChange}
               />
             </TabsContent>
+            {myPendingApprovals.length > 0 && (
+              <TabsContent value="approvals" className="mt-4">
+                <div className="space-y-3">
+                  {myPendingApprovals.map(approval => {
+                    const entry = entries.find(e => e.id === approval.budget_entry_id);
+                    return (
+                      <div key={approval.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">{entry?.description || 'Entrada orçamental'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Nível: <Badge variant="outline">{approval.approval_level}</Badge>
+                            {entry && <span className="ml-2">{Number(entry.planned_amount).toLocaleString()} AOA</span>}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="text-destructive" onClick={() => processApproval.mutate({ approvalId: approval.id, action: "rejected" })}>
+                            <XCircle className="h-4 w-4 mr-1" /> Rejeitar
+                          </Button>
+                          <Button size="sm" onClick={() => processApproval.mutate({ approvalId: approval.id, action: "approved" })}>
+                            <CheckCircle className="h-4 w-4 mr-1" /> Aprovar
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>

@@ -451,102 +451,88 @@ export function generatePerformanceReport(
 
 // ===== DISBURSEMENT =====
 export function generateDisbursementReport(
-  projects: any[], budget: any[], orgName: string
+  projects: any[], tranches: any[], orgName: string
 ): ReportData {
-  const totalPlanned = budget.reduce((s, b) => s + b.planned_amount, 0);
-  const totalActual = budget.reduce((s, b) => s + b.actual_amount, 0);
-  const approvedEntries = budget.filter(b => b.status === 'approved' || b.status === 'paid');
-  const pendingEntries = budget.filter(b => b.status === 'pending');
-  const paidEntries = budget.filter(b => b.status === 'paid');
-  const rejectedEntries = budget.filter(b => b.status === 'rejected');
+  const totalPlanned = tranches.reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const disbursedTranches = tranches.filter((t: any) => t.status === 'disbursed');
+  const pendingTranches = tranches.filter((t: any) => t.status === 'pending');
+  const plannedTranches = tranches.filter((t: any) => t.status === 'planned');
+  const cancelledTranches = tranches.filter((t: any) => t.status === 'cancelled');
 
-  const totalDisbursed = paidEntries.reduce((s, b) => s + b.actual_amount, 0);
-  const totalApproved = approvedEntries.reduce((s, b) => s + b.actual_amount, 0);
-  const totalPending = pendingEntries.reduce((s, b) => s + b.planned_amount, 0);
+  const totalDisbursed = disbursedTranches.reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const totalPending = pendingTranches.reduce((s: number, t: any) => s + Number(t.amount), 0);
+  const totalCancelled = cancelledTranches.reduce((s: number, t: any) => s + Number(t.amount), 0);
   const disbursementRate = totalPlanned > 0 ? Math.round((totalDisbursed / totalPlanned) * 100) : 0;
 
   // By project
-  const byProject = budget.reduce((acc, b) => {
-    const project = projects.find(p => p.id === b.project_id);
+  const byProject = tranches.reduce((acc: Record<string, any>, t: any) => {
+    const project = projects.find((p: any) => p.id === t.project_id);
     const name = project?.name || 'Desconhecido';
-    if (!acc[name]) acc[name] = { planned: 0, disbursed: 0, approved: 0, pending: 0, rejected: 0 };
-    acc[name].planned += b.planned_amount;
-    if (b.status === 'paid') acc[name].disbursed += b.actual_amount;
-    if (b.status === 'approved') acc[name].approved += b.actual_amount;
-    if (b.status === 'pending') acc[name].pending += b.planned_amount;
-    if (b.status === 'rejected') acc[name].rejected += b.actual_amount;
-    return acc;
-  }, {} as Record<string, { planned: number; disbursed: number; approved: number; pending: number; rejected: number }>);
-
-  // By month
-  const byMonth = budget.filter(b => b.status === 'paid').reduce((acc, b) => {
-    const month = format(new Date(b.entry_date), 'yyyy-MM');
-    const label = format(new Date(b.entry_date), "MMMM yyyy", { locale: pt });
-    if (!acc[month]) acc[month] = { label, amount: 0, count: 0 };
-    acc[month].amount += b.actual_amount;
-    acc[month].count++;
-    return acc;
-  }, {} as Record<string, { label: string; amount: number; count: number }>);
-
-  // By supplier
-  const bySupplier = budget.filter(b => b.supplier && b.status === 'paid').reduce((acc, b) => {
-    const name = b.supplier!;
-    if (!acc[name]) acc[name] = { amount: 0, count: 0 };
-    acc[name].amount += b.actual_amount;
+    if (!acc[name]) acc[name] = { planned: 0, disbursed: 0, pending: 0, cancelled: 0, count: 0 };
+    acc[name].planned += Number(t.amount);
     acc[name].count++;
+    if (t.status === 'disbursed') acc[name].disbursed += Number(t.amount);
+    if (t.status === 'pending') acc[name].pending += Number(t.amount);
+    if (t.status === 'cancelled') acc[name].cancelled += Number(t.amount);
     return acc;
-  }, {} as Record<string, { amount: number; count: number }>);
+  }, {} as Record<string, any>);
+
+  // By month (actual_date for disbursed tranches)
+  const byMonth = disbursedTranches
+    .filter((t: any) => t.actual_date)
+    .reduce((acc: Record<string, any>, t: any) => {
+      const month = format(new Date(t.actual_date), 'yyyy-MM');
+      const label = format(new Date(t.actual_date), "MMMM yyyy", { locale: pt });
+      if (!acc[month]) acc[month] = { label, amount: 0, count: 0 };
+      acc[month].amount += Number(t.amount);
+      acc[month].count++;
+      return acc;
+    }, {} as Record<string, any>);
 
   return {
     title: "Relatório de Desembolsos",
-    subtitle: "Análise detalhada de pagamentos, aprovações e fluxo financeiro",
+    subtitle: "Análise detalhada de tranches de desembolso por projecto",
     generatedAt: now(), organizationName: orgName, type: "disbursement",
     metrics: [
-      { label: "Total Planeado", value: formatCurrency(totalPlanned) },
-      { label: "Total Desembolsado", value: formatCurrency(totalDisbursed), subtext: `${disbursementRate}% do planeado` },
-      { label: "Aprovado (Pendente Pgto)", value: formatCurrency(totalApproved), variant: "success" as const },
-      { label: "Pendente Aprovação", value: formatCurrency(totalPending), variant: totalPending > 0 ? "warning" as const : "success" as const },
+      { label: "Total Planeado", value: formatCurrency(totalPlanned), subtext: `${tranches.length} tranches` },
+      { label: "Total Desembolsado", value: formatCurrency(totalDisbursed), subtext: `${disbursementRate}% do planeado`, variant: disbursementRate >= 80 ? "success" as const : "warning" as const },
+      { label: "Pendente", value: formatCurrency(totalPending), subtext: `${pendingTranches.length} tranches`, variant: pendingTranches.length > 0 ? "warning" as const : "success" as const },
+      { label: "Cancelado", value: formatCurrency(totalCancelled), subtext: `${cancelledTranches.length} tranches`, variant: cancelledTranches.length > 0 ? "danger" as const : "default" as const },
     ],
     tables: [
       {
         title: "Desembolsos por Projecto",
-        headers: ["Projecto", "Planeado", "Desembolsado", "Aprovado", "Pendente", "Rejeitado", "% Desembolso"],
+        headers: ["Projecto", "Planeado", "Desembolsado", "Pendente", "Cancelado", "Tranches", "% Desembolso"],
         rows: Object.entries(byProject)
           .sort((a, b) => (b[1] as any).planned - (a[1] as any).planned)
           .map(([name, d]: [string, any]) => [
-            name, formatCurrency(d.planned), formatCurrency(d.disbursed), formatCurrency(d.approved),
-            formatCurrency(d.pending), formatCurrency(d.rejected),
+            name, formatCurrency(d.planned), formatCurrency(d.disbursed),
+            formatCurrency(d.pending), formatCurrency(d.cancelled), d.count,
             d.planned > 0 ? `${Math.round((d.disbursed / d.planned) * 100)}%` : 'N/A',
           ]),
       },
       {
         title: "Desembolsos por Mês",
-        headers: ["Mês", "Valor Desembolsado", "Nº Pagamentos"],
+        headers: ["Mês", "Valor Desembolsado", "Nº Tranches"],
         rows: Object.entries(byMonth)
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([, d]: [string, any]) => [d.label, formatCurrency(d.amount), d.count]),
       },
       {
-        title: "Principais Fornecedores",
-        headers: ["Fornecedor", "Total Pago", "Nº Pagamentos"],
-        rows: Object.entries(bySupplier)
-          .sort((a, b) => (b[1] as any).amount - (a[1] as any).amount)
-          .map(([name, d]: [string, any]) => [name, formatCurrency(d.amount), d.count]),
-      },
-      {
-        title: "Entradas Pendentes de Aprovação",
-        headers: ["Descrição", "Projecto", "Valor", "Fornecedor", "Data"],
-        rows: pendingEntries.slice(0, 20).map(b => {
-          const proj = projects.find(p => p.id === b.project_id);
-          return [b.description, proj?.name || 'N/A', formatCurrency(b.planned_amount), b.supplier || 'N/A', formatDate(b.entry_date)];
+        title: "Tranches Pendentes",
+        headers: ["Tranche", "Projecto", "Valor", "Data Planeada", "Condição"],
+        rows: pendingTranches.slice(0, 20).map((t: any) => {
+          const proj = projects.find((p: any) => p.id === t.project_id);
+          return [t.title, proj?.name || 'N/A', formatCurrency(Number(t.amount)), formatDate(t.planned_date), t.condition_description || 'N/A'];
         }),
       },
     ],
     recommendations: [
-      ...(rejectedEntries.length > 0 ? [`${rejectedEntries.length} entrada(s) rejeitada(s) — rever justificação.`] : []),
-      ...(pendingEntries.length > 5 ? [`${pendingEntries.length} entradas pendentes de aprovação — processar para evitar atrasos.`] : []),
-      ...(disbursementRate < 50 ? [`Taxa de desembolso de ${disbursementRate}% — considere acelerar processos de pagamento.`] : []),
-      ...(disbursementRate >= 90 ? [`Taxa de desembolso elevada (${disbursementRate}%) — monitorar para evitar excesso.`] : []),
+      ...(cancelledTranches.length > 0 ? [`${cancelledTranches.length} tranche(s) cancelada(s) — rever justificação.`] : []),
+      ...(pendingTranches.length > 3 ? [`${pendingTranches.length} tranches pendentes — acelerar processo de desembolso.`] : []),
+      ...(disbursementRate < 50 ? [`Taxa de desembolso de ${disbursementRate}% — considere rever condições de desembolso.`] : []),
+      ...(disbursementRate >= 90 ? [`Taxa de desembolso elevada (${disbursementRate}%) — execução financeira saudável.`] : []),
+      ...(plannedTranches.length > 0 ? [`${plannedTranches.length} tranche(s) ainda em estado planeado — preparar documentação.`] : []),
     ],
   };
 }

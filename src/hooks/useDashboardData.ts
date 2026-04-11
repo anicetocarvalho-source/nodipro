@@ -15,6 +15,12 @@ export interface DashboardStats {
   completedTasks: number;
   inProgressTasks: number;
   overdueTasks: number;
+  totalBeneficiaries: number;
+  directBeneficiaries: number;
+  indirectBeneficiaries: number;
+  disbursementRate: number;
+  totalDisbursed: number;
+  totalFundingValue: number;
 }
 
 export interface ProjectWithDetails {
@@ -171,6 +177,50 @@ export function useDashboardData() {
     enabled: projectIds.length > 0,
   });
 
+  // Fetch beneficiaries
+  const { data: beneficiaries = [] } = useQuery({
+    queryKey: ["dashboard-beneficiaries", projectIds],
+    queryFn: async () => {
+      if (projectIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("beneficiaries")
+        .select("id, project_id, beneficiary_type, quantity")
+        .in("project_id", projectIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: projectIds.length > 0,
+  });
+
+  // Fetch disbursement tranches
+  const { data: disbursementTranches = [] } = useQuery({
+    queryKey: ["dashboard-tranches", projectIds],
+    queryFn: async () => {
+      if (projectIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("disbursement_tranches")
+        .select("id, project_id, amount, status")
+        .in("project_id", projectIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: projectIds.length > 0,
+  });
+
+  // Fetch funding agreements
+  const { data: fundingAgreements = [] } = useQuery({
+    queryKey: ["dashboard-funding", organizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("funding_agreements")
+        .select("id, total_amount, disbursed_amount, status")
+        .eq("organization_id", organizationId || "");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!organizationId,
+  });
+
   // Fetch provinces for budget breakdown
   const { data: provinces = [] } = useQuery({
     queryKey: ["provinces"],
@@ -198,6 +248,12 @@ export function useDashboardData() {
   });
 
   // Calculate stats
+  const directBeneficiaries = beneficiaries.filter(b => b.beneficiary_type === 'direct').reduce((s, b) => s + (b.quantity || 0), 0);
+  const indirectBeneficiaries = beneficiaries.filter(b => b.beneficiary_type === 'indirect').reduce((s, b) => s + (b.quantity || 0), 0);
+  const tranchesTotal = disbursementTranches.reduce((s, t) => s + Number(t.amount || 0), 0);
+  const tranchesDisbursed = disbursementTranches.filter(t => t.status === 'disbursed').reduce((s, t) => s + Number(t.amount || 0), 0);
+  const totalFundingValue = fundingAgreements.reduce((s, f) => s + Number(f.total_amount || 0), 0);
+
   const stats: DashboardStats = {
     activeProjects: projects.filter((p) => p.status === "active").length,
     completedProjects: projects.filter((p) => p.status === "completed").length,
@@ -214,6 +270,12 @@ export function useDashboardData() {
       if (!t.due_date) return false;
       return new Date(t.due_date) < new Date() && t.column_id !== "done";
     }).length,
+    totalBeneficiaries: directBeneficiaries + indirectBeneficiaries,
+    directBeneficiaries,
+    indirectBeneficiaries,
+    disbursementRate: tranchesTotal > 0 ? Math.round((tranchesDisbursed / tranchesTotal) * 100) : 0,
+    totalDisbursed: tranchesDisbursed,
+    totalFundingValue,
   };
 
   stats.executionRate = stats.totalBudget > 0 

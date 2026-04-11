@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useFundingAgreements, FundingAgreement } from "@/hooks/useFundingAgreements";
 import { useProjects } from "@/hooks/useProjects";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
+import { DigitalApprovalPanel } from "@/components/approvals/DigitalApprovalPanel";
 
 const statusLabels: Record<string, string> = {
   negotiation: "Em Negociação", signed: "Assinado", effective: "Em Vigor", closing: "Em Encerramento", closed: "Encerrado", cancelled: "Cancelado",
@@ -99,6 +101,7 @@ export default function FundingAgreements() {
   };
 
   return (
+    <FeatureGate feature="funding_agreements" featureLabel="Acordos de Financiamento">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -202,6 +205,18 @@ export default function FundingAgreements() {
         </Card>
       )}
 
+      {/* Digital Approvals for each agreement */}
+      {filtered.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Aprovações por Acordo</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtered.slice(0, 4).map(a => (
+              <DigitalApprovalPanel key={a.id} entityType="funding_agreement" entityId={a.id} entityLabel={a.title} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -269,5 +284,6 @@ export default function FundingAgreements() {
         </DialogContent>
       </Dialog>
     </div>
+    </FeatureGate>
   );
 }

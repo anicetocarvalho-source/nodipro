@@ -38,6 +38,7 @@ export interface PlanFeatures {
   lessons_learned: boolean;
   annual_work_plan: boolean;
   audit_logs: boolean;
+  beneficiaries: boolean;
 }
 
 export interface OrganizationSubscription {

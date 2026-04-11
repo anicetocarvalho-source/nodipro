@@ -9,6 +9,7 @@ import {
   HandHeart,
   MapPin,
   ExternalLink,
+  Banknote,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,6 +119,22 @@ export function NGOEntityDashboard({ userName }: NGOEntityDashboardProps) {
       changeType: "positive" as const,
       icon: DollarSign,
       href: "/budget",
+    }] : []),
+    {
+      title: "Beneficiários",
+      value: formatCompactNumber(stats.totalBeneficiaries),
+      change: `${formatCompactNumber(stats.directBeneficiaries)} directos`,
+      changeType: stats.totalBeneficiaries > 0 ? "positive" as const : "neutral" as const,
+      icon: HandHeart,
+      href: "/beneficiaries",
+    },
+    ...(canViewBudget ? [{
+      title: "Taxa Desembolso",
+      value: `${stats.disbursementRate}%`,
+      change: `${formatCurrency(stats.totalDisbursed)} desembolsado`,
+      changeType: stats.disbursementRate >= 50 ? "positive" as const : "neutral" as const,
+      icon: Banknote,
+      href: "/disbursements",
     }] : []),
   ];
 
