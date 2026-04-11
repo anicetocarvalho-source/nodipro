@@ -98,7 +98,14 @@ export default function Team() {
           <h1 className="text-2xl font-bold text-foreground">Gestão de Equipa</h1>
           <p className="text-muted-foreground">Gerir membros da equipa, disponibilidade e carga de trabalho.</p>
         </div>
-        {canManageTeam && <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>}
+        {canManageTeam && <Button onClick={async () => {
+          const quota = await checkQuota('member');
+          if (!quota.allowed) {
+            toast.error(`Limite de membros atingido (${quota.current}/${quota.max}). Faça upgrade do seu plano.`);
+            return;
+          }
+          setShowForm(true);
+        }}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>}
       </div>
 
       {/* Stats */}
