@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useAnnualWorkPlans, useAWPActivities, AnnualWorkPlan as AWP } from "@/hooks/useAnnualWorkPlans";
 import { useProjects } from "@/hooks/useProjects";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const statusLabels: Record<string, string> = { draft: "Rascunho", active: "Activo", completed: "Concluído", cancelled: "Cancelado" };
 const statusColors: Record<string, string> = {

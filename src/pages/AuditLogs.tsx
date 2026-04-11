@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useOrgAuditLogs, OrgAuditLog } from "@/hooks/useOrgAuditLogs";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const PAGE_SIZE = 30;
 

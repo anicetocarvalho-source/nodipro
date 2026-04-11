@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useFundingAgreements, FundingAgreement } from "@/hooks/useFundingAgreements";
 import { useProjects } from "@/hooks/useProjects";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const statusLabels: Record<string, string> = {
   negotiation: "Em Negociação", signed: "Assinado", effective: "Em Vigor", closing: "Em Encerramento", closed: "Encerrado", cancelled: "Cancelado",

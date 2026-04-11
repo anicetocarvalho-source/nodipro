@@ -12,6 +12,7 @@ import { useLessonsLearned, LessonLearned } from "@/hooks/useLessonsLearned";
 import { useProjects } from "@/hooks/useProjects";
 import type { DbProject } from "@/types/database";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const typeLabels: Record<string, string> = {
   success: "Boas Práticas",

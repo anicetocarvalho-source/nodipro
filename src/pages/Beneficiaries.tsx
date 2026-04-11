@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useBeneficiaries, BeneficiaryInsert } from "@/hooks/useBeneficiaries";
 import { useProjects } from "@/hooks/useProjects";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const genderLabels: Record<string, string> = { male: "Masculino", female: "Feminino", other: "Outro" };
 const typeLabels: Record<string, string> = { direct: "Directo", indirect: "Indirecto" };
