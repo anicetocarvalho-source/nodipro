@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DbPortfolio, DbPortfolioInsert } from "@/types/portfolio";
 import { useCreatePortfolio, useUpdatePortfolio } from "@/hooks/usePortfolios";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useSubscription } from "@/hooks/useSubscription";
+import { toast } from "sonner";
 
 interface PortfolioFormModalProps {
   open: boolean;
@@ -23,6 +25,7 @@ export function PortfolioFormModal({ open, onOpenChange, portfolio }: PortfolioF
   const createPortfolio = useCreatePortfolio();
   const updatePortfolio = useUpdatePortfolio();
   const { organization } = useOrganization();
+  const { checkQuota } = useSubscription();
 
   useEffect(() => {
     if (portfolio) {
@@ -38,6 +41,15 @@ export function PortfolioFormModal({ open, onOpenChange, portfolio }: PortfolioF
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check quota before creating
+    if (!portfolio) {
+      const quota = await checkQuota('portfolio');
+      if (!quota.allowed) {
+        toast.error(`Limite de portfólios atingido (${quota.current}/${quota.max}). Faça upgrade do seu plano.`);
+        return;
+      }
+    }
     
     const portfolioData: DbPortfolioInsert = {
       name,
