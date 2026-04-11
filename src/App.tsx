@@ -48,6 +48,9 @@ const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Beneficiaries = lazy(() => import("./pages/Beneficiaries"));
 const Disbursements = lazy(() => import("./pages/Disbursements"));
+const LessonsLearnedPage = lazy(() => import("./pages/LessonsLearned"));
+const AnnualWorkPlanPage = lazy(() => import("./pages/AnnualWorkPlan"));
+const AuditLogsPage = lazy(() => import("./pages/AuditLogs"));
 
 const queryClient = new QueryClient();
 
@@ -147,6 +150,9 @@ const App = () => (
               <Route path="/communication" element={<ProtectedPageWrapper><Communication /></ProtectedPageWrapper>} />
               <Route path="/budget" element={<ManagerPageWrapper><Budget /></ManagerPageWrapper>} />
               <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
+              <Route path="/lessons-learned" element={<ProtectedPageWrapper><LessonsLearnedPage /></ProtectedPageWrapper>} />
+              <Route path="/annual-work-plan" element={<ManagerPageWrapper><AnnualWorkPlanPage /></ManagerPageWrapper>} />
+              <Route path="/audit-logs" element={<AdminPageWrapper><AuditLogsPage /></AdminPageWrapper>} />
               <Route path="/profile" element={<AccountPageWrapper><Profile /></AccountPageWrapper>} />
               <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
               <Route path="/superadmin" element={<PlatformAdminPageWrapper><SuperAdmin /></PlatformAdminPageWrapper>} />

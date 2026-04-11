@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      annual_work_plans: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          project_id: string | null
+          status: string
+          title: string
+          total_budget: number
+          total_executed: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          project_id?: string | null
+          status?: string
+          title: string
+          total_budget?: number
+          total_executed?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          project_id?: string | null
+          status?: string
+          title?: string
+          total_budget?: number
+          total_executed?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_work_plans_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "annual_work_plans_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -58,6 +118,65 @@ export type Database = {
           user_name?: string | null
         }
         Relationships: []
+      }
+      awp_activities: {
+        Row: {
+          created_at: string
+          description: string | null
+          executed_budget: number
+          id: string
+          physical_achieved: number | null
+          physical_target: number | null
+          planned_budget: number
+          position: number
+          quarter: string
+          responsible: string | null
+          status: string
+          title: string
+          updated_at: string
+          work_plan_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          executed_budget?: number
+          id?: string
+          physical_achieved?: number | null
+          physical_target?: number | null
+          planned_budget?: number
+          position?: number
+          quarter?: string
+          responsible?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          work_plan_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          executed_budget?: number
+          id?: string
+          physical_achieved?: number | null
+          physical_target?: number | null
+          planned_budget?: number
+          position?: number
+          quarter?: string
+          responsible?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          work_plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "awp_activities_work_plan_id_fkey"
+            columns: ["work_plan_id"]
+            isOneToOne: false
+            referencedRelation: "annual_work_plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       beneficiaries: {
         Row: {
@@ -3556,6 +3675,17 @@ export type Database = {
           reference_code: string
           status: string
         }[]
+      }
+      get_org_audit_logs: {
+        Args: {
+          _action_filter?: string
+          _limit?: number
+          _offset?: number
+          _org_id: string
+          _search?: string
+          _target_filter?: string
+        }
+        Returns: Json
       }
       get_org_detail_for_admin: { Args: { _org_id: string }; Returns: Json }
       get_platform_audit_logs: {
