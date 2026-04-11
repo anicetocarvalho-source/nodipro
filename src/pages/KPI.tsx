@@ -58,7 +58,7 @@ function getKPIStatus(kpi: any) {
   return { value: current, status, progress: target ? Math.min(100, (current / target) * 100) : 0, change, target, label: status === "excellent" ? "Excelente" : status === "good" ? "Bom" : "Atenção" };
 }
 
-export default function KPI() {
+function KPIContent() {
   const { kpis, loadingKPIs, createKPI, updateKPI, deleteKPI, addMeasurement } = useKPIs();
   const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
   const canManageKPIs = isAdmin || isPortfolioManager || isProjectManager || isManager;

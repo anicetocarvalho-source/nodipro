@@ -81,7 +81,7 @@ interface GeneratedReportEntry {
   format: string;
 }
 
-export default function Reports() {
+function ReportsContent() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const { organization } = useOrganization();

@@ -27,7 +27,7 @@ const categoryColors: Record<string, string> = {
   partner: "bg-muted text-muted-foreground",
 };
 
-export default function Stakeholders() {
+function StakeholdersContent() {
   const { t } = useTranslation();
   const { data: projects } = useProjects();
   const { stakeholders, isLoading, createStakeholder, updateStakeholder, deleteStakeholder } = useStakeholders();

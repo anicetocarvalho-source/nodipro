@@ -23,7 +23,7 @@ import {
 
 const fmt = (v: number) => new Intl.NumberFormat("pt-AO").format(v);
 
-export default function Procurement() {
+function ProcurementContent() {
   const { data: projects } = useProjects();
   const {
     suppliers, loadingSuppliers, createSupplier, updateSupplier, deleteSupplier,

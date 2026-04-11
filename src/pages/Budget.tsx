@@ -96,7 +96,7 @@ const formatCurrency = (value: number) => {
   }).format(value) + " AOA";
 };
 
-export default function Budget() {
+function BudgetContent() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}

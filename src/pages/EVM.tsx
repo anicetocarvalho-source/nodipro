@@ -29,7 +29,7 @@ const fmt = (v: number) => {
 
 const fmtCurrency = (v: number) => `${fmt(v)} AOA`;
 
-export default function EVM() {
+function EVMContent() {
   const { evmData, portfolio, isLoading } = useEVMData();
 
   const chartData = useMemo(() =>
@@ -226,5 +226,13 @@ function MetricCard({ title, value, description, health, icon: Icon, tooltip }: 
       </TooltipTrigger>
       <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
     </Tooltip>
+  );
+}
+
+export default function EVM() {
+  return (
+    <FeatureGate feature="evm" featureLabel="Gestão de Valor Agregado (EVM)">
+      <EVMContent />
+    </FeatureGate>
   );
 }

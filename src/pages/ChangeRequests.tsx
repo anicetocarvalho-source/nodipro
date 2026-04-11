@@ -27,7 +27,7 @@ const statusConfig: Record<string, { icon: any; className: string }> = {
   implemented: { icon: CheckCircle, className: "bg-success/20 text-success" },
 };
 
-export default function ChangeRequests() {
+function ChangeRequestsContent() {
   const { t } = useTranslation();
   const { profile } = useAuthContext();
   const { data: projects } = useProjects();
