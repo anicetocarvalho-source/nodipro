@@ -734,6 +734,87 @@ export type Database = {
           },
         ]
       }
+      disbursement_tranches: {
+        Row: {
+          actual_date: string | null
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          condition_description: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          description: string | null
+          evidence_document_id: string | null
+          id: string
+          milestone_description: string | null
+          notes: string | null
+          planned_date: string | null
+          project_id: string
+          status: string
+          title: string
+          tranche_number: number
+          updated_at: string
+        }
+        Insert: {
+          actual_date?: string | null
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          condition_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          evidence_document_id?: string | null
+          id?: string
+          milestone_description?: string | null
+          notes?: string | null
+          planned_date?: string | null
+          project_id: string
+          status?: string
+          title: string
+          tranche_number?: number
+          updated_at?: string
+        }
+        Update: {
+          actual_date?: string | null
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          condition_description?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          description?: string | null
+          evidence_document_id?: string | null
+          id?: string
+          milestone_description?: string | null
+          notes?: string | null
+          planned_date?: string | null
+          project_id?: string
+          status?: string
+          title?: string
+          tranche_number?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disbursement_tranches_evidence_document_id_fkey"
+            columns: ["evidence_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disbursement_tranches_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_comments: {
         Row: {
           content: string
