@@ -609,7 +609,7 @@ export default function Budget() {
                 <SelectTrigger><SelectValue placeholder="Seleccionar aprovador" /></SelectTrigger>
                 <SelectContent>
                   {teamMembers.map((m) => (
-                    <SelectItem key={m.id} value={m.user_id || m.id}>
+                    <SelectItem key={m.id} value={m.id}>
                       {m.name} ({m.role || 'Membro'})
                     </SelectItem>
                   ))}
@@ -623,7 +623,7 @@ export default function Budget() {
               disabled={!selectedApproverId || submitForApproval.isPending}
               onClick={() => {
                 if (!submitApprovalEntry) return;
-                const member = teamMembers.find(m => (m.user_id || m.id) === selectedApproverId);
+                const member = teamMembers.find(m => m.id === selectedApproverId);
                 submitForApproval.mutate({
                   budgetEntryId: submitApprovalEntry.id,
                   level: approvalLevel,

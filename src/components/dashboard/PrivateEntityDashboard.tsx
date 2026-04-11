@@ -9,6 +9,8 @@ import {
   Building2,
   BarChart3,
   ExternalLink,
+  Heart,
+  Banknote,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
