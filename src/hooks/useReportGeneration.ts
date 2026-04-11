@@ -46,7 +46,7 @@ export function useReportGeneration() {
       const projectIds = allProjects.map(p => p.id);
 
       // Now fetch related data filtered by project IDs
-      const [tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes, tranchesRes] = await Promise.all([
+      const [tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes, tranchesRes, beneficiariesRes, lessonsRes, fundingRes] = await Promise.all([
         projectIds.length > 0
           ? supabase.from("tasks").select("*").in("project_id", projectIds)
           : Promise.resolve({ data: [], error: null }),
@@ -64,6 +64,13 @@ export function useReportGeneration() {
         projectIds.length > 0
           ? supabase.from("disbursement_tranches").select("*").in("project_id", projectIds)
           : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0
+          ? supabase.from("beneficiaries").select("*").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0
+          ? supabase.from("lessons_learned").select("*").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase.from("funding_agreements").select("*").eq("organization_id", orgId),
       ]);
 
       // Data is already filtered by project IDs
@@ -72,6 +79,9 @@ export function useReportGeneration() {
       const allBudget = budgetRes.data || [];
       const allDocs = docsRes.data || [];
       const allTranches = tranchesRes.data || [];
+      const allBeneficiaries = beneficiariesRes.data || [];
+      const allLessons = lessonsRes.data || [];
+      const allFunding = fundingRes.data || [];
       const portfolios = portfoliosRes.data || [];
       const programs = programsRes.data || [];
 
