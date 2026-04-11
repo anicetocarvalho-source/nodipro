@@ -15,6 +15,12 @@ export interface DashboardStats {
   completedTasks: number;
   inProgressTasks: number;
   overdueTasks: number;
+  totalBeneficiaries: number;
+  directBeneficiaries: number;
+  indirectBeneficiaries: number;
+  disbursementRate: number;
+  totalDisbursed: number;
+  totalFundingValue: number;
 }
 
 export interface ProjectWithDetails {
