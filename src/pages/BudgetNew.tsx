@@ -158,6 +158,7 @@ export default function Budget() {
   const { data: monthlyData = {} } = useBudgetEntriesByMonth(selectedProjectId);
   const { data: phaseData = [] } = useBudgetEntriesByPhase(selectedProjectId);
   const { data: alerts = [] } = useBudgetAlerts(selectedProjectId);
+  const { pendingApprovals, myPendingApprovals, submitForApproval, processApproval } = useBudgetApprovals(selectedProjectId);
   
   const deleteEntry = useDeleteBudgetEntry();
   const updateStatus = useUpdateBudgetEntryStatus();
