@@ -33,6 +33,7 @@ export interface PlanFeatures {
   api_access: boolean;
   stakeholders: boolean;
   briefings: boolean;
+  disbursements: boolean;
 }
 
 export interface OrganizationSubscription {

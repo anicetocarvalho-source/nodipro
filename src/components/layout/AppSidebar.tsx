@@ -5,7 +5,7 @@ import {
   LayoutDashboard, FolderKanban, Briefcase, BarChart3, AlertTriangle, Users, FileText,
   MessageSquare, Wallet, ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Settings,
   HelpCircle, LogOut, ShieldCheck, Layers, Building2, Grid3X3, Gauge, ShoppingBag,
-  Users2, FileEdit, User, Heart,
+  Users2, FileEdit, User, Heart, Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,7 @@ export function AppSidebar() {
         { icon: FileText, labelKey: "nav.documents", path: "/documents" },
         { icon: MessageSquare, labelKey: "nav.communication", path: "/communication" },
         { icon: Wallet, labelKey: "nav.budget", path: "/budget", requiresPermission: "canViewBudget" },
+        { icon: Banknote, labelKey: "nav.disbursements", path: "/disbursements", requiresPermission: "canViewBudget" },
         { icon: ClipboardList, labelKey: "nav.reports", path: "/reports", requiresPermission: "canAccessReports" },
       ],
     },

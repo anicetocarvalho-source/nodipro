@@ -1,10 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Printer, FileSpreadsheet, AlertTriangle, Building2 } from "lucide-react";
+import { Printer, FileSpreadsheet, AlertTriangle, Building2, Download } from "lucide-react";
 import { ReportData } from "@/hooks/useReportGeneration";
 import { exportToCSV, printReport } from "@/lib/exportUtils";
+import { exportToExcel, exportDonorReport } from "@/lib/excelExport";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface ReportPreviewModalProps {
   reportData: ReportData | null;
@@ -17,6 +19,12 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
   const handlePrint = () => printReport();
   const handleExportCSV = () => {
     exportToCSV(reportData, `relatorio-${reportData.type}-${Date.now()}`);
+  };
+  const handleExportExcel = () => {
+    exportToExcel(reportData, `relatorio-${reportData.type}-${Date.now()}`);
+  };
+  const handleDonorExport = (format: "worldbank" | "undp" | "generic") => {
+    exportDonorReport(reportData, `relatorio-doador-${format}-${Date.now()}`, format);
   };
 
   return (
@@ -52,10 +60,34 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg">{reportData.title}</DialogTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Excel (CSV)
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportExcel}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Excel (.xlsx)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportCSV}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleDonorExport("worldbank")}>
+                      Formato Banco Mundial
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDonorExport("undp")}>
+                      Formato PNUD
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDonorExport("generic")}>
+                      Formato Genérico Doador
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={handlePrint}>
                   <Printer className="h-4 w-4 mr-2" />
                   Imprimir / PDF
