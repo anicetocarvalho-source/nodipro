@@ -1,105 +1,82 @@
 
 
-## Auditoria Completa de Privilégios — Gaps Identificados
+## Correcção Completa dos Fluxos de Utilizador
 
-Após análise de todas as rotas, páginas e componentes, aqui está tudo o que pode ser ajustado:
+### Problemas Identificados
 
----
+**1. CRÍTICO — SuperAdmin acessível a Admin de organização**
+A rota `/superadmin` usa `AdminPageWrapper` que verifica `requiredRole="admin"`. Um admin de organização regular também passa este check. Deveria verificar `isPlatformAdmin`.
 
-### 1. Rotas sem protecção de role (acesso directo por URL)
+**2. CRÍTICO — Onboarding: novo utilizador fica com role `member`**
+O trigger `handle_new_user` atribui sempre `role = 'member'` em `user_roles`. Quando o utilizador cria uma organização no onboarding (e torna-se `owner` em `organization_members`), o seu `user_roles` permanece `member`. Resultado: o owner não tem acesso a funcionalidades de admin (Budget, Reports, Portfolio, etc.) na sua própria organização.
 
-Páginas que usam `ProtectedPageWrapper` (qualquer utilizador autenticado) mas deveriam ser restritas:
+**Correcção**: Após criar a organização no onboarding, actualizar o `user_roles` para `admin` via uma nova função RPC `SECURITY DEFINER`.
 
-| Rota | Wrapper actual | Deveria ser | Problema |
-|------|---------------|-------------|----------|
-| `/portfolio` | ProtectedPageWrapper | ManagerPageWrapper | Member acede por URL directamente |
-| `/methodologies` | ProtectedPageWrapper | ManagerPageWrapper | Member acede por URL directamente |
-| `/programs/:id` | ProtectedPageWrapper | ManagerPageWrapper | Detalhe de programa acessível a member |
+**3. IMPORTANTE — Observer vê menus que levam a "Acesso Restrito"**
+Na BD, o observer tem `budget.view`, `report.view`, `portfolio.view`. No sidebar, os menus Governance, EVM, Procurement, Change Requests usam `requiresPermission: "canViewBudget"`. O observer vê estes menus mas as rotas usam `ManagerPageWrapper` → vê página de erro "Acesso Restrito".
 
-O menu sidebar esconde estes itens, mas **nada impede o acesso directo por URL**.
+**Correcção**: Remover `budget.view`, `report.view`, `portfolio.view` do role `observer` na BD. O observer deve apenas observar conteúdo operacional (projectos, tarefas, documentos, equipa).
 
----
+**4. MENOR — Auth page não tem fluxo de registo**
+A página `/auth` só tem login. Não há formulário de registo (signUp está implementado no hook mas não exposto na UI). Novos utilizadores não conseguem criar conta.
 
-### 2. Páginas sem verificação de permissões em acções
+**Correcção**: Adicionar tab/toggle de registo na página Auth com campos email, password, nome completo.
 
-| Página | Problema | Correcção |
-|--------|----------|-----------|
-| **Team** | Botão "Adicionar Membro" e "Remover" visíveis a todos — não usa `usePermissions` | Esconder acções de gestão para member/observer |
-| **Documents** | Botão "Novo Documento", eliminar e aprovar workflow visíveis a todos — não usa `usePermissions` | Restringir upload/delete/approve por role |
-| **Stakeholders** | Provavelmente sem restrições de criação/edição | Verificar e restringir |
-| **LogFrame** | Sem restrição de edição — member pode alterar indicadores | Restringir edição a manager+ |
-| **KPI** | Sem restrição de criação/edição de KPIs | Restringir gestão a manager+ |
-| **Communication** | Sem restrições — ok para todos | Sem alteração necessária |
+**5. MENOR — AlertDialog ref warning no Procurement**
+Console warning: "Function components cannot be given refs" no `AlertDialogContent`. É um warning da versão do Radix, não bloqueia funcionalidade.
 
 ---
 
-### 3. Dashboard — informação sensível exposta
+### Plano de Implementação
 
-O dashboard mostra a todos:
-- Orçamento total e gastos
-- Métricas financeiras (execução orçamental)
-
-**Member/Observer não deveria ver dados financeiros** no dashboard (alinhado com a restrição do menu Budget).
-
----
-
-### 4. Sprints — rota sem protecção
-
-| Rota | Estado | Nota |
-|------|--------|------|
-| `/sprints` | ProtectedPageWrapper | Avaliar se member pode gerir sprints ou apenas ver |
-
----
-
-### 5. Acções em ProjectDetail
-
-| Acção | Estado actual | Correcção |
-|-------|---------------|-----------|
-| Eliminar projecto | Sem verificação `canDeleteProject` | Adicionar guard |
-| Editar projecto | Sem verificação `canEditProject` | Adicionar guard |
-| Gerar relatório | Visível a todos | Restringir a manager+ |
-
----
-
-### 6. SuperAdmin — protecção insuficiente
-
-A rota `/superadmin` usa `ProtectedPageWrapper` em vez de verificar `isPlatformAdmin`. Qualquer utilizador autenticado pode aceder por URL.
-
----
-
-### Resumo de prioridades
-
-```text
-CRÍTICO (segurança):
-├── Portfolio/Methodologies/Programs — proteger rotas com ManagerPageWrapper
-├── SuperAdmin — adicionar verificação isPlatformAdmin na rota
-└── Team — esconder "Adicionar/Remover" para member
-
-IMPORTANTE (consistência):
-├── Documents — restringir upload/delete/approve por role
-├── Dashboard — esconder métricas financeiras para member
-├── ProjectDetail — guards em editar/eliminar/relatório
-├── LogFrame/KPI — restringir edição a manager+
-└── Stakeholders — verificar acções
-
-MENOR (polish):
-└── Sprints — definir nível de acesso para member
+#### Passo 1: Migração BD — Limpar permissões do Observer
+```sql
+-- Remover permissões de gestão do observer
+DELETE FROM role_permissions 
+WHERE role = 'observer' 
+AND permission_id IN (
+  SELECT id FROM permissions WHERE name IN ('budget.view', 'report.view', 'portfolio.view')
+);
 ```
 
-### Plano de implementação
+#### Passo 2: Migração BD — Função para promover owner a admin
+```sql
+CREATE OR REPLACE FUNCTION public.promote_org_owner_to_admin(_user_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.user_roles SET role = 'admin' WHERE user_id = _user_id;
+END;
+$$;
+```
 
-**Ficheiros a alterar:**
+#### Passo 3: SuperAdmin route — verificar isPlatformAdmin
+`src/App.tsx`: Criar novo wrapper `PlatformAdminPageWrapper` que verifica `isPlatformAdmin` em vez de `requiredRole="admin"`.
+
+#### Passo 4: Onboarding — promover user após criar org
+`src/components/onboarding/OnboardingWizard.tsx`: Após `createOrganization` com sucesso, chamar `supabase.rpc('promote_org_owner_to_admin', { _user_id: user.id })`.
+
+#### Passo 5: Auth — adicionar formulário de registo
+`src/pages/Auth.tsx`: Adicionar estado `isSignUp` com toggle entre login e registo. Formulário de registo com: nome completo, email, password, confirmação de password.
+
+---
+
+### Ficheiros alterados
 
 | Ficheiro | Alteração |
 |----------|-----------|
-| `src/App.tsx` | Mudar Portfolio, Methodologies, Programs para `ManagerPageWrapper`; proteger SuperAdmin |
-| `src/pages/Team.tsx` | Importar `usePermissions`, esconder botões de gestão para member |
-| `src/pages/Documents.tsx` | Importar `usePermissions`, restringir criação/eliminação/aprovação |
-| `src/pages/ProjectDetail.tsx` | Adicionar guards em editar/eliminar/gerar relatório |
-| `src/pages/LogFrame.tsx` | Restringir edição de indicadores a manager+ |
-| `src/pages/KPI.tsx` | Restringir gestão de KPIs a manager+ |
-| `src/pages/Stakeholders.tsx` | Restringir criação/edição a manager+ |
-| `src/components/dashboard/*` | Esconder cards financeiros para member/observer |
+| Migração SQL | Limpar permissões observer + criar função `promote_org_owner_to_admin` |
+| `src/App.tsx` | Novo `PlatformAdminPageWrapper` para `/superadmin` |
+| `src/components/onboarding/OnboardingWizard.tsx` | Chamar RPC para promover owner a admin |
+| `src/pages/Auth.tsx` | Adicionar formulário de registo |
 
-Nenhuma alteração de base de dados necessária — tudo é enforcement na UI (a BD já tem RLS correcto).
+### Resultado
+
+- **SuperAdmin**: acessível apenas a platform admins (tabela `platform_admins`)
+- **Onboarding**: novo utilizador que cria organização recebe role `admin` automaticamente
+- **Observer**: vê apenas menus operacionais, sem links mortos para páginas restritas
+- **Auth**: novos utilizadores podem registar-se directamente
 
