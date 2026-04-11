@@ -4,7 +4,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, ArrowRight, FolderKanban, BarChart3, Users, Shield, KeyRound } from "lucide-react";
+import { Loader2, Mail, Lock, ArrowRight, FolderKanban, BarChart3, Users, Shield, KeyRound, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -33,7 +33,32 @@ const loginSchema = z.object({
     .min(6, "Palavra-passe deve ter pelo menos 6 caracteres"),
 });
 
+const signUpSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(1, "Nome completo é obrigatório")
+    .min(3, "Nome deve ter pelo menos 3 caracteres"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Email é obrigatório")
+    .email("Email inválido")
+    .max(255, "Email muito longo"),
+  password: z
+    .string()
+    .min(1, "Palavra-passe é obrigatória")
+    .min(6, "Palavra-passe deve ter pelo menos 6 caracteres"),
+  confirmPassword: z
+    .string()
+    .min(1, "Confirmação é obrigatória"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As palavras-passe não coincidem",
+  path: ["confirmPassword"],
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
+type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const features = [
   {
@@ -119,10 +144,11 @@ const scaleIn = {
 
 export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
-  const { user, signIn } = useAuthContext();
+  const { user, signIn, signUp } = useAuthContext();
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -140,12 +166,31 @@ export default function Auth() {
     },
   });
 
+  const signUpForm = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      fullName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
   const onLogin = async (values: LoginFormValues) => {
     setIsLoading(true);
     const { error } = await signIn(values.email, values.password);
     setIsLoading(false);
     if (!error) {
       navigate("/dashboard", { replace: true });
+    }
+  };
+
+  const onSignUp = async (values: SignUpFormValues) => {
+    setIsLoading(true);
+    const { error } = await signUp(values.email, values.password, values.fullName);
+    setIsLoading(false);
+    if (!error) {
+      setIsSignUp(false);
     }
   };
 
