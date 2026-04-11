@@ -602,12 +602,14 @@ function EntriesTable({
   entries, 
   onEdit, 
   onDelete,
-  onStatusChange
+  onStatusChange,
+  onSubmitForApproval
 }: { 
   entries: BudgetEntry[];
   onEdit: (entry: BudgetEntry) => void;
   onDelete: (entry: BudgetEntry) => void;
   onStatusChange: (entryId: string, status: string) => void;
+  onSubmitForApproval?: (entry: BudgetEntry) => void;
 }) {
   if (entries.length === 0) {
     return (
