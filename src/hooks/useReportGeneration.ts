@@ -98,13 +98,13 @@ export function useReportGeneration() {
           data = generateTeamReport(allProjects, allTasks, allTeam, organization.name);
           break;
         case "financial":
-          data = generateFinancialReport(allProjects, allBudget, organization.name);
+          data = generateFinancialReport(allProjects, allBudget, organization.name, allFunding);
           break;
         case "risk":
           data = generateRiskReport(allProjects, allTasks, allBudget, organization.name, allDocs);
           break;
         case "kpi":
-          data = generateKPIReport(allProjects, allTasks, allBudget, allTeam, organization.name, allDocs);
+          data = generateKPIReport(allProjects, allTasks, allBudget, allTeam, organization.name, allDocs, allBeneficiaries);
           break;
         case "performance":
           data = generatePerformanceReport(allProjects, allTasks, allBudget, organization.name);
