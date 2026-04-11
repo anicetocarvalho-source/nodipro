@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { useIntegrityNotifications } from "@/hooks/useIntegrityNotifications";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface TopBarProps {
   onMobileMenuToggle?: () => void;
@@ -59,8 +60,12 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const { profile, role, signOut } = useAuthContext();
   const navigate = useNavigate();
-  const { notifications, unreadCount, markAsRead, markAllAsRead, clearAll } = useIntegrityNotifications();
+  const integrity = useIntegrityNotifications();
+  const dbNotifications = useNotifications();
   const { isPlatformAdmin } = usePlatformAdmin();
+
+  // Combine both notification sources for the bell
+  const combinedUnread = integrity.unreadCount + dbNotifications.unreadCount;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -93,7 +98,17 @@ export function TopBar({ onMobileMenuToggle }: TopBarProps) {
 
       <div className="flex items-center gap-2 lg:gap-4">
         <ThemeToggle />
-        {!isPlatformAdmin && <NotificationBell notifications={notifications} unreadCount={unreadCount} onMarkAsRead={markAsRead} onMarkAllAsRead={markAllAsRead} onClearAll={clearAll} />}
+        {!isPlatformAdmin && (
+          <NotificationBell
+            notifications={integrity.notifications}
+            unreadCount={combinedUnread}
+            onMarkAsRead={integrity.markAsRead}
+            onMarkAllAsRead={() => { integrity.markAllAsRead(); dbNotifications.markAllAsRead(); }}
+            onClearAll={() => { integrity.clearAll(); dbNotifications.clearAll(); }}
+            dbNotifications={dbNotifications.notifications}
+            onDbMarkAsRead={dbNotifications.markAsRead}
+          />
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
