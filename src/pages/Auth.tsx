@@ -388,90 +388,217 @@ export default function Auth() {
                     className="text-2xl font-bold text-foreground"
                     variants={itemVariants}
                   >
-                    Bem-vindo de volta
+                    {isSignUp ? 'Criar Conta' : 'Bem-vindo de volta'}
                   </motion.h2>
                   <motion.p 
                     className="text-muted-foreground mt-2"
                     variants={itemVariants}
                   >
-                    Introduza as suas credenciais para aceder à plataforma
+                    {isSignUp 
+                      ? 'Preencha os dados para criar a sua conta'
+                      : 'Introduza as suas credenciais para aceder à plataforma'}
                   </motion.p>
                 </motion.div>
 
-                <Form {...loginForm}>
-                  <motion.form 
-                    onSubmit={loginForm.handleSubmit(onLogin)} 
-                    className="space-y-5"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    <motion.div variants={itemVariants}>
-                      <FormField
-                        control={loginForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground font-medium">Email</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  type="email"
-                                  placeholder="seu@email.com"
-                                  className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </motion.div>
+                {isSignUp ? (
+                  <Form {...signUpForm}>
+                    <motion.form 
+                      onSubmit={signUpForm.handleSubmit(onSignUp)} 
+                      className="space-y-4"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <motion.div variants={itemVariants}>
+                        <FormField
+                          control={signUpForm.control}
+                          name="fullName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground font-medium">Nome Completo</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="text"
+                                    placeholder="Seu nome completo"
+                                    className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
 
-                    <motion.div variants={itemVariants}>
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground font-medium">Palavra-passe</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                  type="password"
-                                  placeholder="••••••••"
-                                  className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
-                                  {...field}
-                                />
-                              </div>
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </motion.div>
+                      <motion.div variants={itemVariants}>
+                        <FormField
+                          control={signUpForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground font-medium">Email</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="email"
+                                    placeholder="seu@email.com"
+                                    className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
 
-                    <motion.div variants={itemVariants}>
-                      <Button 
-                        type="submit" 
-                        className="w-full h-12 text-base font-semibold mt-2" 
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        ) : (
-                          <>
-                            Entrar na Plataforma
-                            <ArrowRight className="ml-2 h-5 w-5" />
-                          </>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </motion.form>
-                </Form>
+                      <motion.div variants={itemVariants}>
+                        <FormField
+                          control={signUpForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground font-medium">Palavra-passe</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
+
+                      <motion.div variants={itemVariants}>
+                        <FormField
+                          control={signUpForm.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground font-medium">Confirmar Palavra-passe</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
+
+                      <motion.div variants={itemVariants}>
+                        <Button 
+                          type="submit" 
+                          className="w-full h-12 text-base font-semibold mt-2" 
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          ) : (
+                            <>
+                              Criar Conta
+                              <ArrowRight className="ml-2 h-5 w-5" />
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
+                    </motion.form>
+                  </Form>
+                ) : (
+                  <Form {...loginForm}>
+                    <motion.form 
+                      onSubmit={loginForm.handleSubmit(onLogin)} 
+                      className="space-y-5"
+                      variants={containerVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <motion.div variants={itemVariants}>
+                        <FormField
+                          control={loginForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground font-medium">Email</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="email"
+                                    placeholder="seu@email.com"
+                                    className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
+
+                      <motion.div variants={itemVariants}>
+                        <FormField
+                          control={loginForm.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-foreground font-medium">Palavra-passe</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                  <Input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    className="pl-11 h-12 bg-muted/50 border-border/50 focus:bg-background transition-colors"
+                                    {...field}
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </motion.div>
+
+                      <motion.div variants={itemVariants}>
+                        <Button 
+                          type="submit" 
+                          className="w-full h-12 text-base font-semibold mt-2" 
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          ) : (
+                            <>
+                              Entrar na Plataforma
+                              <ArrowRight className="ml-2 h-5 w-5" />
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
+                    </motion.form>
+                  </Form>
+                );
 
                 {/* Quick Access - Demo Users */}
                 <motion.div
