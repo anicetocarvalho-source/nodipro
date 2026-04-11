@@ -36,10 +36,23 @@ export function useSubscription() {
 
     if (data) {
       const sub = data as any;
-      setSubscription({
+      const subData: OrganizationSubscription = {
         ...sub,
         plan: sub.subscription_plans as SubscriptionPlan,
-      });
+      };
+      
+      // Frontend fallback: check if trial has expired
+      if (subData.status === 'trial' && subData.trial_ends_at && new Date(subData.trial_ends_at) < new Date()) {
+        subData.status = 'expired';
+        // Also update in DB
+        supabase
+          .from('organization_subscriptions')
+          .update({ status: 'expired', updated_at: new Date().toISOString() })
+          .eq('id', subData.id)
+          .then();
+      }
+      
+      setSubscription(subData);
     } else {
       setSubscription(null);
     }
