@@ -764,3 +764,11 @@ function ReportsContent() {
     </div>
   );
 }
+
+export default function Reports() {
+  return (
+    <FeatureGate feature="reports" featureLabel="Relatórios">
+      <ReportsContent />
+    </FeatureGate>
+  );
+}

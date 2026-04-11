@@ -185,3 +185,11 @@ function CRFormModal({ open, onClose, item, projects, userName, onSubmit }: any)
     </Dialog>
   );
 }
+
+export default function ChangeRequests() {
+  return (
+    <FeatureGate feature="change_requests" featureLabel="Pedidos de Alteração">
+      <ChangeRequestsContent />
+    </FeatureGate>
+  );
+}

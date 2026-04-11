@@ -248,3 +248,11 @@ function MeasurementModal({ open, onClose, kpi, onSubmit }: any) {
     </Dialog>
   );
 }
+
+export default function KPI() {
+  return (
+    <FeatureGate feature="kpis" featureLabel="KPIs e Métricas">
+      <KPIContent />
+    </FeatureGate>
+  );
+}

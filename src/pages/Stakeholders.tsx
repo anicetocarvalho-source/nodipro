@@ -234,3 +234,11 @@ function StakeholderFormModal({ open, onClose, item, projects, onSubmit }: any) 
     </Dialog>
   );
 }
+
+export default function Stakeholders() {
+  return (
+    <FeatureGate feature="stakeholders" featureLabel="Stakeholders">
+      <StakeholdersContent />
+    </FeatureGate>
+  );
+}

@@ -499,3 +499,11 @@ function ContractFormModal({ open, onClose, item, projects, suppliers, plans, on
     </Dialog>
   );
 }
+
+export default function Procurement() {
+  return (
+    <FeatureGate feature="procurement" featureLabel="Aquisições">
+      <ProcurementContent />
+    </FeatureGate>
+  );
+}

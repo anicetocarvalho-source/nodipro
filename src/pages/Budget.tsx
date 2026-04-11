@@ -264,3 +264,11 @@ function BudgetContent() {
     </div>
   );
 }
+
+export default function Budget() {
+  return (
+    <FeatureGate feature="budget_advanced" featureLabel="Orçamento Avançado">
+      <BudgetContent />
+    </FeatureGate>
+  );
+}
