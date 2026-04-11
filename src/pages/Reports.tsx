@@ -37,6 +37,9 @@ const reportTemplates = [
   { id: "6", name: "Relatório de KPIs", type: "kpi" as ReportType, format: "Excel", description: "Indicadores-chave de desempenho da organização." },
   { id: "7", name: "Análise de Desempenho e Impacto de Atrasos", type: "performance" as ReportType, format: "PDF", description: "Desvio de cronograma, taxa de conclusão por projecto e impacto operacional." },
   { id: "8", name: "Relatório de Desembolsos", type: "disbursement" as ReportType, format: "PDF", description: "Análise de pagamentos, aprovações pendentes e fluxo financeiro por projecto." },
+  { id: "9", name: "Relatório para Doador — Banco Mundial", type: "financial" as ReportType, format: "Excel", description: "Formato padrão Banco Mundial: progresso, execução financeira, aquisições, salvaguardas.", donorFormat: "worldbank" as const },
+  { id: "10", name: "Relatório para Doador — PNUD", type: "financial" as ReportType, format: "Excel", description: "Formato PNUD: resultados, indicadores, lições aprendidas, sustentabilidade.", donorFormat: "undp" as const },
+  { id: "11", name: "Relatório Genérico para Doador", type: "financial" as ReportType, format: "Excel", description: "Template genérico para doadores internacionais com secções standard.", donorFormat: "generic" as const },
 ];
 
 const typeConfig: Record<string, { label: string; className: string }> = {
