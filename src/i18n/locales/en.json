@@ -97,7 +97,8 @@
     "disbursements": "Disbursements",
     "lessonsLearned": "Lessons Learned",
     "annualWorkPlan": "Annual Work Plan",
-    "auditLogs": "Audit Logs"
+    "auditLogs": "Audit Logs",
+    "fundingAgreements": "Funding Agreements"
   },
   "auth": {
     "welcome": "Welcome back",
