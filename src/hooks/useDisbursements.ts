@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
 
 export interface DisbursementTranche {
@@ -25,15 +26,27 @@ export interface DisbursementTranche {
 }
 
 export function useDisbursements(projectId?: string) {
+  const { organization } = useOrganization();
   const queryClient = useQueryClient();
-  const queryKey = ["disbursement_tranches", projectId];
+  const orgId = organization?.id;
+  const queryKey = ["disbursement_tranches", orgId, projectId];
 
   const { data: tranches = [], isLoading } = useQuery({
     queryKey,
     queryFn: async () => {
+      if (!orgId) return [];
+      // Get org project ids for scoping
+      const { data: orgProjects } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("organization_id", orgId);
+      const orgProjectIds = orgProjects?.map(p => p.id) || [];
+      if (orgProjectIds.length === 0) return [];
+
       let query = supabase
         .from("disbursement_tranches")
         .select("*")
+        .in("project_id", orgProjectIds)
         .order("tranche_number", { ascending: true });
 
       if (projectId) {
@@ -44,6 +57,7 @@ export function useDisbursements(projectId?: string) {
       if (error) throw error;
       return data as DisbursementTranche[];
     },
+    enabled: !!orgId,
   });
 
   const createTranche = useMutation({
