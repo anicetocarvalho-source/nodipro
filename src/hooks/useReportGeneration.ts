@@ -46,7 +46,7 @@ export function useReportGeneration() {
       const projectIds = allProjects.map(p => p.id);
 
       // Now fetch related data filtered by project IDs
-      const [tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes, tranchesRes] = await Promise.all([
+      const [tasksRes, teamRes, budgetRes, portfoliosRes, programsRes, docsRes, tranchesRes, beneficiariesRes, lessonsRes, fundingRes] = await Promise.all([
         projectIds.length > 0
           ? supabase.from("tasks").select("*").in("project_id", projectIds)
           : Promise.resolve({ data: [], error: null }),
@@ -64,6 +64,13 @@ export function useReportGeneration() {
         projectIds.length > 0
           ? supabase.from("disbursement_tranches").select("*").in("project_id", projectIds)
           : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0
+          ? supabase.from("beneficiaries").select("*").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        projectIds.length > 0
+          ? supabase.from("lessons_learned").select("*").in("project_id", projectIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase.from("funding_agreements").select("*").eq("organization_id", orgId),
       ]);
 
       // Data is already filtered by project IDs
@@ -72,6 +79,9 @@ export function useReportGeneration() {
       const allBudget = budgetRes.data || [];
       const allDocs = docsRes.data || [];
       const allTranches = tranchesRes.data || [];
+      const allBeneficiaries = beneficiariesRes.data || [];
+      const allLessons = lessonsRes.data || [];
+      const allFunding = fundingRes.data || [];
       const portfolios = portfoliosRes.data || [];
       const programs = programsRes.data || [];
 
@@ -88,13 +98,13 @@ export function useReportGeneration() {
           data = generateTeamReport(allProjects, allTasks, allTeam, organization.name);
           break;
         case "financial":
-          data = generateFinancialReport(allProjects, allBudget, organization.name);
+          data = generateFinancialReport(allProjects, allBudget, organization.name, allFunding);
           break;
         case "risk":
           data = generateRiskReport(allProjects, allTasks, allBudget, organization.name, allDocs);
           break;
         case "kpi":
-          data = generateKPIReport(allProjects, allTasks, allBudget, allTeam, organization.name, allDocs);
+          data = generateKPIReport(allProjects, allTasks, allBudget, allTeam, organization.name, allDocs, allBeneficiaries);
           break;
         case "performance":
           data = generatePerformanceReport(allProjects, allTasks, allBudget, organization.name);

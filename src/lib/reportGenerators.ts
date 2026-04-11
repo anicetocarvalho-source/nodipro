@@ -204,7 +204,7 @@ export function generateTeamReport(projects: any[], tasks: any[], team: any[], o
 }
 
 // ===== FINANCIAL =====
-export function generateFinancialReport(projects: any[], budget: any[], orgName: string): ReportData {
+export function generateFinancialReport(projects: any[], budget: any[], orgName: string, fundingAgreements: any[] = []): ReportData {
   const totalPlanned = budget.reduce((s, b) => s + b.planned_amount, 0);
   const totalActual = budget.reduce((s, b) => s + b.actual_amount, 0);
   const variance = totalPlanned - totalActual;
@@ -248,6 +248,14 @@ export function generateFinancialReport(projects: any[], budget: any[], orgName:
         rows: Object.entries(byProject).sort((a, b) => (b[1] as any).planned - (a[1] as any).planned)
           .map(([name, d]: [string, any]) => [name, d.entries, formatCurrency(d.planned), formatCurrency(d.actual), formatCurrency(Math.abs(d.planned - d.actual)), d.planned > 0 ? `${Math.round((d.actual / d.planned) * 100)}%` : 'N/A']),
       },
+      ...(fundingAgreements.length > 0 ? [{
+        title: "Acordos de Financiamento",
+        headers: ["Título", "Tipo", "Estado", "Valor Total", "Desembolsado", "% Desembolso"],
+        rows: fundingAgreements.map((a: any) => {
+          const rate = a.total_amount > 0 ? Math.round((a.disbursed_amount / a.total_amount) * 100) : 0;
+          return [a.title, a.agreement_type, a.status, formatCurrency(a.total_amount), formatCurrency(a.disbursed_amount), `${rate}%`];
+        }),
+      }] : []),
     ],
   };
 }
@@ -304,7 +312,7 @@ export function generateRiskReport(projects: any[], tasks: any[], budget: any[],
 
 // ===== KPIs =====
 export function generateKPIReport(
-  projects: any[], tasks: any[], budget: any[], team: any[], orgName: string, documents: any[] = []
+  projects: any[], tasks: any[], budget: any[], team: any[], orgName: string, documents: any[] = [], beneficiaries: any[] = []
 ): ReportData {
   const totalP = projects.length;
   const activeP = projects.filter(p => p.status === 'active').length;
@@ -367,6 +375,16 @@ export function generateKPIReport(
           ["Em Rascunho", documents.filter(d => d.status === 'draft').length, '0', documents.filter(d => d.status === 'draft').length === 0 ? '✅' : '⚠️ A completar'],
         ],
       },
+      ...(beneficiaries.length > 0 ? [{
+        title: "KPIs de Impacto Social",
+        headers: ["Indicador", "Valor", "Meta", "Estado"],
+        rows: [
+          ["Total Beneficiários", beneficiaries.reduce((s: number, b: any) => s + (b.quantity || 0), 0), '-', '-'],
+          ["Directos", beneficiaries.filter((b: any) => b.beneficiary_type === 'direct').reduce((s: number, b: any) => s + (b.quantity || 0), 0), '-', '-'],
+          ["Indirectos", beneficiaries.filter((b: any) => b.beneficiary_type === 'indirect').reduce((s: number, b: any) => s + (b.quantity || 0), 0), '-', '-'],
+          ["Registos Activos", beneficiaries.filter((b: any) => b.status === 'active').length, '-', beneficiaries.filter((b: any) => b.status === 'active').length > 0 ? '✅' : '-'],
+        ],
+      }] : []),
     ],
   };
 }

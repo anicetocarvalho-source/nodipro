@@ -60,8 +60,25 @@ export function useFundingAgreements() {
         funderMap = new Map(funders?.map(f => [f.id, f.name]) || []);
       }
 
+      // Calculate disbursed_amount from real tranches for project-linked agreements
+      const projectIdsWithAgreements = [...new Set((data || []).map(a => a.project_id).filter(Boolean))] as string[];
+      let trancheMap = new Map<string, number>();
+      if (projectIdsWithAgreements.length > 0) {
+        const { data: tranches } = await supabase
+          .from("disbursement_tranches")
+          .select("project_id, amount, status")
+          .in("project_id", projectIdsWithAgreements)
+          .eq("status", "disbursed");
+        if (tranches) {
+          for (const t of tranches) {
+            trancheMap.set(t.project_id, (trancheMap.get(t.project_id) || 0) + Number(t.amount));
+          }
+        }
+      }
+
       return (data || []).map(a => ({
         ...a,
+        disbursed_amount: a.project_id ? (trancheMap.get(a.project_id) ?? a.disbursed_amount) : a.disbursed_amount,
         project_name: a.project_id ? projectMap.get(a.project_id) || null : null,
         funder_name: a.funder_id ? funderMap.get(a.funder_id) || null : null,
       })) as FundingAgreement[];

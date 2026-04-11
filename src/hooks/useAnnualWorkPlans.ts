@@ -145,7 +145,17 @@ export function useAWPActivities(workPlanId: string | undefined) {
         .order("quarter")
         .order("position");
       if (error) throw error;
-      return (data || []) as AWPActivity[];
+      const activities = (data || []) as AWPActivity[];
+
+      // Auto-update parent work plan totals
+      const totalBudget = activities.reduce((s, a) => s + a.planned_budget, 0);
+      const totalExecuted = activities.reduce((s, a) => s + a.executed_budget, 0);
+      await supabase
+        .from("annual_work_plans")
+        .update({ total_budget: totalBudget, total_executed: totalExecuted })
+        .eq("id", workPlanId);
+
+      return activities;
     },
     enabled: !!workPlanId,
   });

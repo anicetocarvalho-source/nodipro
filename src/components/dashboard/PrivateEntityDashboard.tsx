@@ -9,6 +9,8 @@ import {
   Building2,
   BarChart3,
   ExternalLink,
+  Heart,
+  Banknote,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,6 +124,22 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
       icon: DollarSign,
       href: "/budget",
     }] : []),
+    {
+      title: "Beneficiários",
+      value: formatCompactNumber(stats.totalBeneficiaries || 0),
+      change: `${stats.directBeneficiaries || 0} directos`,
+      changeType: "positive" as const,
+      icon: Heart,
+      href: "/beneficiaries",
+    },
+    ...(canViewBudget ? [{
+      title: "Taxa Desembolso",
+      value: `${stats.disbursementRate || 0}%`,
+      change: formatCurrency(stats.totalFundingValue || 0),
+      changeType: (stats.disbursementRate || 0) >= 50 ? "positive" as const : "neutral" as const,
+      icon: Banknote,
+      href: "/disbursements",
+    }] : []),
   ];
 
   return (
@@ -145,7 +163,7 @@ export function PrivateEntityDashboard({ userName }: PrivateEntityDashboardProps
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {dynamicStats.map((stat) => (
           <StatCard key={stat.title} {...stat} />
         ))}

@@ -89,6 +89,9 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { useBudgetApprovals } from "@/hooks/useBudgetApprovals";
 import BudgetEntryModal from "@/components/budget/BudgetEntryModal";
 import BudgetReportModal from "@/components/budget/BudgetReportModal";
+import { DigitalApprovalPanel } from "@/components/approvals/DigitalApprovalPanel";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 
 const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(25, 95%, 53%)', 'hsl(262, 83%, 58%)', 'hsl(0, 84%, 60%)', 'hsl(45, 93%, 47%)'];
 
@@ -152,6 +155,10 @@ export default function Budget() {
   const [selectedEntry, setSelectedEntry] = useState<BudgetEntry | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<BudgetEntry | null>(null);
   
+  const [submitApprovalEntry, setSubmitApprovalEntry] = useState<BudgetEntry | null>(null);
+  const [approvalLevel, setApprovalLevel] = useState<"prepared" | "verified" | "approved">("prepared");
+  const [selectedApproverId, setSelectedApproverId] = useState<string>("");
+  
   const { data: entries = [], isLoading: loadingEntries } = useBudgetEntries(selectedProjectId);
   const { data: summary, isLoading: loadingSummary } = useBudgetSummary(selectedProjectId);
   const { data: categoryData = [] } = useBudgetEntriesByCategory(selectedProjectId);
@@ -159,6 +166,7 @@ export default function Budget() {
   const { data: phaseData = [] } = useBudgetEntriesByPhase(selectedProjectId);
   const { data: alerts = [] } = useBudgetAlerts(selectedProjectId);
   const { pendingApprovals, myPendingApprovals, submitForApproval, processApproval } = useBudgetApprovals(selectedProjectId);
+  const { data: teamMembers = [] } = useTeamMembers(selectedProjectId);
   
   const deleteEntry = useDeleteBudgetEntry();
   const updateStatus = useUpdateBudgetEntryStatus();
@@ -489,6 +497,7 @@ export default function Budget() {
                 onEdit={handleEditEntry}
                 onDelete={handleDeleteEntry}
                 onStatusChange={handleStatusChange}
+                onSubmitForApproval={(entry) => setSubmitApprovalEntry(entry)}
               />
             </TabsContent>
             <TabsContent value="pending" className="mt-4">
@@ -497,6 +506,7 @@ export default function Budget() {
                 onEdit={handleEditEntry}
                 onDelete={handleDeleteEntry}
                 onStatusChange={handleStatusChange}
+                onSubmitForApproval={(entry) => setSubmitApprovalEntry(entry)}
               />
             </TabsContent>
             <TabsContent value="approved" className="mt-4">
@@ -546,6 +556,15 @@ export default function Budget() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Digital Approvals Panel */}
+      {selectedProjectId && (
+        <DigitalApprovalPanel
+          entityType="budget"
+          entityId={selectedProjectId}
+          entityLabel="Orçamento do Projecto"
+        />
+      )}
       
       {/* Modals */}
       <BudgetEntryModal
@@ -562,6 +581,65 @@ export default function Budget() {
         projects={projects}
         defaultProjectId={selectedProjectId}
       />
+
+      {/* Submit for Approval Dialog */}
+      <Dialog open={!!submitApprovalEntry} onOpenChange={() => setSubmitApprovalEntry(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submeter para Aprovação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Entrada: <strong>{submitApprovalEntry?.description}</strong>
+            </p>
+            <div>
+              <label className="text-sm font-medium">Nível de Aprovação</label>
+              <Select value={approvalLevel} onValueChange={(v) => setApprovalLevel(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="prepared">Preparado</SelectItem>
+                  <SelectItem value="verified">Verificado</SelectItem>
+                  <SelectItem value="approved">Aprovado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Aprovador</label>
+              <Select value={selectedApproverId} onValueChange={setSelectedApproverId}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar aprovador" /></SelectTrigger>
+                <SelectContent>
+                  {teamMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name} ({m.role || 'Membro'})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSubmitApprovalEntry(null)}>Cancelar</Button>
+            <Button 
+              disabled={!selectedApproverId || submitForApproval.isPending}
+              onClick={() => {
+                if (!submitApprovalEntry) return;
+                const member = teamMembers.find(m => m.id === selectedApproverId);
+                submitForApproval.mutate({
+                  budgetEntryId: submitApprovalEntry.id,
+                  level: approvalLevel,
+                  approverId: selectedApproverId,
+                  approverName: member?.name || 'Aprovador',
+                });
+                setSubmitApprovalEntry(null);
+                setSelectedApproverId("");
+              }}
+            >
+              <CheckCircle className="h-4 w-4 mr-1" />
+              Submeter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
@@ -592,12 +670,14 @@ function EntriesTable({
   entries, 
   onEdit, 
   onDelete,
-  onStatusChange
+  onStatusChange,
+  onSubmitForApproval
 }: { 
   entries: BudgetEntry[];
   onEdit: (entry: BudgetEntry) => void;
   onDelete: (entry: BudgetEntry) => void;
   onStatusChange: (entryId: string, status: string) => void;
+  onSubmitForApproval?: (entry: BudgetEntry) => void;
 }) {
   if (entries.length === 0) {
     return (
@@ -687,11 +767,17 @@ function EntriesTable({
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onEdit(entry)}>
                         <Pencil className="h-4 w-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
+                      {entry.status === 'pending' && onSubmitForApproval && (
+                        <DropdownMenuItem onClick={() => onSubmitForApproval(entry)}>
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Submeter para Aprovação
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem 
                         onClick={() => onDelete(entry)}
                         className="text-destructive"
