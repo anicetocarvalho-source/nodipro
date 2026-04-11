@@ -16,6 +16,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const statusConfig: Record<string, { icon: any; className: string }> = {
   submitted: { icon: Clock, className: "bg-primary/10 text-primary" },
@@ -26,7 +27,7 @@ const statusConfig: Record<string, { icon: any; className: string }> = {
   implemented: { icon: CheckCircle, className: "bg-success/20 text-success" },
 };
 
-export default function ChangeRequests() {
+function ChangeRequestsContent() {
   const { t } = useTranslation();
   const { profile } = useAuthContext();
   const { data: projects } = useProjects();
@@ -182,5 +183,13 @@ function CRFormModal({ open, onClose, item, projects, userName, onSubmit }: any)
         <DialogFooter><Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button><Button onClick={handleSubmit} disabled={!form.title || !form.project_id}>{t("common.save")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function ChangeRequests() {
+  return (
+    <FeatureGate feature="change_requests" featureLabel="Pedidos de Alteração">
+      <ChangeRequestsContent />
+    </FeatureGate>
   );
 }

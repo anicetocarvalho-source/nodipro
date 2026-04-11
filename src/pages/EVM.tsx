@@ -10,6 +10,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import { useEVMData, EVMMetrics } from "@/hooks/useEVM";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const healthColor = (h: string) =>
   h === 'good' ? 'text-success' : h === 'warning' ? 'text-warning' : 'text-destructive';
@@ -28,7 +29,7 @@ const fmt = (v: number) => {
 
 const fmtCurrency = (v: number) => `${fmt(v)} AOA`;
 
-export default function EVM() {
+function EVMContent() {
   const { evmData, portfolio, isLoading } = useEVMData();
 
   const chartData = useMemo(() =>
@@ -225,5 +226,13 @@ function MetricCard({ title, value, description, health, icon: Icon, tooltip }: 
       </TooltipTrigger>
       <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
     </Tooltip>
+  );
+}
+
+export default function EVM() {
+  return (
+    <FeatureGate feature="evm" featureLabel="Gestão de Valor Agregado (EVM)">
+      <EVMContent />
+    </FeatureGate>
   );
 }

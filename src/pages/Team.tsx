@@ -20,6 +20,7 @@ import { useOrganization } from "@/contexts/OrganizationContext";
 import { useProjects } from "@/hooks/useProjects";
 import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   available: { label: "Disponível", className: "bg-success" },
@@ -34,6 +35,7 @@ export default function Team() {
   const orgId = organization?.id;
   const { data: projects } = useProjects();
   const { canManageTeam } = usePermissions();
+  const { checkQuota } = useSubscription();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["team_members_all", orgId],
@@ -96,7 +98,14 @@ export default function Team() {
           <h1 className="text-2xl font-bold text-foreground">Gestão de Equipa</h1>
           <p className="text-muted-foreground">Gerir membros da equipa, disponibilidade e carga de trabalho.</p>
         </div>
-        {canManageTeam && <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>}
+        {canManageTeam && <Button onClick={async () => {
+          const quota = await checkQuota('member');
+          if (!quota.allowed) {
+            toast.error(`Limite de membros atingido (${quota.current}/${quota.max}). Faça upgrade do seu plano.`);
+            return;
+          }
+          setShowForm(true);
+        }}><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>}
       </div>
 
       {/* Stats */}

@@ -3,6 +3,7 @@ import { AppSidebar } from "./AppSidebar";
 import { TopBar } from "./TopBar";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { ChatbotWidget } from "@/components/chatbot/ChatbotWidget";
+import { TrialExpiredBanner } from "@/components/subscription/TrialExpiredBanner";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -34,6 +35,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main content */}
       <div className="lg:ml-64 min-h-screen flex flex-col">
         <TopBar onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
+        <TrialExpiredBanner />
         <main className="flex-1 p-4 lg:p-6">
           <Breadcrumbs />
           {children}

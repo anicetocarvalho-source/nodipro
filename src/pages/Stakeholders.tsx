@@ -16,6 +16,7 @@ import { useStakeholders } from "@/hooks/useStakeholders";
 import { useProjects } from "@/hooks/useProjects";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/hooks/usePermissions";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const categoryColors: Record<string, string> = {
   internal: "bg-primary/10 text-primary",
@@ -26,7 +27,7 @@ const categoryColors: Record<string, string> = {
   partner: "bg-muted text-muted-foreground",
 };
 
-export default function Stakeholders() {
+function StakeholdersContent() {
   const { t } = useTranslation();
   const { data: projects } = useProjects();
   const { stakeholders, isLoading, createStakeholder, updateStakeholder, deleteStakeholder } = useStakeholders();
@@ -231,5 +232,13 @@ function StakeholderFormModal({ open, onClose, item, projects, onSubmit }: any) 
         <DialogFooter><Button variant="outline" onClick={onClose}>{t("common.cancel")}</Button><Button onClick={handleSubmit} disabled={!form.name || !form.project_id}>{t("common.save")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function Stakeholders() {
+  return (
+    <FeatureGate feature="stakeholders" featureLabel="Stakeholders">
+      <StakeholdersContent />
+    </FeatureGate>
   );
 }

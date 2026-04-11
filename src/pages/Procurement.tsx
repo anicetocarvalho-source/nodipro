@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useProcurement } from "@/hooks/useProcurement";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { useProjects } from "@/hooks/useProjects";
 import {
   PROCUREMENT_METHODS, PROCUREMENT_STATUSES, CONTRACT_TYPES, CONTRACT_STATUSES,
@@ -22,7 +23,7 @@ import {
 
 const fmt = (v: number) => new Intl.NumberFormat("pt-AO").format(v);
 
-export default function Procurement() {
+function ProcurementContent() {
   const { data: projects } = useProjects();
   const {
     suppliers, loadingSuppliers, createSupplier, updateSupplier, deleteSupplier,
@@ -496,5 +497,13 @@ function ContractFormModal({ open, onClose, item, projects, suppliers, plans, on
         <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={handleSubmit} disabled={!form.title || !form.project_id}>Guardar</Button></DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function Procurement() {
+  return (
+    <FeatureGate feature="procurement" featureLabel="Aquisições">
+      <ProcurementContent />
+    </FeatureGate>
   );
 }

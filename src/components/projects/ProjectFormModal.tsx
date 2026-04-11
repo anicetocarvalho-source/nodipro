@@ -47,6 +47,7 @@ import { cn } from "@/lib/utils";
 import { useCreateProject, useUpdateProject, useProjectSDGs, useSaveProjectSDGs } from "@/hooks/useProjects";
 import { useSectors, useSDGs, useProvinces, useFunders } from "@/hooks/useGovernance";
 import { DbProject, ProjectStatus, PROJECT_METHODOLOGY_OPTIONS } from "@/types/database";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const optionalNumber = z.preprocess(
   (val) => (val === "" || val === undefined || val === null ? undefined : Number(val)),
@@ -103,6 +104,7 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
   const { data: funders = [] } = useFunders();
   const { data: projectSDGs = [] } = useProjectSDGs(project?.id);
   const { organization } = useOrganization();
+  const { checkQuota } = useSubscription();
   const isEditing = !!project;
   
   const form = useForm<ProjectFormValues>({
@@ -164,6 +166,15 @@ export function ProjectFormModal({ open, onOpenChange, project }: ProjectFormMod
 
   const onSubmit = async (values: ProjectFormValues) => {
     try {
+      // Check quota before creating
+      if (!isEditing) {
+        const quota = await checkQuota('project');
+        if (!quota.allowed) {
+          toast.error(`Limite de projectos atingido (${quota.current}/${quota.max}). Faça upgrade do seu plano.`);
+          return;
+        }
+      }
+
       const projectData = {
         name: values.name,
         description: values.description || null,

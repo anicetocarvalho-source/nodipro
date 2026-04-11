@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { useReportGeneration, ReportType } from "@/hooks/useReportGeneration";
 import { ReportPreviewModal } from "@/components/reports/ReportPreviewModal";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const reportTemplates = [
   { id: "1", name: "Relatório de Status do Projecto", type: "project" as ReportType, format: "PDF", description: "Estado actual dos projectos, progresso, tarefas e orçamento." },
@@ -80,7 +81,7 @@ interface GeneratedReportEntry {
   format: string;
 }
 
-export default function Reports() {
+function ReportsContent() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(true);
   const { organization } = useOrganization();
@@ -761,5 +762,13 @@ export default function Reports() {
         onClose={() => setReportData(null)}
       />
     </div>
+  );
+}
+
+export default function Reports() {
+  return (
+    <FeatureGate feature="reports" featureLabel="Relatórios">
+      <ReportsContent />
+    </FeatureGate>
   );
 }

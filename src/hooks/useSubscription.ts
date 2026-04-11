@@ -29,17 +29,30 @@ export function useSubscription() {
       .from('organization_subscriptions')
       .select('*, subscription_plans(*)')
       .eq('organization_id', organization.id)
-      .in('status', ['trial', 'active'])
+      .in('status', ['trial', 'active', 'expired'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (data) {
       const sub = data as any;
-      setSubscription({
+      const subData: OrganizationSubscription = {
         ...sub,
         plan: sub.subscription_plans as SubscriptionPlan,
-      });
+      };
+      
+      // Frontend fallback: check if trial has expired
+      if (subData.status === 'trial' && subData.trial_ends_at && new Date(subData.trial_ends_at) < new Date()) {
+        subData.status = 'expired';
+        // Also update in DB
+        supabase
+          .from('organization_subscriptions')
+          .update({ status: 'expired', updated_at: new Date().toISOString() })
+          .eq('id', subData.id)
+          .then();
+      }
+      
+      setSubscription(subData);
     } else {
       setSubscription(null);
     }
@@ -58,6 +71,12 @@ export function useSubscription() {
 
   const hasFeature = (feature: keyof PlanFeatures): boolean => {
     if (!currentPlan) return false;
+    // Block premium features when subscription is expired
+    if (subscription?.status === 'expired') {
+      // Only allow basic features on expired plans
+      const basicFeatures: (keyof PlanFeatures)[] = ['kanban', 'risks'];
+      return basicFeatures.includes(feature);
+    }
     return currentPlan.features[feature] ?? false;
   };
 

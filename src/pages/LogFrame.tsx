@@ -21,8 +21,9 @@ import { LogFrameIndicatorFormModal } from "@/components/logframe/LogFrameIndica
 import { cn } from "@/lib/utils";
 import { TheoryOfChange } from "@/components/logframe/TheoryOfChange";
 import { usePermissions } from "@/hooks/usePermissions";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
-export default function LogFrame() {
+function LogFrameContent() {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
@@ -302,5 +303,13 @@ export default function LogFrame() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+export default function LogFrame() {
+  return (
+    <FeatureGate feature="logframe" featureLabel="Quadro Lógico">
+      <LogFrameContent />
+    </FeatureGate>
   );
 }

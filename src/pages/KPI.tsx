@@ -17,6 +17,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { cn } from "@/lib/utils";
 import { useKPIs } from "@/hooks/useKPIs";
 import { usePermissions } from "@/hooks/usePermissions";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const DIRECTIONS = [
   { value: "higher_is_better", label: "Maior é melhor" },
@@ -57,7 +58,7 @@ function getKPIStatus(kpi: any) {
   return { value: current, status, progress: target ? Math.min(100, (current / target) * 100) : 0, change, target, label: status === "excellent" ? "Excelente" : status === "good" ? "Bom" : "Atenção" };
 }
 
-export default function KPI() {
+function KPIContent() {
   const { kpis, loadingKPIs, createKPI, updateKPI, deleteKPI, addMeasurement } = useKPIs();
   const { isAdmin, isPortfolioManager, isProjectManager, isManager } = usePermissions();
   const canManageKPIs = isAdmin || isPortfolioManager || isProjectManager || isManager;
@@ -245,5 +246,13 @@ function MeasurementModal({ open, onClose, kpi, onSubmit }: any) {
         <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={handleSubmit} disabled={!value}>Registar</Button></DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export default function KPI() {
+  return (
+    <FeatureGate feature="kpis" featureLabel="KPIs e Métricas">
+      <KPIContent />
+    </FeatureGate>
   );
 }

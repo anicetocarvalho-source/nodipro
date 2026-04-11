@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { cn } from "@/lib/utils";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const budgetStats = [
   { title: "Orçamento Total", value: "650.000.000 AOA", change: "+15% YoY", changeType: "positive" },
@@ -95,7 +96,7 @@ const formatCurrency = (value: number) => {
   }).format(value) + " AOA";
 };
 
-export default function Budget() {
+function BudgetContent() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -261,5 +262,13 @@ export default function Budget() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function Budget() {
+  return (
+    <FeatureGate feature="budget_advanced" featureLabel="Orçamento Avançado">
+      <BudgetContent />
+    </FeatureGate>
   );
 }
