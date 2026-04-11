@@ -94,7 +94,10 @@
     "stakeholders": "Parties prenantes",
     "beneficiaries": "Bénéficiaires",
     "changeRequests": "Demandes de changement",
-    "disbursements": "Décaissements"
+    "disbursements": "Décaissements",
+    "lessonsLearned": "Leçons Apprises",
+    "annualWorkPlan": "Plan de Travail Annuel",
+    "auditLogs": "Journaux d'Audit"
   },
   "auth": {
     "welcome": "Bienvenue",

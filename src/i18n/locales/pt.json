@@ -94,7 +94,10 @@
     "stakeholders": "Stakeholders",
     "beneficiaries": "Beneficiários",
     "changeRequests": "Pedidos de Mudança",
-    "disbursements": "Desembolsos"
+    "disbursements": "Desembolsos",
+    "lessonsLearned": "Lições Aprendidas",
+    "annualWorkPlan": "Plano de Trabalho Anual",
+    "auditLogs": "Auditoria"
   },
   "auth": {
     "welcome": "Bem-vindo de volta",
