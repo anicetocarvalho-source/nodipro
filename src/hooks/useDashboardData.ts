@@ -177,6 +177,50 @@ export function useDashboardData() {
     enabled: projectIds.length > 0,
   });
 
+  // Fetch beneficiaries
+  const { data: beneficiaries = [] } = useQuery({
+    queryKey: ["dashboard-beneficiaries", projectIds],
+    queryFn: async () => {
+      if (projectIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("beneficiaries")
+        .select("id, project_id, beneficiary_type, quantity")
+        .in("project_id", projectIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: projectIds.length > 0,
+  });
+
+  // Fetch disbursement tranches
+  const { data: disbursementTranches = [] } = useQuery({
+    queryKey: ["dashboard-tranches", projectIds],
+    queryFn: async () => {
+      if (projectIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("disbursement_tranches")
+        .select("id, project_id, amount, status")
+        .in("project_id", projectIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: projectIds.length > 0,
+  });
+
+  // Fetch funding agreements
+  const { data: fundingAgreements = [] } = useQuery({
+    queryKey: ["dashboard-funding", organizationId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("funding_agreements")
+        .select("id, total_amount, disbursed_amount, status")
+        .eq("organization_id", organizationId || "");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!organizationId,
+  });
+
   // Fetch provinces for budget breakdown
   const { data: provinces = [] } = useQuery({
     queryKey: ["provinces"],
