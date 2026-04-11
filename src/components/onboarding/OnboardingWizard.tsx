@@ -107,14 +107,23 @@ export function OnboardingWizard() {
 
     setIsSubmitting(true);
     try {
+      // Check if it's a free plan
+      const { data: planData } = await supabase
+        .from('subscription_plans')
+        .select('slug')
+        .eq('id', planId)
+        .single();
+
+      const isFree = planData?.slug === 'free';
+
       // Create subscription for the organization
       const { error } = await supabase
         .from('organization_subscriptions')
         .insert({
           organization_id: createdOrgId,
           plan_id: planId,
-          status: 'trial',
-          trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+          status: isFree ? 'active' : 'trial',
+          trial_ends_at: isFree ? null : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         });
 
       if (error) throw error;

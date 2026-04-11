@@ -51,8 +51,10 @@ export function PlanCard({ plan, isCurrentPlan, onSelect, isLoading, yearly }: P
         <h3 className="text-xl font-bold">{plan.name}</h3>
         <p className="text-sm text-muted-foreground">{plan.description}</p>
         <div className="mt-4">
-          <span className="text-4xl font-bold">${price}</span>
-          <span className="text-muted-foreground">{period}</span>
+          <span className="text-4xl font-bold">
+            {price === 0 ? 'Grátis' : new Intl.NumberFormat('pt-AO').format(price)}
+          </span>
+          {price > 0 && <span className="text-muted-foreground"> {plan.currency}{period}</span>}
         </div>
       </CardHeader>
       <CardContent className="flex-1 space-y-3">

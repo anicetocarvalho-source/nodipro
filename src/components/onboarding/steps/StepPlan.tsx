@@ -77,7 +77,8 @@ export function StepPlan({ onComplete, onBack, isSubmitting }: StepPlanProps) {
               </div>
               <p className="text-sm text-muted-foreground">{plan.description}</p>
               <div className="text-2xl font-bold">
-                ${plan.price_monthly}<span className="text-sm font-normal text-muted-foreground">/mês</span>
+                {plan.price_monthly === 0 ? 'Grátis' : `${new Intl.NumberFormat('pt-AO').format(plan.price_monthly)} ${plan.currency}`}
+                {plan.price_monthly > 0 && <span className="text-sm font-normal text-muted-foreground">/mês</span>}
               </div>
               <div className="text-xs text-muted-foreground">
                 {plan.max_projects === -1 ? '∞' : plan.max_projects} projectos · {plan.max_members === -1 ? '∞' : plan.max_members} membros
