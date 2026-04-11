@@ -84,6 +84,7 @@ export default function LessonsLearned() {
   };
 
   return (
+    <FeatureGate feature="lessons_learned" featureLabel="Lições Aprendidas">
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -202,5 +203,6 @@ export default function LessonsLearned() {
         </DialogContent>
       </Dialog>
     </div>
+    </FeatureGate>
   );
 }
