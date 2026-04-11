@@ -34,6 +34,10 @@ export interface PlanFeatures {
   stakeholders: boolean;
   briefings: boolean;
   disbursements: boolean;
+  funding_agreements: boolean;
+  lessons_learned: boolean;
+  annual_work_plan: boolean;
+  audit_logs: boolean;
 }
 
 export interface OrganizationSubscription {
