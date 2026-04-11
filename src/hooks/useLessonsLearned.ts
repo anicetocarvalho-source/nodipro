@@ -18,9 +18,9 @@ export interface LessonLearned {
 }
 
 export function useLessonsLearned() {
-  const { currentOrganization } = useOrganization();
+  const { organization } = useOrganization();
   const queryClient = useQueryClient();
-  const orgId = currentOrganization?.id;
+  const orgId = organization?.id;
 
   const lessonsQuery = useQuery({
     queryKey: ["lessons-learned", orgId],

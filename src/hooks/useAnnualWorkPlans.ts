@@ -37,9 +37,9 @@ export interface AWPActivity {
 }
 
 export function useAnnualWorkPlans() {
-  const { currentOrganization } = useOrganization();
+  const { organization } = useOrganization();
   const queryClient = useQueryClient();
-  const orgId = currentOrganization?.id;
+  const orgId = organization?.id;
 
   const plansQuery = useQuery({
     queryKey: ["annual-work-plans", orgId],

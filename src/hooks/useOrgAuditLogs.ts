@@ -19,7 +19,7 @@ export interface OrgAuditResult {
 }
 
 export function useOrgAuditLogs() {
-  const { currentOrganization } = useOrganization();
+  const { organization } = useOrganization();
   const [loading, setLoading] = useState(false);
 
   const fetchLogs = useCallback(async (params: {
@@ -29,12 +29,12 @@ export function useOrgAuditLogs() {
     target_filter?: string | null;
     search?: string | null;
   }): Promise<OrgAuditResult> => {
-    if (!currentOrganization?.id) return { logs: [], total: 0 };
+    if (!organization?.id) return { logs: [], total: 0 };
     
     setLoading(true);
     try {
       const { data, error } = await supabase.rpc("get_org_audit_logs", {
-        _org_id: currentOrganization.id,
+        _org_id: organization!.id,
         _limit: params.limit || 50,
         _offset: params.offset || 0,
         _action_filter: params.action_filter || null,
@@ -49,7 +49,7 @@ export function useOrgAuditLogs() {
     } finally {
       setLoading(false);
     }
-  }, [currentOrganization?.id]);
+  }, [organization?.id]);
 
   return { fetchLogs, loading };
 }
