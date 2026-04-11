@@ -1,82 +1,71 @@
 
 
-## Correcção Completa dos Fluxos de Utilizador
+## Consolidar Utilizadores de Teste numa Única Organização
 
-### Problemas Identificados
+### Situação actual
 
-**1. CRÍTICO — SuperAdmin acessível a Admin de organização**
-A rota `/superadmin` usa `AdminPageWrapper` que verifica `requiredRole="admin"`. Um admin de organização regular também passa este check. Deveria verificar `isPlatformAdmin`.
+Existem 5 organizações na BD, com os utilizadores dispersos:
 
-**2. CRÍTICO — Onboarding: novo utilizador fica com role `member`**
-O trigger `handle_new_user` atribui sempre `role = 'member'` em `user_roles`. Quando o utilizador cria uma organização no onboarding (e torna-se `owner` em `organization_members`), o seu `user_roles` permanece `member`. Resultado: o owner não tem acesso a funcionalidades de admin (Budget, Reports, Portfolio, etc.) na sua própria organização.
+| Utilizador | Org primária | Role na org |
+|---|---|---|
+| superadmin@nodipro.com | Tech (privada) | owner |
+| admin@nodipro.com | Ministério Infraestruturas | owner |
+| manager@nodipro.com | TechCorp Angola | owner |
+| member@nodipro.com | Mwango Brain | owner |
 
-**Correcção**: Após criar a organização no onboarding, actualizar o `user_roles` para `admin` via uma nova função RPC `SECURITY DEFINER`.
+Todos os 4 estão no "Ministério das Infraestruturas de Angola" como secundários, mas cada um tem a sua própria org como primária. Isto cria problemas: cada user vê os dados da sua org primária, não da org partilhada.
 
-**3. IMPORTANTE — Observer vê menus que levam a "Acesso Restrito"**
-Na BD, o observer tem `budget.view`, `report.view`, `portfolio.view`. No sidebar, os menus Governance, EVM, Procurement, Change Requests usam `requiresPermission: "canViewBudget"`. O observer vê estes menus mas as rotas usam `ManagerPageWrapper` → vê página de erro "Acesso Restrito".
+### Objectivo
 
-**Correcção**: Remover `budget.view`, `report.view`, `portfolio.view` do role `observer` na BD. O observer deve apenas observar conteúdo operacional (projectos, tarefas, documentos, equipa).
+- Manter **1 única organização** de teste: "Ministério das Infraestruturas de Angola"
+- Remover as organizações individuais (TechCorp, Mwango Brain, Tech, Test Org Direct)
+- Todos os users ficam com esta org como **primária**
+- O `seed-test-users` passa a garantir esta consolidação automaticamente
 
-**4. MENOR — Auth page não tem fluxo de registo**
-A página `/auth` só tem login. Não há formulário de registo (signUp está implementado no hook mas não exposto na UI). Novos utilizadores não conseguem criar conta.
+### Plano de implementação
 
-**Correcção**: Adicionar tab/toggle de registo na página Auth com campos email, password, nome completo.
+**1. Migração SQL — Limpar organizações e consolidar membros**
 
-**5. MENOR — AlertDialog ref warning no Procurement**
-Console warning: "Function components cannot be given refs" no `AlertDialogContent`. É um warning da versão do Radix, não bloqueia funcionalidade.
-
----
-
-### Plano de Implementação
-
-#### Passo 1: Migração BD — Limpar permissões do Observer
 ```sql
--- Remover permissões de gestão do observer
-DELETE FROM role_permissions 
-WHERE role = 'observer' 
-AND permission_id IN (
-  SELECT id FROM permissions WHERE name IN ('budget.view', 'report.view', 'portfolio.view')
-);
+-- Remover organizações individuais (não a partilhada)
+-- Mover dados orphaned se existirem (projects, etc.)
+-- Definir org partilhada como is_primary para todos os users
+-- Remover org_members das orgs eliminadas
+-- Eliminar organizações extras
 ```
 
-#### Passo 2: Migração BD — Função para promover owner a admin
-```sql
-CREATE OR REPLACE FUNCTION public.promote_org_owner_to_admin(_user_id uuid)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  UPDATE public.user_roles SET role = 'admin' WHERE user_id = _user_id;
-END;
-$$;
-```
+Acções concretas:
+- Eliminar memberships das orgs individuais
+- Eliminar as 4 organizações extras (Test Org Direct, TechCorp Angola, Mwango Brain, Tech)
+- Actualizar `is_primary = true` para todos os 4 users na org "Ministério das Infraestruturas de Angola"
+- Garantir roles correctos: admin@→owner, superadmin@→admin, manager@→manager, member@→member
 
-#### Passo 3: SuperAdmin route — verificar isPlatformAdmin
-`src/App.tsx`: Criar novo wrapper `PlatformAdminPageWrapper` que verifica `isPlatformAdmin` em vez de `requiredRole="admin"`.
+**2. Actualizar `seed-test-users` Edge Function**
 
-#### Passo 4: Onboarding — promover user após criar org
-`src/components/onboarding/OnboardingWizard.tsx`: Após `createOrganization` com sucesso, chamar `supabase.rpc('promote_org_owner_to_admin', { _user_id: user.id })`.
+Adicionar lógica ao final da função para:
+- Criar a organização "Ministério das Infraestruturas de Angola" (tipo `public`) se não existir
+- Adicionar todos os 4 users como membros com roles correctos (owner, admin, manager, member)
+- Definir `is_primary = true` para todos
+- Criar subscrição trial se não existir
+- Remover qualquer outra organização/membership destes users
 
-#### Passo 5: Auth — adicionar formulário de registo
-`src/pages/Auth.tsx`: Adicionar estado `isSignUp` com toggle entre login e registo. Formulário de registo com: nome completo, email, password, confirmação de password.
+**3. Actualizar `seed-demo-data` para usar a org partilhada**
 
----
+Verificar que o seed de dados demo usa a organização correcta.
+
+### Mapeamento final de roles
+
+| Email | system_role (user_roles) | org_role (organization_members) | platform_admin |
+|---|---|---|---|
+| superadmin@nodipro.com | admin | admin | Sim |
+| admin@nodipro.com | admin | owner | Não |
+| manager@nodipro.com | manager | manager | Não |
+| member@nodipro.com | member | member | Não |
 
 ### Ficheiros alterados
 
 | Ficheiro | Alteração |
-|----------|-----------|
-| Migração SQL | Limpar permissões observer + criar função `promote_org_owner_to_admin` |
-| `src/App.tsx` | Novo `PlatformAdminPageWrapper` para `/superadmin` |
-| `src/components/onboarding/OnboardingWizard.tsx` | Chamar RPC para promover owner a admin |
-| `src/pages/Auth.tsx` | Adicionar formulário de registo |
-
-### Resultado
-
-- **SuperAdmin**: acessível apenas a platform admins (tabela `platform_admins`)
-- **Onboarding**: novo utilizador que cria organização recebe role `admin` automaticamente
-- **Observer**: vê apenas menus operacionais, sem links mortos para páginas restritas
-- **Auth**: novos utilizadores podem registar-se directamente
+|---|---|
+| Migração SQL | Limpar orgs extras, consolidar memberships |
+| `supabase/functions/seed-test-users/index.ts` | Adicionar consolidação de organização e memberships |
 
