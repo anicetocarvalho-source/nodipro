@@ -27,7 +27,7 @@ export default function Beneficiaries() {
   const projectId = selectedProject !== "all" ? selectedProject : undefined;
 
   const { beneficiaries, isLoading, totalDirect, totalIndirect, totalBeneficiaries, genderBreakdown, createBeneficiary, updateBeneficiary, deleteBeneficiary } = useBeneficiaries(projectId);
-  const { projects } = useProjects();
+  const { data: projects = [] } = useProjects();
 
   const [form, setForm] = useState<Partial<BeneficiaryInsert>>({
     beneficiary_type: "direct",

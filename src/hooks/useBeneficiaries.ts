@@ -7,8 +7,8 @@ export interface Beneficiary {
   id: string;
   project_id: string;
   name: string;
-  beneficiary_type: "direct" | "indirect";
-  gender: "male" | "female" | "other" | null;
+  beneficiary_type: string;
+  gender: string | null;
   age_group: string | null;
   province_id: string | null;
   sector: string | null;
@@ -16,14 +16,29 @@ export interface Beneficiary {
   description: string | null;
   contact_info: string | null;
   registration_date: string;
-  status: "active" | "inactive" | "completed";
-  metadata: Record<string, unknown> | null;
+  status: string;
+  metadata: unknown | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
 }
 
-export type BeneficiaryInsert = Omit<Beneficiary, "id" | "created_at" | "updated_at">;
+export type BeneficiaryInsert = {
+  project_id: string;
+  name: string;
+  beneficiary_type?: string;
+  gender?: string | null;
+  age_group?: string | null;
+  province_id?: string | null;
+  sector?: string | null;
+  quantity?: number;
+  description?: string | null;
+  contact_info?: string | null;
+  registration_date?: string;
+  status?: string;
+  metadata?: unknown | null;
+  created_by?: string | null;
+};
 
 export function useBeneficiaries(projectId?: string) {
   const { user } = useAuthContext();
@@ -43,7 +58,8 @@ export function useBeneficiaries(projectId?: string) {
 
   const createBeneficiary = useMutation({
     mutationFn: async (data: BeneficiaryInsert) => {
-      const { error } = await supabase.from("beneficiaries").insert({ ...data, created_by: user?.id });
+      const insertData = { ...data, created_by: user?.id || null };
+      const { error } = await supabase.from("beneficiaries").insert(insertData);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -54,8 +70,8 @@ export function useBeneficiaries(projectId?: string) {
   });
 
   const updateBeneficiary = useMutation({
-    mutationFn: async ({ id, ...data }: Partial<Beneficiary> & { id: string }) => {
-      const { error } = await supabase.from("beneficiaries").update(data).eq("id", id);
+    mutationFn: async ({ id, ...data }: { id: string; [key: string]: unknown }) => {
+      const { error } = await supabase.from("beneficiaries").update(data as Record<string, unknown>).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
