@@ -248,6 +248,12 @@ export function useDashboardData() {
   });
 
   // Calculate stats
+  const directBeneficiaries = beneficiaries.filter(b => b.beneficiary_type === 'direct').reduce((s, b) => s + (b.quantity || 0), 0);
+  const indirectBeneficiaries = beneficiaries.filter(b => b.beneficiary_type === 'indirect').reduce((s, b) => s + (b.quantity || 0), 0);
+  const tranchesTotal = disbursementTranches.reduce((s, t) => s + Number(t.amount || 0), 0);
+  const tranchesDisbursed = disbursementTranches.filter(t => t.status === 'disbursed').reduce((s, t) => s + Number(t.amount || 0), 0);
+  const totalFundingValue = fundingAgreements.reduce((s, f) => s + Number(f.total_amount || 0), 0);
+
   const stats: DashboardStats = {
     activeProjects: projects.filter((p) => p.status === "active").length,
     completedProjects: projects.filter((p) => p.status === "completed").length,
@@ -264,6 +270,12 @@ export function useDashboardData() {
       if (!t.due_date) return false;
       return new Date(t.due_date) < new Date() && t.column_id !== "done";
     }).length,
+    totalBeneficiaries: directBeneficiaries + indirectBeneficiaries,
+    directBeneficiaries,
+    indirectBeneficiaries,
+    disbursementRate: tranchesTotal > 0 ? Math.round((tranchesDisbursed / tranchesTotal) * 100) : 0,
+    totalDisbursed: tranchesDisbursed,
+    totalFundingValue,
   };
 
   stats.executionRate = stats.totalBudget > 0 
