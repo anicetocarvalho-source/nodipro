@@ -92,6 +92,7 @@
     "myAccount": "My Account",
     "logout": "Logout",
     "stakeholders": "Stakeholders",
+    "beneficiaries": "Beneficiaries",
     "changeRequests": "Change Requests"
   },
   "auth": {

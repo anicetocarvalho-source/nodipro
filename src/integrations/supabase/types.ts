@@ -59,6 +59,81 @@ export type Database = {
         }
         Relationships: []
       }
+      beneficiaries: {
+        Row: {
+          age_group: string | null
+          beneficiary_type: string
+          contact_info: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          gender: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          project_id: string
+          province_id: string | null
+          quantity: number
+          registration_date: string
+          sector: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string | null
+          beneficiary_type?: string
+          contact_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          gender?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          project_id: string
+          province_id?: string | null
+          quantity?: number
+          registration_date?: string
+          sector?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string | null
+          beneficiary_type?: string
+          contact_info?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          gender?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          project_id?: string
+          province_id?: string | null
+          quantity?: number
+          registration_date?: string
+          sector?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficiaries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "beneficiaries_province_id_fkey"
+            columns: ["province_id"]
+            isOneToOne: false
+            referencedRelation: "provinces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       briefing_modules: {
         Row: {
           briefing_id: string
@@ -162,6 +237,63 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "budget_alerts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_approvals: {
+        Row: {
+          approval_level: string
+          approved_at: string | null
+          approver_id: string | null
+          approver_name: string | null
+          budget_entry_id: string
+          comments: string | null
+          created_at: string
+          id: string
+          project_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approval_level?: string
+          approved_at?: string | null
+          approver_id?: string | null
+          approver_name?: string | null
+          budget_entry_id: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          project_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approval_level?: string
+          approved_at?: string | null
+          approver_id?: string | null
+          approver_name?: string | null
+          budget_entry_id?: string
+          comments?: string | null
+          created_at?: string
+          id?: string
+          project_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_approvals_budget_entry_id_fkey"
+            columns: ["budget_entry_id"]
+            isOneToOne: false
+            referencedRelation: "budget_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_approvals_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
@@ -1259,6 +1391,56 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          metadata: Json | null
+          module: string | null
+          project_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          metadata?: Json | null
+          module?: string | null
+          project_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          metadata?: Json | null
+          module?: string | null
+          project_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
             referencedColumns: ["id"]
           },
         ]
