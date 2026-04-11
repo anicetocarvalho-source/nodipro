@@ -60,10 +60,34 @@ export function ReportPreviewModal({ reportData, onClose }: ReportPreviewModalPr
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg">{reportData.title}</DialogTitle>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  Excel (CSV)
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Exportar
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportExcel}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Excel (.xlsx)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportCSV}>
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => handleDonorExport("worldbank")}>
+                      Formato Banco Mundial
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDonorExport("undp")}>
+                      Formato PNUD
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDonorExport("generic")}>
+                      Formato Genérico Doador
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button variant="outline" size="sm" onClick={handlePrint}>
                   <Printer className="h-4 w-4 mr-2" />
                   Imprimir / PDF
