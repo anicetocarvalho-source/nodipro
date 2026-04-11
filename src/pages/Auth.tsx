@@ -598,95 +598,117 @@ export default function Auth() {
                       </motion.div>
                     </motion.form>
                   </Form>
-                );
+                )}
 
-                {/* Quick Access - Demo Users */}
+                {/* Toggle between login and signup */}
                 <motion.div
-                  className="mt-4"
+                  className="mt-4 text-center"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.6, duration: 0.5 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
                 >
-                  <div className="p-3 bg-muted/30 rounded-lg border border-border/30 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Acesso Rápido (Demo)</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {[
-                        { email: "superadmin@nodipro.com", password: "SuperAdmin123!", label: "Super Admin", desc: "Plataforma + Admin", color: "text-destructive" },
-                        { email: "admin@nodipro.com", password: "Admin123!", label: "Admin", desc: "Owner da Org", color: "text-primary" },
-                        { email: "manager@nodipro.com", password: "Manager123!", label: "Gestor", desc: "Projectos, Orçamento", color: "text-warning" },
-                        { email: "member@nodipro.com", password: "Member123!", label: "Membro", desc: "Tarefas, Documentos", color: "text-muted-foreground" },
-                      ].map((user) => (
-                        <button
-                          key={user.email}
-                          type="button"
-                          onClick={() => {
-                            loginForm.setValue("email", user.email);
-                            loginForm.setValue("password", user.password);
-                          }}
-                          className="text-left p-2 rounded-md hover:bg-muted/80 transition-colors border border-transparent hover:border-border/50"
-                        >
-                          <span className={`text-xs font-semibold ${user.color}`}>{user.label}</span>
-                          <span className="block text-[10px] text-muted-foreground truncate">{user.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsSignUp(!isSignUp)}
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
+                  >
+                    {isSignUp 
+                      ? 'Já tem conta? Iniciar sessão'
+                      : 'Não tem conta? Criar conta'}
+                  </button>
                 </motion.div>
 
-                {/* Forgot Password Section */}
-                <motion.div
-                  className="mt-3"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7, duration: 0.5 }}
-                >
-                  {!showForgotPassword ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotPassword(true)}
-                      className="w-full text-center text-sm text-primary hover:text-primary/80 transition-colors"
-                    >
-                      Esqueceu a palavra-passe?
-                    </button>
-                  ) : (
-                    <div className="p-4 bg-muted/50 rounded-lg border border-border/50 space-y-3">
-                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
-                        <KeyRound className="h-4 w-4" />
-                        Recuperar palavra-passe
-                      </p>
-                      <div className="relative">
-                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          type="email"
-                          placeholder="seu@email.com"
-                          value={forgotEmail}
-                          onChange={(e) => setForgotEmail(e.target.value)}
-                          className="pl-11 h-10 bg-background"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => { setShowForgotPassword(false); setForgotEmail(""); }}
-                          className="flex-1"
-                        >
-                          Cancelar
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={onForgotPassword}
-                          disabled={forgotLoading}
-                          className="flex-1"
-                        >
-                          {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar"}
-                        </Button>
+                {/* Quick Access - Demo Users (only on login) */}
+                {!isSignUp && (
+                  <motion.div
+                    className="mt-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6, duration: 0.5 }}
+                  >
+                    <div className="p-3 bg-muted/30 rounded-lg border border-border/30 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Acesso Rápido (Demo)</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { email: "superadmin@nodipro.com", password: "SuperAdmin123!", label: "Super Admin", desc: "Plataforma + Admin", color: "text-destructive" },
+                          { email: "admin@nodipro.com", password: "Admin123!", label: "Admin", desc: "Owner da Org", color: "text-primary" },
+                          { email: "manager@nodipro.com", password: "Manager123!", label: "Gestor", desc: "Projectos, Orçamento", color: "text-warning" },
+                          { email: "member@nodipro.com", password: "Member123!", label: "Membro", desc: "Tarefas, Documentos", color: "text-muted-foreground" },
+                        ].map((user) => (
+                          <button
+                            key={user.email}
+                            type="button"
+                            onClick={() => {
+                              loginForm.setValue("email", user.email);
+                              loginForm.setValue("password", user.password);
+                            }}
+                            className="text-left p-2 rounded-md hover:bg-muted/80 transition-colors border border-transparent hover:border-border/50"
+                          >
+                            <span className={`text-xs font-semibold ${user.color}`}>{user.label}</span>
+                            <span className="block text-[10px] text-muted-foreground truncate">{user.desc}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
-                  )}
-                </motion.div>
+                  </motion.div>
+                )}
+
+                {/* Forgot Password Section (only on login) */}
+                {!isSignUp && (
+                  <motion.div
+                    className="mt-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.7, duration: 0.5 }}
+                  >
+                    {!showForgotPassword ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="w-full text-center text-sm text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Esqueceu a palavra-passe?
+                      </button>
+                    ) : (
+                      <div className="p-4 bg-muted/50 rounded-lg border border-border/50 space-y-3">
+                        <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                          <KeyRound className="h-4 w-4" />
+                          Recuperar palavra-passe
+                        </p>
+                        <div className="relative">
+                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            type="email"
+                            placeholder="seu@email.com"
+                            value={forgotEmail}
+                            onChange={(e) => setForgotEmail(e.target.value)}
+                            className="pl-11 h-10 bg-background"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setShowForgotPassword(false); setForgotEmail(""); }}
+                            className="flex-1"
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={onForgotPassword}
+                            disabled={forgotLoading}
+                            className="flex-1"
+                          >
+                            {forgotLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Enviar"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
