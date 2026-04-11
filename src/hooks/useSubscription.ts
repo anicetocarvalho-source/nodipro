@@ -71,6 +71,12 @@ export function useSubscription() {
 
   const hasFeature = (feature: keyof PlanFeatures): boolean => {
     if (!currentPlan) return false;
+    // Block premium features when subscription is expired
+    if (subscription?.status === 'expired') {
+      // Only allow basic features on expired plans
+      const basicFeatures: (keyof PlanFeatures)[] = ['kanban', 'risks'];
+      return basicFeatures.includes(feature);
+    }
     return currentPlan.features[feature] ?? false;
   };
 
