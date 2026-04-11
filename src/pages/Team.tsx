@@ -35,6 +35,7 @@ export default function Team() {
   const orgId = organization?.id;
   const { data: projects } = useProjects();
   const { canManageTeam } = usePermissions();
+  const { checkQuota } = useSubscription();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["team_members_all", orgId],
