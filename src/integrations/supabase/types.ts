@@ -853,6 +853,59 @@ export type Database = {
           },
         ]
       }
+      digital_approvals: {
+        Row: {
+          approval_type: string
+          approved_at: string
+          approved_by: string
+          approver_name: string | null
+          comment: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: string | null
+          organization_id: string
+          status: string
+        }
+        Insert: {
+          approval_type?: string
+          approved_at?: string
+          approved_by: string
+          approver_name?: string | null
+          comment: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          organization_id: string
+          status?: string
+        }
+        Update: {
+          approval_type?: string
+          approved_at?: string
+          approved_by?: string
+          approver_name?: string | null
+          comment?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          organization_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "digital_approvals_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disbursement_tranches: {
         Row: {
           actual_date: string | null
@@ -1244,6 +1297,97 @@ export type Database = {
           type?: string | null
         }
         Relationships: []
+      }
+      funding_agreements: {
+        Row: {
+          agreement_number: string | null
+          agreement_type: string
+          closing_date: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          disbursed_amount: number
+          disbursement_conditions: string | null
+          effective_date: string | null
+          funder_id: string | null
+          id: string
+          key_contacts: string | null
+          notes: string | null
+          organization_id: string
+          project_id: string | null
+          signed_date: string | null
+          status: string
+          title: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          agreement_number?: string | null
+          agreement_type?: string
+          closing_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          disbursed_amount?: number
+          disbursement_conditions?: string | null
+          effective_date?: string | null
+          funder_id?: string | null
+          id?: string
+          key_contacts?: string | null
+          notes?: string | null
+          organization_id: string
+          project_id?: string | null
+          signed_date?: string | null
+          status?: string
+          title: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          agreement_number?: string | null
+          agreement_type?: string
+          closing_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          disbursed_amount?: number
+          disbursement_conditions?: string | null
+          effective_date?: string | null
+          funder_id?: string | null
+          id?: string
+          key_contacts?: string | null
+          notes?: string | null
+          organization_id?: string
+          project_id?: string | null
+          signed_date?: string | null
+          status?: string
+          title?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funding_agreements_funder_id_fkey"
+            columns: ["funder_id"]
+            isOneToOne: false
+            referencedRelation: "funders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funding_agreements_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funding_agreements_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invitations: {
         Row: {
