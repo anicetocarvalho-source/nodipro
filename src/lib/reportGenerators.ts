@@ -375,6 +375,16 @@ export function generateKPIReport(
           ["Em Rascunho", documents.filter(d => d.status === 'draft').length, '0', documents.filter(d => d.status === 'draft').length === 0 ? '✅' : '⚠️ A completar'],
         ],
       },
+      ...(beneficiaries.length > 0 ? [{
+        title: "KPIs de Impacto Social",
+        headers: ["Indicador", "Valor", "Meta", "Estado"],
+        rows: [
+          ["Total Beneficiários", beneficiaries.reduce((s: number, b: any) => s + (b.quantity || 0), 0), '-', '-'],
+          ["Directos", beneficiaries.filter((b: any) => b.beneficiary_type === 'direct').reduce((s: number, b: any) => s + (b.quantity || 0), 0), '-', '-'],
+          ["Indirectos", beneficiaries.filter((b: any) => b.beneficiary_type === 'indirect').reduce((s: number, b: any) => s + (b.quantity || 0), 0), '-', '-'],
+          ["Registos Activos", beneficiaries.filter((b: any) => b.status === 'active').length, '-', beneficiaries.filter((b: any) => b.status === 'active').length > 0 ? '✅' : '-'],
+        ],
+      }] : []),
     ],
   };
 }
