@@ -29,7 +29,7 @@ export function useSubscription() {
       .from('organization_subscriptions')
       .select('*, subscription_plans(*)')
       .eq('organization_id', organization.id)
-      .in('status', ['trial', 'active'])
+      .in('status', ['trial', 'active', 'expired'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
