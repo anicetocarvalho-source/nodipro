@@ -14,6 +14,7 @@ import { useFundingAgreements, FundingAgreement } from "@/hooks/useFundingAgreem
 import { useProjects } from "@/hooks/useProjects";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FeatureGate } from "@/components/subscription/FeatureGate";
+import { DigitalApprovalPanel } from "@/components/approvals/DigitalApprovalPanel";
 
 const statusLabels: Record<string, string> = {
   negotiation: "Em Negociação", signed: "Assinado", effective: "Em Vigor", closing: "Em Encerramento", closed: "Encerrado", cancelled: "Cancelado",
@@ -202,6 +203,18 @@ export default function FundingAgreements() {
             </Table>
           </CardContent>
         </Card>
+      )}
+
+      {/* Digital Approvals for each agreement */}
+      {filtered.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Aprovações por Acordo</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filtered.slice(0, 4).map(a => (
+              <DigitalApprovalPanel key={a.id} entityType="funding_agreement" entityId={a.id} entityLabel={a.title} />
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Modal */}
