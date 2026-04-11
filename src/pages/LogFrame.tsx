@@ -305,3 +305,11 @@ function LogFrameContent() {
     </div>
   );
 }
+
+export default function LogFrame() {
+  return (
+    <FeatureGate feature="logframe" featureLabel="Quadro Lógico">
+      <LogFrameContent />
+    </FeatureGate>
+  );
+}
