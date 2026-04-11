@@ -48,6 +48,9 @@ const SuperAdmin = lazy(() => import("./pages/SuperAdmin"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Beneficiaries = lazy(() => import("./pages/Beneficiaries"));
 const Disbursements = lazy(() => import("./pages/Disbursements"));
+const LessonsLearnedPage = lazy(() => import("./pages/LessonsLearned"));
+const AnnualWorkPlanPage = lazy(() => import("./pages/AnnualWorkPlan"));
+const AuditLogsPage = lazy(() => import("./pages/AuditLogs"));
 
 const queryClient = new QueryClient();
 
