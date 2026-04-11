@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { cn } from "@/lib/utils";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const budgetStats = [
   { title: "Orçamento Total", value: "650.000.000 AOA", change: "+15% YoY", changeType: "positive" },

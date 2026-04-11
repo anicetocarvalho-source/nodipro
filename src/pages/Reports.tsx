@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { useReportGeneration, ReportType } from "@/hooks/useReportGeneration";
 import { ReportPreviewModal } from "@/components/reports/ReportPreviewModal";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const reportTemplates = [
   { id: "1", name: "Relatório de Status do Projecto", type: "project" as ReportType, format: "PDF", description: "Estado actual dos projectos, progresso, tarefas e orçamento." },

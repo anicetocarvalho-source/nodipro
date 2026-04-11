@@ -10,6 +10,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import { useEVMData, EVMMetrics } from "@/hooks/useEVM";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const healthColor = (h: string) =>
   h === 'good' ? 'text-success' : h === 'warning' ? 'text-warning' : 'text-destructive';

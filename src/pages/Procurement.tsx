@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { useProcurement } from "@/hooks/useProcurement";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 import { useProjects } from "@/hooks/useProjects";
 import {
   PROCUREMENT_METHODS, PROCUREMENT_STATUSES, CONTRACT_TYPES, CONTRACT_STATUSES,

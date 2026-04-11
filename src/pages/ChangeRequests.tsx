@@ -16,6 +16,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
+import { FeatureGate } from "@/components/subscription/FeatureGate";
 
 const statusConfig: Record<string, { icon: any; className: string }> = {
   submitted: { icon: Clock, className: "bg-primary/10 text-primary" },
