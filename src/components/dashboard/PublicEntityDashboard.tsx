@@ -8,6 +8,8 @@ import {
   Target,
   AlertTriangle,
   ExternalLink,
+  Users,
+  Banknote,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,6 +125,22 @@ export function PublicEntityDashboard({ userName }: PublicEntityDashboardProps) 
       icon: Globe,
       href: "/governance",
     },
+    {
+      title: "Beneficiários",
+      value: stats.totalBeneficiaries,
+      change: `${stats.directBeneficiaries} directos | ${stats.indirectBeneficiaries} indirectos`,
+      changeType: stats.totalBeneficiaries > 0 ? "positive" as const : "neutral" as const,
+      icon: Users,
+      href: "/beneficiaries",
+    },
+    ...(canViewBudget ? [{
+      title: "Taxa Desembolso",
+      value: `${stats.disbursementRate}%`,
+      change: `Total financiado: ${formatCompactNumber(stats.totalFundingValue)}`,
+      changeType: stats.disbursementRate >= 50 ? "positive" as const : "neutral" as const,
+      icon: Banknote,
+      href: "/disbursements",
+    }] : []),
   ];
 
   return (
