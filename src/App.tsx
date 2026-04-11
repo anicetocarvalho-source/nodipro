@@ -11,6 +11,8 @@ import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AccountLayout } from "@/components/layout/AccountLayout";
 import { Loader2 } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 
@@ -84,6 +86,20 @@ const AdminPageWrapper = ({ children }: { children: React.ReactNode }) => (
   </ProtectedRoute>
 );
 
+// Wrapper for platform admin pages (SuperAdmin)
+const PlatformAdminPageWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isPlatformAdmin, loading } = useAuthContext();
+  if (loading) return <PageLoader />;
+  if (!isPlatformAdmin) return <Navigate to="/dashboard" replace />;
+  return (
+    <ProtectedRoute>
+      <AppLayout>
+        <Suspense fallback={<PageLoader />}>{children}</Suspense>
+      </AppLayout>
+    </ProtectedRoute>
+  );
+};
+
 // Wrapper for account pages (profile, settings, subscription)
 const AccountPageWrapper = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
@@ -129,7 +145,7 @@ const App = () => (
               <Route path="/reports" element={<ManagerPageWrapper><Reports /></ManagerPageWrapper>} />
               <Route path="/profile" element={<AccountPageWrapper><Profile /></AccountPageWrapper>} />
               <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
-              <Route path="/superadmin" element={<AdminPageWrapper><SuperAdmin /></AdminPageWrapper>} />
+              <Route path="/superadmin" element={<PlatformAdminPageWrapper><SuperAdmin /></PlatformAdminPageWrapper>} />
               <Route path="/settings" element={<AccountPageWrapper><Settings /></AccountPageWrapper>} />
               <Route path="/help" element={<ProtectedPageWrapper><Help /></ProtectedPageWrapper>} />
               <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />

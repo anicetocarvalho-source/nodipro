@@ -10,6 +10,7 @@ import { OnboardingProgress } from './OnboardingProgress';
 import { EntityType, OrganizationSize } from '@/types/organization';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export interface OnboardingData {
   entity_type: EntityType | null;
@@ -30,6 +31,7 @@ const STEPS = [
 
 export function OnboardingWizard() {
   const { createOrganization, refreshOrganization } = useOrganization();
+  const { user } = useAuthContext();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,6 +84,10 @@ export function OnboardingWizard() {
 
       if (org) {
         setCreatedOrgId(org.id);
+        // Promote user to admin role since they created the organization
+        if (user) {
+          await supabase.rpc('promote_org_owner_to_admin', { _user_id: user.id });
+        }
         nextStep(); // Move to plan selection
       }
     } catch (error) {
