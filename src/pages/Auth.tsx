@@ -639,8 +639,8 @@ export default function Auth() {
                             key={user.email}
                             type="button"
                             onClick={() => {
-                              loginForm.setValue("email", user.email);
-                              loginForm.setValue("password", user.password);
+                              loginForm.setValue("email", user.email, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+                              loginForm.setValue("password", user.password, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
                             }}
                             className="text-left p-2 rounded-md hover:bg-muted/80 transition-colors border border-transparent hover:border-border/50"
                           >

@@ -71,7 +71,12 @@ const Index = () => {
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
-          <Button size="lg" variant="outline" className="w-full sm:w-auto">
+          <Button
+            size="lg"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+          >
             Ver Demonstração
           </Button>
         </div>
