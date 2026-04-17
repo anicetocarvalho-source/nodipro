@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -36,13 +37,13 @@ const FEATURE_LABELS: Record<keyof PlanFeatures, string> = {
   beneficiaries: 'Beneficiários',
 };
 
-export function PlanCard({ plan, isCurrentPlan, onSelect, isLoading, yearly }: PlanCardProps) {
+export const PlanCard = forwardRef<HTMLDivElement, PlanCardProps>(({ plan, isCurrentPlan, onSelect, isLoading, yearly }, ref) => {
   const price = yearly ? plan.price_yearly : plan.price_monthly;
   const period = yearly ? '/ano' : '/mês';
   const isPopular = plan.slug === 'professional';
 
   return (
-    <Card className={cn(
+    <Card ref={ref} className={cn(
       'relative flex flex-col',
       isPopular && 'border-primary shadow-lg scale-105',
       isCurrentPlan && 'ring-2 ring-primary'
@@ -97,4 +98,6 @@ export function PlanCard({ plan, isCurrentPlan, onSelect, isLoading, yearly }: P
       </CardFooter>
     </Card>
   );
-}
+});
+
+PlanCard.displayName = 'PlanCard';

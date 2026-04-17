@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PlanCard } from './PlanCard';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import type { SubscriptionPlan } from '@/types/subscription';
 
-export function PricingSection() {
+export const PricingSection = forwardRef<HTMLElement>((_props, ref) => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [yearly, setYearly] = useState(false);
 
@@ -23,7 +23,7 @@ export function PricingSection() {
   if (plans.length === 0) return null;
 
   return (
-    <section className="container mx-auto px-4 py-20" id="pricing">
+    <section ref={ref} className="container mx-auto px-4 py-20" id="pricing">
       <h3 className="text-2xl md:text-3xl font-bold text-center mb-4">
         Planos e Preços
       </h3>
@@ -44,4 +44,6 @@ export function PricingSection() {
       </div>
     </section>
   );
-}
+});
+
+PricingSection.displayName = 'PricingSection';
