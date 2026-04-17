@@ -1,83 +1,91 @@
 
 
-## Simulação de Fluxos Completos — Resultados da Auditoria UX
+## Auditoria de Rotas da Plataforma — Resultados
 
-### Ecrãs Testados e Resultados
-
-**1. Landing Page (`/`)** — OK
-- Hero com gradient, tagline, 2 CTAs, 4 feature cards
-- Pricing section carrega planos do DB correctamente
-- Footer com copyright
-- **Problema encontrado**: O botão "Ver Demonstração" não faz nada (sem `onClick`, sem link)
-- **Problema encontrado**: Na secção de Pricing, **todos os 4 planos** mostram as 6 features novas (Acordos de Financiamento, Lições Aprendidas, AWP, Auditoria, Beneficiários, Desembolsos) como **indisponíveis (X vermelho)**, incluindo o plano Enterprise. Causa: a coluna `features` JSONB na tabela `subscription_plans` não contém as chaves `funding_agreements`, `lessons_learned`, `annual_work_plan`, `audit_logs`, `beneficiaries`, `disbursements`. O `PlanCard` lê `plan.features[key]` que retorna `undefined` → falsy → X.
-
-**2. Página de Login (`/auth`)** — Problema parcial
-- Layout split-screen profissional, animações Framer Motion suaves
-- Demo quick-access buttons visíveis (Super Admin, Admin, Gestor, Membro)
-- **Bug**: `loginForm.setValue("email", user.email)` não usa `{ shouldValidate: true, shouldDirty: true }`. Quando se clica num botão demo e depois em "Entrar", os valores são por vezes descartados pela validação Zod porque o campo não está marcado como "dirty/touched". Funciona inconsistentemente — em tentativas subsequentes funciona. Correcção simples no `setValue`.
-
-**3. Dashboard (`/dashboard`)** — OK
-- Saudação personalizada com nome + badge de entidade
-- Trial expired banner com CTA "Ver Planos"
-- 6 KPI cards (Projectos, Taxa Execução, Tarefas, ODS, Beneficiários, Taxa Desembolso)
-- Secções de ODS e Execução Orçamental por Província
-- Próximos Prazos com prioridades
-- NODIBot FAB visível (canto inferior direito)
-
-**4. Projectos (`/projects`)** — OK
-- Grid de cards com RAG status, progresso, orçamento em AOA
-- Tabs de filtro (Todos/Activos/Atrasados/Pausados/Concluídos) com contagens
-- Pesquisa, toggle grid/lista, botão "Novo Projecto"
-- Tab Sprints integrada
-
-**5. Detalhe de Projecto (`/projects/:id`)** — OK
-- Header com status, metodologia, funder
-- 5 KPI cards (Prazo, Progresso, Equipa, Orçamento, Risco)
-- Kanban com tarefas bloqueadas (highlight amarelo + lock icon)
-- Painel de integridade (60%) com alertas
-- Resumo cruzado (Orçamento, Documentos, Equipa)
-- Breadcrumbs funcionais
-
-**6. Sidebar de Navegação** — OK (com nota)
-- 3 grupos colapsíveis (Planning, Operations, Management)
-- Itens condicionais por permissão (RBAC)
-- Labels em inglês quando browser é EN (i18n a funcionar por design)
-- Scroll quando o conteúdo excede a altura
-- **Nota**: O grupo "Management" está cortado — é preciso scroll para ver items como Documents, Budget, Reports, etc. Scroll funcional mas não óbvio visualmente.
+### Metodologia
+Analise estática completa de `App.tsx`, componentes de protecção (`ProtectedRoute`, `RoleProtectedRoute`, `PlatformAdminPageWrapper`), e contextos de autenticação/organização.
 
 ---
 
-### Problemas Identificados e Correcções
+### Inventário de Rotas (31 rotas)
 
-| # | Severidade | Problema | Correcção |
+| Rota | Protecção | Wrapper | Estado |
 |---|---|---|---|
-| 1 | **CRITICO** | Plans JSONB no DB não tem as 6 feature keys novas → todas aparecem como X em todos os planos | SQL migration: `UPDATE subscription_plans SET features = features || '{"funding_agreements": true, "lessons_learned": true, ...}'` para planos Professional e Enterprise |
-| 2 | **MODERADO** | `loginForm.setValue` no quick-access não marca campos como dirty/validated → falha intermitente no login | Adicionar `{ shouldValidate: true, shouldDirty: true }` ao `setValue` |
-| 3 | **MENOR** | Botão "Ver Demonstração" na landing page não tem acção | Adicionar scroll suave até a secção de pricing ou link para `/auth` |
+| `/` | Publica | Nenhum | OK — redirect autenticados → `/projects` |
+| `/auth` | Publica | Nenhum | OK |
+| `/reset-password` | Publica | Suspense | OK |
+| `/onboarding` | Semi-protegida (código interno) | Suspense | OK — redirect se já onboarded |
+| `/dashboard` | ProtectedRoute | AppLayout | OK — redirect por entidade |
+| `/projects` | ProtectedRoute | AppLayout | OK |
+| `/projects/:id` | ProtectedRoute | AppLayout | OK |
+| `/sprints` | ProtectedRoute | AppLayout | OK — redirect → `/projects` |
+| `/logframe` | ProtectedRoute | AppLayout | OK |
+| `/kpi` | ProtectedRoute | AppLayout | OK |
+| `/stakeholders` | ProtectedRoute | AppLayout | OK |
+| `/beneficiaries` | ProtectedRoute | AppLayout | OK |
+| `/lessons-learned` | ProtectedRoute | AppLayout | OK |
+| `/team` | ProtectedRoute | AppLayout | OK |
+| `/documents` | ProtectedRoute | AppLayout | OK |
+| `/communication` | ProtectedRoute | AppLayout | OK |
+| `/help` | ProtectedRoute | AppLayout | OK |
+| `/governance` | Manager+ | AppLayout | OK |
+| `/evm` | Manager+ | AppLayout | OK |
+| `/procurement` | Manager+ | AppLayout | OK |
+| `/disbursements` | Manager+ | AppLayout | OK |
+| `/change-requests` | Manager+ | AppLayout | OK |
+| `/portfolio` | Manager+ | AppLayout | OK |
+| `/programs/:id` | Manager+ | AppLayout | OK |
+| `/methodologies` | Manager+ | AppLayout | OK |
+| `/risks` | Manager+ | AppLayout | OK |
+| `/budget` | Manager+ | AppLayout | OK |
+| `/reports` | Manager+ | AppLayout | OK |
+| `/annual-work-plan` | Manager+ | AppLayout | OK |
+| `/funding-agreements` | Manager+ | AppLayout | OK |
+| `/admin` | Admin | AppLayout | OK |
+| `/audit-logs` | Admin | AppLayout | OK |
+| `/superadmin` | PlatformAdmin | AppLayout | OK |
+| `/profile` | ProtectedRoute | AccountLayout | OK |
+| `/settings` | ProtectedRoute | AccountLayout | OK |
+| `/subscription` | ProtectedRoute | AccountLayout | OK |
+| `*` (404) | Nenhum | Suspense | OK |
 
-### Plano de Implementação
+---
 
-**Ficheiros a alterar:**
-- `src/pages/Auth.tsx` — linhas 642-643: adicionar opções ao `setValue`
-- `src/pages/Index.tsx` — botão "Ver Demonstração": adicionar acção
-- **Migração SQL** — actualizar `features` JSONB em `subscription_plans` para incluir as 6 novas feature keys com valores apropriados por plano (Free: todas false; Starter: `beneficiaries` true; Professional/Enterprise: todas true)
+### Problemas Encontrados
 
-### Detalhe Técnico da Migração
+#### BUG 1: MENOR — Console warning `forwardRef` no `PricingSection`
 
-```sql
--- Professional e Enterprise: todas as features novas activas
-UPDATE subscription_plans SET features = features 
-  || '{"funding_agreements": true, "lessons_learned": true, "annual_work_plan": true, "audit_logs": true, "beneficiaries": true, "disbursements": true}'::jsonb
-WHERE slug IN ('professional', 'enterprise');
+O React emite um warning porque `Index.tsx` (linha 126) renderiza `<PricingSection />` sem ref, mas algo no tree está a tentar passar uma ref ao componente. O `PricingSection` é um function component sem `forwardRef`. O mesmo ocorre com `PlanCard`.
 
--- Starter: apenas beneficiaries
-UPDATE subscription_plans SET features = features 
-  || '{"funding_agreements": false, "lessons_learned": false, "annual_work_plan": false, "audit_logs": false, "beneficiaries": true, "disbursements": false}'::jsonb
-WHERE slug = 'starter';
+**Causa**: Provavelmente o `id="pricing"` na section interna do PricingSection não causa o problema directamente. O warning indica que algum parent tenta passar ref — possivelmente o Tooltip ou outro wrapper.
 
--- Free: nenhuma
-UPDATE subscription_plans SET features = features 
-  || '{"funding_agreements": false, "lessons_learned": false, "annual_work_plan": false, "audit_logs": false, "beneficiaries": false, "disbursements": false}'::jsonb
-WHERE slug = 'free';
-```
+**Correcção**: Wrap `PricingSection` e `PlanCard` com `React.forwardRef` para suprimir os warnings.
+
+#### BUG 2: INFORMATIVO — Rota `/` com tooltip "Ir para Dashboard" no logo
+
+O tooltip no logo diz "Ir para Dashboard" mas o link vai para `/` (a própria landing page). Inconsistência textual menor.
+
+**Correcção**: Alterar tooltip para "Página Inicial" ou alterar o link para `/dashboard`.
+
+#### Tudo o Resto Está Correcto
+
+- **Acesso sem autenticação**: Rotas protegidas fazem `<Navigate to="/auth">` — correcto
+- **Redirect pós-login**: `ProtectedRoute` redirect para `/onboarding` se `needsOnboarding`, caso contrário permite acesso — correcto
+- **Platform admin**: Redirect automático de `/dashboard`, `/`, `/projects` para `/superadmin` — correcto
+- **Roles insuficientes**: `RoleProtectedRoute` mostra UI de "Acesso Restrito" com botão voltar — correcto (não redirect, mostra mensagem)
+- **404**: Catch-all `*` renderiza `NotFound` com link "Return to Home" — correcto
+- **Browser back/forward**: BrowserRouter com SPA fallback — correcto para Lovable hosting
+- **Sprints**: Redirect permanente para `/projects` — correcto
+
+---
+
+### Plano de Correcção
+
+| # | Severidade | Ficheiro | Correcção |
+|---|---|---|---|
+| 1 | MENOR | `src/components/subscription/PricingSection.tsx` | Wrap com `React.forwardRef` |
+| 2 | MENOR | `src/components/subscription/PlanCard.tsx` | Wrap com `React.forwardRef` |
+| 3 | INFORMATIVO | `src/pages/Index.tsx` | Alterar tooltip "Ir para Dashboard" → "Página Inicial" |
+
+Estes são os unicos problemas. A arquitectura de routing está sólida: protecção por autenticação, role gating, onboarding redirect, e 404 todos funcionam correctamente.
 
