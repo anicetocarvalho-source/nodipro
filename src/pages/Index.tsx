@@ -37,7 +37,7 @@ const Index = () => {
               </Link>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-foreground text-background">
-              Ir para Dashboard
+              Página Inicial
             </TooltipContent>
           </Tooltip>
           <div className="flex items-center gap-4">
