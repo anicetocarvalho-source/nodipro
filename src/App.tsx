@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AccountLayout } from "@/components/layout/AccountLayout";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { Loader2 } from "lucide-react";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -121,6 +122,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <OrganizationProvider>
             <Routes>
