@@ -428,8 +428,10 @@ export type Database = {
           category_id: string | null
           created_at: string
           created_by: string | null
+          currency: string
           description: string
           entry_date: string
+          exchange_rate_to_base: number
           id: string
           invoice_number: string | null
           notes: string | null
@@ -448,8 +450,10 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           description: string
           entry_date?: string
+          exchange_rate_to_base?: number
           id?: string
           invoice_number?: string | null
           notes?: string | null
@@ -468,8 +472,10 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           created_by?: string | null
+          currency?: string
           description?: string
           entry_date?: string
+          exchange_rate_to_base?: number
           id?: string
           invoice_number?: string | null
           notes?: string | null
@@ -488,6 +494,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cost_categories"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_entries_currency_fkey"
+            columns: ["currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
           },
           {
             foreignKeyName: "budget_entries_project_id_fkey"
@@ -853,6 +866,33 @@ export type Database = {
           },
         ]
       }
+      currencies: {
+        Row: {
+          code: string
+          created_at: string
+          decimals: number
+          is_active: boolean
+          name: string
+          symbol: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          decimals?: number
+          is_active?: boolean
+          name: string
+          symbol: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          decimals?: number
+          is_active?: boolean
+          name?: string
+          symbol?: string
+        }
+        Relationships: []
+      }
       digital_approvals: {
         Row: {
           approval_type: string
@@ -918,6 +958,7 @@ export type Database = {
           currency: string
           description: string | null
           evidence_document_id: string | null
+          exchange_rate_to_base: number
           id: string
           milestone_description: string | null
           notes: string | null
@@ -939,6 +980,7 @@ export type Database = {
           currency?: string
           description?: string | null
           evidence_document_id?: string | null
+          exchange_rate_to_base?: number
           id?: string
           milestone_description?: string | null
           notes?: string | null
@@ -960,6 +1002,7 @@ export type Database = {
           currency?: string
           description?: string | null
           evidence_document_id?: string | null
+          exchange_rate_to_base?: number
           id?: string
           milestone_description?: string | null
           notes?: string | null
@@ -1268,6 +1311,104 @@ export type Database = {
           },
         ]
       }
+      evm_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          cpi: number | null
+          created_at: string
+          id: string
+          is_acknowledged: boolean
+          message: string
+          project_id: string
+          severity: string
+          spi: number | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          cpi?: number | null
+          created_at?: string
+          id?: string
+          is_acknowledged?: boolean
+          message: string
+          project_id: string
+          severity?: string
+          spi?: number | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          cpi?: number | null
+          created_at?: string
+          id?: string
+          is_acknowledged?: boolean
+          message?: string
+          project_id?: string
+          severity?: string
+          spi?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_alerts_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exchange_rates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          effective_date: string
+          from_currency: string
+          id: string
+          rate: number
+          source: string | null
+          to_currency: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_currency: string
+          id?: string
+          rate: number
+          source?: string | null
+          to_currency: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          effective_date?: string
+          from_currency?: string
+          id?: string
+          rate?: number
+          source?: string | null
+          to_currency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_rates_from_currency_fkey"
+            columns: ["from_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "exchange_rates_to_currency_fkey"
+            columns: ["to_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
       funders: {
         Row: {
           acronym: string | null
@@ -1309,6 +1450,7 @@ export type Database = {
           disbursed_amount: number
           disbursement_conditions: string | null
           effective_date: string | null
+          exchange_rate_to_base: number
           funder_id: string | null
           id: string
           key_contacts: string | null
@@ -1331,6 +1473,7 @@ export type Database = {
           disbursed_amount?: number
           disbursement_conditions?: string | null
           effective_date?: string | null
+          exchange_rate_to_base?: number
           funder_id?: string | null
           id?: string
           key_contacts?: string | null
@@ -1353,6 +1496,7 @@ export type Database = {
           disbursed_amount?: number
           disbursement_conditions?: string | null
           effective_date?: string | null
+          exchange_rate_to_base?: number
           funder_id?: string | null
           id?: string
           key_contacts?: string | null
@@ -1889,6 +2033,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          base_currency: string
           country: string | null
           created_at: string
           created_by: string | null
@@ -1908,6 +2053,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          base_currency?: string
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -1927,6 +2073,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          base_currency?: string
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -1946,6 +2093,13 @@ export type Database = {
           website?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "organizations_base_currency_fkey"
+            columns: ["base_currency"]
+            isOneToOne: false
+            referencedRelation: "currencies"
+            referencedColumns: ["code"]
+          },
           {
             foreignKeyName: "organizations_province_id_fkey"
             columns: ["province_id"]
@@ -3676,6 +3830,114 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "project_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_entries: {
+        Row: {
+          billable: boolean
+          created_at: string
+          description: string | null
+          entry_date: string
+          hours: number
+          id: string
+          organization_id: string
+          project_id: string | null
+          task_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billable?: boolean
+          created_at?: string
+          description?: string | null
+          entry_date?: string
+          hours: number
+          id?: string
+          organization_id: string
+          project_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billable?: boolean
+          created_at?: string
+          description?: string | null
+          entry_date?: string
+          hours?: number
+          id?: string
+          organization_id?: string
+          project_id?: string | null
+          task_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_entries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_capacity: {
+        Row: {
+          created_at: string
+          effective_from: string
+          effective_to: string | null
+          id: string
+          notes: string | null
+          organization_id: string
+          updated_at: string
+          user_id: string
+          weekly_hours: number
+        }
+        Insert: {
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          organization_id: string
+          updated_at?: string
+          user_id: string
+          weekly_hours?: number
+        }
+        Update: {
+          created_at?: string
+          effective_from?: string
+          effective_to?: string | null
+          id?: string
+          notes?: string | null
+          organization_id?: string
+          updated_at?: string
+          user_id?: string
+          weekly_hours?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_capacity_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

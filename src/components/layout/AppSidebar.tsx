@@ -6,6 +6,7 @@ import {
   MessageSquare, Wallet, ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Settings,
   HelpCircle, LogOut, ShieldCheck, Layers, Building2, Grid3X3, Gauge, ShoppingBag,
   Users2, FileEdit, User, Heart, Banknote, BookOpen, CalendarRange, ScrollText, Handshake,
+  Clock, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -58,12 +59,14 @@ export function AppSidebar() {
         { icon: Grid3X3, labelKey: "nav.logframe", path: "/logframe" },
         { icon: BarChart3, labelKey: "nav.kpi", path: "/kpi" },
         { icon: Gauge, labelKey: "nav.evm", path: "/evm", requiresPermission: "canViewBudget" },
+        { icon: Activity, labelKey: "nav.benchmark", path: "/benchmark", requiresPermission: "canViewBudget" },
         { icon: ShoppingBag, labelKey: "nav.procurement", path: "/procurement", requiresPermission: "canViewBudget" },
         { icon: AlertTriangle, labelKey: "nav.risks", path: "/risks", requiresPermission: "canManageRisks" },
         { icon: Users2, labelKey: "nav.stakeholders", path: "/stakeholders" },
         { icon: Heart, labelKey: "nav.beneficiaries", path: "/beneficiaries" },
         { icon: FileEdit, labelKey: "nav.changeRequests", path: "/change-requests", requiresPermission: "canViewBudget" },
         { icon: Users, labelKey: "nav.team", path: "/team" },
+        { icon: Clock, labelKey: "nav.timesheets", path: "/timesheets" },
       ],
     },
     {

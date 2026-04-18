@@ -53,6 +53,8 @@ const LessonsLearnedPage = lazy(() => import("./pages/LessonsLearned"));
 const AnnualWorkPlanPage = lazy(() => import("./pages/AnnualWorkPlan"));
 const AuditLogsPage = lazy(() => import("./pages/AuditLogs"));
 const FundingAgreementsPage = lazy(() => import("./pages/FundingAgreements"));
+const Timesheets = lazy(() => import("./pages/Timesheets"));
+const Benchmark = lazy(() => import("./pages/Benchmark"));
 
 const queryClient = new QueryClient();
 
@@ -157,6 +159,8 @@ const App = () => (
               <Route path="/annual-work-plan" element={<ManagerPageWrapper><AnnualWorkPlanPage /></ManagerPageWrapper>} />
               <Route path="/audit-logs" element={<AdminPageWrapper><AuditLogsPage /></AdminPageWrapper>} />
               <Route path="/funding-agreements" element={<ManagerPageWrapper><FundingAgreementsPage /></ManagerPageWrapper>} />
+              <Route path="/timesheets" element={<ProtectedPageWrapper><Timesheets /></ProtectedPageWrapper>} />
+              <Route path="/benchmark" element={<ManagerPageWrapper><Benchmark /></ManagerPageWrapper>} />
               <Route path="/profile" element={<AccountPageWrapper><Profile /></AccountPageWrapper>} />
               <Route path="/admin" element={<AdminPageWrapper><Admin /></AdminPageWrapper>} />
               <Route path="/superadmin" element={<PlatformAdminPageWrapper><SuperAdmin /></PlatformAdminPageWrapper>} />
