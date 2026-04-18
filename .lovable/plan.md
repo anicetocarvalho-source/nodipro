@@ -1,46 +1,146 @@
 
 
-## Auditoria de Integridade de Dados — Plano
+## NODIPRO — Roadmap de Melhorias Estratégicas
 
-### Metodologia
-Analisar (1) constraints `ON DELETE` em todas as foreign keys, (2) triggers de cálculos automáticos, (3) consistência UI vs DB através de queries de amostragem em tabelas-chave.
+Análise extensa e bem fundamentada. Concordo com a maioria das propostas. Vou organizar num roadmap faseado de implementação.
 
-### Áreas a Investigar
+---
 
-**1. Cascade vs Preservação em Deletes**
-- Verificar FKs nas tabelas críticas: `projects`, `tasks`, `budget_entries`, `documents`, `organizations`, `sprints`, `portfolios`, `programs`
-- Identificar se relações têm `ON DELETE CASCADE`, `SET NULL`, `RESTRICT` ou nenhuma acção definida
-- Detectar potenciais órfãos: ex. eliminar projecto → tarefas/orçamento/documentos ficam pendentes?
-- Verificar se eliminar utilizador (auth.users) propaga para `profiles`, `user_roles`, `organization_members`
+### Avaliação Rápida do Estado Actual
 
-**2. Campos Calculados Automáticos**
-- `projects.spent` — trigger `update_project_spent` em `budget_entries` (já existe, verificar se está activo)
-- `documents.current_version` — trigger `log_version_upload` (já existe)
-- `funding_agreements.disbursed_amount` — verificar se actualiza quando disbursements mudam de status
-- `annual_work_plans` — totais trimestrais derivados de actividades
-- Contagens em portfolios/programs (projects_count, total_budget) — calculadas em runtime ou armazenadas?
+**Já existe na plataforma** (ajustar, não reconstruir):
+- Multicaixa Reference (mas só por referência manual, não Express/TPA)
+- PWA com offline básico (mem://technical/mobile-pwa-strategy)
+- Chatbot NODIBot com Gemini e acesso a dados via RLS (mem://features/nodibot-ai-assistant)
+- Procurement básico (planos, contratos, fornecedores)
+- KPIs e EVM (mas não alimentam alertas preditivos)
+- 11 templates de relatórios
 
-**3. Consistência UI vs DB**
-- Amostrar dados de tabelas-chave e comparar com lógica de hooks (`useProjects`, `useDashboardData`, `useFundingAgreements`)
-- Verificar se hooks fazem agregações que possam divergir do trigger `update_project_spent`
-- Verificar `RAGIndicator` e `useProjectIntegrity` usam fontes consistentes
+**Lacunas confirmadas**:
+- Sem Multicaixa Express/TPA real, sem multi-moeda, sem API pública
+- Sem capacity planning nem timesheets
+- Sem M&A formal (OCDE-CAD), sem gestão de activos, sem LMS
+- Chatbot é read-only (não gera relatórios nem executa acções)
 
-**4. Triggers Existentes vs Esperados**
-- O bloco `<db-triggers>` mostra "There are no triggers in the database" — ALERTA: as funções existem mas os triggers podem não estar instalados!
-- Validar se `update_project_spent`, `audit_trigger_func`, `check_budget_thresholds`, `notify_*` estão de facto attached às tabelas
-- Se não estiverem, `projects.spent` não actualiza automaticamente → divergência crítica entre UI e DB
+---
 
-### Ferramentas a Usar (read-only)
-- `supabase--read_query` — inspeccionar `information_schema.referential_constraints`, `information_schema.triggers`, e amostrar dados
-- `supabase--linter` — detectar problemas estruturais
-- `code--view` — confirmar lógica de hooks que assumem campos calculados
+### Roadmap Proposto (4 Fases)
 
-### Output Esperado
-Relatório estruturado com:
-| Severidade | Categoria | Problema | Localização | Correcção sugerida |
-- **CRÍTICO**: triggers em falta, FKs sem acção (órfãos), campos calculados desactualizados
-- **MODERADO**: divergências entre agregação UI e valor armazenado
-- **MENOR**: inconsistências cosméticas
+#### **Fase 1 — Lacunas Críticas de Mercado** (4-6 sprints)
+Foco: desbloquear adopção em Angola/PALOPs.
 
-Sem alterações de código nesta fase — apenas diagnóstico. Após aprovação do relatório, plano de correcções (migrations SQL para adicionar triggers/FK actions em falta + ajustes em hooks) será apresentado em mensagem separada.
+1. **Multi-moeda com câmbio dinâmico**
+   - Tabela `currencies` (AOA, USD, EUR, MZN, ZAR) + `exchange_rates` (atualização diária via edge function ou input manual)
+   - Adicionar `currency` + `exchange_rate_to_base` em `budget_entries`, `disbursement_tranches`, `funding_agreements`
+   - Conversão automática para moeda base da organização nos dashboards/EVM
+
+2. **Multicaixa Express + TPA**
+   - Edge function `multicaixa-express-checkout` com gateway EMIS (requer credenciais que o utilizador deverá fornecer mais tarde)
+   - Webhook `multicaixa-callback` para confirmação automática
+   - Manter referência manual como fallback
+
+3. **Capacity Planning + Timesheets**
+   - Tabela `time_entries` (user_id, task_id, date, hours, billable)
+   - Tabela `user_capacity` (weekly_hours por utilizador)
+   - UI: heatmap de alocação por equipa, alerta quando >100% antes de atribuir tarefa
+   - Widget "Minhas horas esta semana" no dashboard
+
+4. **Comparador de projectos + alertas preditivos EVM**
+   - Página `/governance/benchmark` com side-by-side de SPI/CPI/progresso
+   - Trigger que cria notificação quando SPI<0.85 ou CPI<0.9 por 2 semanas consecutivas
+
+---
+
+#### **Fase 2 — Diferenciação Funcional** (4-6 sprints)
+
+5. **NODIBot Action-Capable**
+   - Adicionar tool-calling ao edge function `platform-chatbot` (gerar PDF, criar tarefa, exportar relatório)
+   - Comandos NL: "qual o burn rate do projecto X?", "exporta relatório mensal do projecto Y"
+   - Streaming markdown já existe — adicionar acções estruturadas
+
+6. **Risk Heatmap Agregado + Riscos Cruzados**
+   - Coluna `affects_projects` (uuid[]) em `risks`
+   - Dashboard executivo: matriz 5x5 (probabilidade x impacto) agregada por portfólio
+
+7. **Stakeholder Engagement Plan**
+   - Tabela `stakeholder_communications` (stakeholder_id, frequency, channel, owner, next_due, last_contact, status)
+   - Vista calendário + alertas para comunicações em atraso
+
+8. **Report Builder drag-and-drop**
+   - UI tipo "blocos" (KPI card, tabela, gráfico, texto) que o utilizador arrasta
+   - Salva como template em `report_templates` com `layout_json`
+   - Templates AfDB e IFAD adicionados aos pré-existentes
+
+---
+
+#### **Fase 3 — Novos Módulos Estratégicos** (6-8 sprints)
+
+9. **Monitorização & Avaliação (M&A) OCDE-CAD**
+   - Tabelas `evaluations` (tipo: midterm/final/expost), `evaluation_criteria` (5 critérios CAD), `evaluation_findings`
+   - Workflow formal: TOR → recolha → análise → relatório → resposta da gestão
+
+10. **Gestão de Activos e Inventário**
+    - Tabelas `assets`, `asset_movements`, `asset_depreciation`
+    - QR codes para identificação física, transferências entre projectos com aprovação
+
+11. **e-Procurement Avançado**
+    - Estender módulo actual: `tenders` (publicação), `tender_proposals` (recepção), `evaluation_scorecards` (técnica + financeira)
+    - Workflow de adjudicação documentada com trilho de auditoria
+
+12. **HR-P (Recursos Humanos de Projecto)**
+    - Tabelas `consultants`, `tor_documents`, `consultant_contracts`, `performance_evaluations`
+    - Diferente de `team_members`: orientado a recursos externos contratados
+
+---
+
+#### **Fase 4 — Expansão e Ecossistema** (longo prazo)
+
+13. **API Pública REST + Webhooks**
+    - Edge functions `/api/v1/{projects,tasks,budget}` com autenticação por API key (`api_keys` table)
+    - Sistema de webhooks com retries e logs (`webhook_subscriptions`, `webhook_deliveries`)
+    - Documentação OpenAPI auto-gerada
+
+14. **Conformidade Regulatória por País**
+    - Configuração `country_compliance_configs` por jurisdição
+    - Conector SIGFE (Angola) e e-SISTAFE (Moçambique) — adapters específicos
+    - Templates de declarações fiscais por país
+
+15. **Offline Robusto (Service Worker + IndexedDB)**
+    - Upgrade do PWA actual: cache de leituras + queue de mutations
+    - Sync resolver com detecção de conflitos (last-write-wins ou manual)
+
+16. **LMS Interno + Marketplace**
+    - LMS: cursos, módulos, quizzes, certificados
+    - Marketplace: templates partilhados (gratuitos/pagos) + directório de consultores
+
+17. **Localização Profunda + Sandbox Público**
+    - Adicionar Espanhol (i18n já suporta extensão)
+    - Formatos de data/moeda/fiscalidade por país
+    - `/demo` com dataset read-only e reset diário
+
+---
+
+### O Que Recomendo Começar Já
+
+Quatro itens de **Fase 1** entregam impacto imediato e desbloqueiam vendas:
+
+| # | Item | Esforço | Impacto |
+|---|------|---------|---------|
+| 1 | Multi-moeda + câmbio | Médio | Alto (doadores internacionais) |
+| 2 | Capacity + Timesheets | Médio | Alto (gestão real de equipa) |
+| 3 | Alertas preditivos EVM | Baixo | Médio (usa dados existentes) |
+| 4 | Comparador de projectos | Baixo | Médio (governance) |
+
+Multicaixa Express requer credenciais EMIS — pode começar mais tarde quando disponíveis.
+
+---
+
+### Pergunta Antes de Avançar
+
+Preciso saber por onde quer começar para evitar implementar tudo de uma vez (seria semanas de trabalho). Sugiro escolher entre:
+
+- **Opção A**: Implementar os 4 itens de impacto rápido da Fase 1 agora
+- **Opção B**: Começar apenas pelo multi-moeda (base para muitos outros módulos)
+- **Opção C**: Salvar este roadmap como documento (`/mnt/documents/NODIPRO_Roadmap.md`) e decidir item-a-item nas próximas sessões
+- **Opção D**: Outro módulo específico da lista que considere prioritário
 
