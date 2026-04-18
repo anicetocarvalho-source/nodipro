@@ -1,91 +1,46 @@
 
 
-## Auditoria de Rotas da Plataforma — Resultados
+## Auditoria de Integridade de Dados — Plano
 
 ### Metodologia
-Analise estática completa de `App.tsx`, componentes de protecção (`ProtectedRoute`, `RoleProtectedRoute`, `PlatformAdminPageWrapper`), e contextos de autenticação/organização.
+Analisar (1) constraints `ON DELETE` em todas as foreign keys, (2) triggers de cálculos automáticos, (3) consistência UI vs DB através de queries de amostragem em tabelas-chave.
 
----
+### Áreas a Investigar
 
-### Inventário de Rotas (31 rotas)
+**1. Cascade vs Preservação em Deletes**
+- Verificar FKs nas tabelas críticas: `projects`, `tasks`, `budget_entries`, `documents`, `organizations`, `sprints`, `portfolios`, `programs`
+- Identificar se relações têm `ON DELETE CASCADE`, `SET NULL`, `RESTRICT` ou nenhuma acção definida
+- Detectar potenciais órfãos: ex. eliminar projecto → tarefas/orçamento/documentos ficam pendentes?
+- Verificar se eliminar utilizador (auth.users) propaga para `profiles`, `user_roles`, `organization_members`
 
-| Rota | Protecção | Wrapper | Estado |
-|---|---|---|---|
-| `/` | Publica | Nenhum | OK — redirect autenticados → `/projects` |
-| `/auth` | Publica | Nenhum | OK |
-| `/reset-password` | Publica | Suspense | OK |
-| `/onboarding` | Semi-protegida (código interno) | Suspense | OK — redirect se já onboarded |
-| `/dashboard` | ProtectedRoute | AppLayout | OK — redirect por entidade |
-| `/projects` | ProtectedRoute | AppLayout | OK |
-| `/projects/:id` | ProtectedRoute | AppLayout | OK |
-| `/sprints` | ProtectedRoute | AppLayout | OK — redirect → `/projects` |
-| `/logframe` | ProtectedRoute | AppLayout | OK |
-| `/kpi` | ProtectedRoute | AppLayout | OK |
-| `/stakeholders` | ProtectedRoute | AppLayout | OK |
-| `/beneficiaries` | ProtectedRoute | AppLayout | OK |
-| `/lessons-learned` | ProtectedRoute | AppLayout | OK |
-| `/team` | ProtectedRoute | AppLayout | OK |
-| `/documents` | ProtectedRoute | AppLayout | OK |
-| `/communication` | ProtectedRoute | AppLayout | OK |
-| `/help` | ProtectedRoute | AppLayout | OK |
-| `/governance` | Manager+ | AppLayout | OK |
-| `/evm` | Manager+ | AppLayout | OK |
-| `/procurement` | Manager+ | AppLayout | OK |
-| `/disbursements` | Manager+ | AppLayout | OK |
-| `/change-requests` | Manager+ | AppLayout | OK |
-| `/portfolio` | Manager+ | AppLayout | OK |
-| `/programs/:id` | Manager+ | AppLayout | OK |
-| `/methodologies` | Manager+ | AppLayout | OK |
-| `/risks` | Manager+ | AppLayout | OK |
-| `/budget` | Manager+ | AppLayout | OK |
-| `/reports` | Manager+ | AppLayout | OK |
-| `/annual-work-plan` | Manager+ | AppLayout | OK |
-| `/funding-agreements` | Manager+ | AppLayout | OK |
-| `/admin` | Admin | AppLayout | OK |
-| `/audit-logs` | Admin | AppLayout | OK |
-| `/superadmin` | PlatformAdmin | AppLayout | OK |
-| `/profile` | ProtectedRoute | AccountLayout | OK |
-| `/settings` | ProtectedRoute | AccountLayout | OK |
-| `/subscription` | ProtectedRoute | AccountLayout | OK |
-| `*` (404) | Nenhum | Suspense | OK |
+**2. Campos Calculados Automáticos**
+- `projects.spent` — trigger `update_project_spent` em `budget_entries` (já existe, verificar se está activo)
+- `documents.current_version` — trigger `log_version_upload` (já existe)
+- `funding_agreements.disbursed_amount` — verificar se actualiza quando disbursements mudam de status
+- `annual_work_plans` — totais trimestrais derivados de actividades
+- Contagens em portfolios/programs (projects_count, total_budget) — calculadas em runtime ou armazenadas?
 
----
+**3. Consistência UI vs DB**
+- Amostrar dados de tabelas-chave e comparar com lógica de hooks (`useProjects`, `useDashboardData`, `useFundingAgreements`)
+- Verificar se hooks fazem agregações que possam divergir do trigger `update_project_spent`
+- Verificar `RAGIndicator` e `useProjectIntegrity` usam fontes consistentes
 
-### Problemas Encontrados
+**4. Triggers Existentes vs Esperados**
+- O bloco `<db-triggers>` mostra "There are no triggers in the database" — ALERTA: as funções existem mas os triggers podem não estar instalados!
+- Validar se `update_project_spent`, `audit_trigger_func`, `check_budget_thresholds`, `notify_*` estão de facto attached às tabelas
+- Se não estiverem, `projects.spent` não actualiza automaticamente → divergência crítica entre UI e DB
 
-#### BUG 1: MENOR — Console warning `forwardRef` no `PricingSection`
+### Ferramentas a Usar (read-only)
+- `supabase--read_query` — inspeccionar `information_schema.referential_constraints`, `information_schema.triggers`, e amostrar dados
+- `supabase--linter` — detectar problemas estruturais
+- `code--view` — confirmar lógica de hooks que assumem campos calculados
 
-O React emite um warning porque `Index.tsx` (linha 126) renderiza `<PricingSection />` sem ref, mas algo no tree está a tentar passar uma ref ao componente. O `PricingSection` é um function component sem `forwardRef`. O mesmo ocorre com `PlanCard`.
+### Output Esperado
+Relatório estruturado com:
+| Severidade | Categoria | Problema | Localização | Correcção sugerida |
+- **CRÍTICO**: triggers em falta, FKs sem acção (órfãos), campos calculados desactualizados
+- **MODERADO**: divergências entre agregação UI e valor armazenado
+- **MENOR**: inconsistências cosméticas
 
-**Causa**: Provavelmente o `id="pricing"` na section interna do PricingSection não causa o problema directamente. O warning indica que algum parent tenta passar ref — possivelmente o Tooltip ou outro wrapper.
-
-**Correcção**: Wrap `PricingSection` e `PlanCard` com `React.forwardRef` para suprimir os warnings.
-
-#### BUG 2: INFORMATIVO — Rota `/` com tooltip "Ir para Dashboard" no logo
-
-O tooltip no logo diz "Ir para Dashboard" mas o link vai para `/` (a própria landing page). Inconsistência textual menor.
-
-**Correcção**: Alterar tooltip para "Página Inicial" ou alterar o link para `/dashboard`.
-
-#### Tudo o Resto Está Correcto
-
-- **Acesso sem autenticação**: Rotas protegidas fazem `<Navigate to="/auth">` — correcto
-- **Redirect pós-login**: `ProtectedRoute` redirect para `/onboarding` se `needsOnboarding`, caso contrário permite acesso — correcto
-- **Platform admin**: Redirect automático de `/dashboard`, `/`, `/projects` para `/superadmin` — correcto
-- **Roles insuficientes**: `RoleProtectedRoute` mostra UI de "Acesso Restrito" com botão voltar — correcto (não redirect, mostra mensagem)
-- **404**: Catch-all `*` renderiza `NotFound` com link "Return to Home" — correcto
-- **Browser back/forward**: BrowserRouter com SPA fallback — correcto para Lovable hosting
-- **Sprints**: Redirect permanente para `/projects` — correcto
-
----
-
-### Plano de Correcção
-
-| # | Severidade | Ficheiro | Correcção |
-|---|---|---|---|
-| 1 | MENOR | `src/components/subscription/PricingSection.tsx` | Wrap com `React.forwardRef` |
-| 2 | MENOR | `src/components/subscription/PlanCard.tsx` | Wrap com `React.forwardRef` |
-| 3 | INFORMATIVO | `src/pages/Index.tsx` | Alterar tooltip "Ir para Dashboard" → "Página Inicial" |
-
-Estes são os unicos problemas. A arquitectura de routing está sólida: protecção por autenticação, role gating, onboarding redirect, e 404 todos funcionam correctamente.
+Sem alterações de código nesta fase — apenas diagnóstico. Após aprovação do relatório, plano de correcções (migrations SQL para adicionar triggers/FK actions em falta + ajustes em hooks) será apresentado em mensagem separada.
 
